@@ -1,11 +1,28 @@
-mirroring_add 250 3
-register_write ingress.log2_m 0 4
-register_write ingress.training_len 0 20
-register_write ingress.alpha 0 20
-register_write ingress.k 0 28
+Switch ports are connected as follows:
+
+0	veth0 	router input
+1	veth2 	router output
+2	veth4 	ddosd  output
+
+# mirroring_add <mirror_id> <egress_port>
+
+mirroring_add 250 2										# mirror_id=250; egress_port=2;  
+
+# register_write <name> <index> <value>
+
+register_write ingress.log2_m 0 18						# Observation window = 2^18 packets (~256 k packets) 
+register_write ingress.training_len 0 250				# Training phase = 250 windows (~2^26 packets) 
+ 
+// alpha: 	fixed point representation: 0 integer bits, 8 fractional bits.
+// k: 		fixed point representation: 5 integer bits, 3 fractional bits.
+
+register_write ingress.alpha 0 20						# 20/256	= 0.078125 
+register_write ingress.k 0 28							# 28/8 	 	= 3.5
+
 table_clear ingress.ipv4_fib
-table_add ingress.ipv4_fib ingress.forward 0/0 => 2
-table_clear ingress.src_entropy_term
+table_add ingress.ipv4_fib ingress.forward 0/0 => 1		# default forwarding to port 1 (veth2)	
+
+table_clear ingress.src_entropy_term					# Key is nominal; value is in fixed point representation: 28 integer bits, 4 fractional bits.
 table_add ingress.src_entropy_term ingress.get_entropy_term 0/31 => 0
 table_add ingress.src_entropy_term ingress.get_entropy_term 2/32 => 32
 table_add ingress.src_entropy_term ingress.get_entropy_term 3/32 => 44
@@ -235,6 +252,7 @@ table_add ingress.src_entropy_term ingress.get_entropy_term 229376/19 => 308
 table_add ingress.src_entropy_term ingress.get_entropy_term 237568/19 => 309
 table_add ingress.src_entropy_term ingress.get_entropy_term 245760/18 => 310
 table_add ingress.src_entropy_term ingress.get_entropy_term 262144/18 => 311
+
 table_clear ingress.dst_entropy_term
 table_add ingress.dst_entropy_term ingress.get_entropy_term 0/31 => 0
 table_add ingress.dst_entropy_term ingress.get_entropy_term 2/32 => 32

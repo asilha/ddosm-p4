@@ -1,0 +1,13 @@
+Using the 'pure' switch: 
+
+./run.sh 
+
+tcpreplay -q --limit=20480 --pps=10 -i veth0  /media/p4/ddos/datasets/ddos5.pcap 2>&1
+
+Using the 'mininet' environment: 
+
+./mininet.sh 
+./control.sh
+
+tcpreplay -q --limit=20480 --pps=10 -i s1-eth1  /media/p4/ddos/datasets/ddos5.pcap 2>&1
+
