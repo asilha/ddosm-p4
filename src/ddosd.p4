@@ -146,12 +146,14 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
 
             // Source IP Address Frequency Estimation
 
+            // Obtain column IDs for all rows
             bit<32> src_h1;
             bit<32> src_h2;
             bit<32> src_h3;
             bit<32> src_h4;
             cs_hash(hdr.ipv4.src_addr, src_h1, src_h2, src_h3, src_h4);
 
+            // Determine whether to increase or decrease counters
             int<32> src_g1;
             int<32> src_g2;
             int<32> src_g3;
@@ -160,22 +162,23 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
 
             // Row 1 Estimate
 
+            // Read current OW annotation
             bit<8> src_cs1_ow_aux;
             src_cs1_ow.read(src_cs1_ow_aux, src_h1);
 
             int<32> src_c1;
-            if (src_cs1_ow_aux != current_ow[7:0]) {
-                src_c1 = 0;
-                src_cs1_ow.write(src_h1, current_ow[7:0]);
-            } else {
-                src_cs1.read(src_c1, src_h1);
+            if (src_cs1_ow_aux != current_ow[7:0]) {            // If we're in a different window: 
+                src_c1 = 0;                                         // a) reinitialize the counter,
+                src_cs1_ow.write(src_h1, current_ow[7:0]);          // b) annotate the current window number. 
+            } else {                                            // Otherwise:
+                src_cs1.read(src_c1, src_h1);                       // a) read the current counter value from src_cs1(src_h1) into src_c1.
             }
-            src_c1 = src_c1 + src_g1;
-            src_cs1.write(src_h1, src_c1);
+            src_c1 = src_c1 + src_g1;                           // Update the counter value according to ghash.
+            src_cs1.write(src_h1, src_c1);                      // Write the new counter value from src_c1 into src_cs1(src_h1)
 
-            src_c1 = src_g1*src_c1;
+            src_c1 = src_g1*src_c1;                             // If g1 is negative, the counter value will also be negative; this computes the absolute value.
 
-            // Row 2 Estimate
+            // Row 2 Estimate (follow the same logic we used for row 1)
 
             bit<8> src_cs2_ow_aux;
             src_cs2_ow.read(src_cs2_ow_aux, src_h2);
@@ -226,16 +229,18 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
 
             src_c4 = src_g4*src_c4;
 
-            // Count Sketch Source IP Frequency Estimate
+            // At this point, we have updated counters in src_c1, src_c2, src_c3, and src_c4.
+
+            // Count Sketch Source IP Frequency Estimate: store it in meta.ip_count.
             median(src_c1, src_c2, src_c3, src_c4, meta.ip_count);
 
             // LPM Table Lookup
-            if (meta.ip_count > 0)
+            if (meta.ip_count > 0)              // This prevents having to perform a lookup when the argument is zero.
                 src_entropy_term.apply();
             else
                 meta.entropy_term = 0;
 
-            // Source Entropy Norm Update
+            // Source Entropy Norm Update       // At this point, meta.entropy_term has the 'increment'.
             bit<32> src_S_aux;
             src_S.read(src_S_aux, 0);
             src_S_aux = src_S_aux + meta.entropy_term;
@@ -356,6 +361,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                 current_ow = current_ow + 1;
                 ow_counter.write(0, current_ow);
 
+                                //  Ĥ = log2(m) - Ŝ/m  =  log2(m) - Ŝ * 2^(-log2(m))
                 meta.src_entropy = ((bit<32>)log2_m_aux << 4) - (src_S_aux >> log2_m_aux);
                 meta.dst_entropy = ((bit<32>)log2_m_aux << 4) - (dst_S_aux >> log2_m_aux);
 
@@ -364,8 +370,8 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                 dst_ewma.read(meta.dst_ewma, 0);
                 dst_ewmmd.read(meta.dst_ewmmd, 0);
 
-                if (current_ow == 1) {
-                    meta.src_ewma = meta.src_entropy << 14;
+                if (current_ow == 1) {                              // In the first window..
+                    meta.src_ewma = meta.src_entropy << 14;         // Initialize EWMAs with the first estimated entropies. EWMAs have 18 fractional bits. 
                     meta.src_ewmmd = 0;
                     meta.dst_ewma = meta.dst_entropy << 14;
                     meta.dst_ewmmd = 0;
@@ -374,12 +380,12 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
 
                     bit<32> training_len_aux;
                     training_len.read(training_len_aux, 0);
-                    if (current_ow > training_len_aux) {
+                    if (current_ow > training_len_aux) {            // We've finished training.
                         bit<8> k_aux;
                         k.read(k_aux, 0);
 
                         bit<32> src_thresh;
-                        src_thresh = meta.src_ewma + ((bit<32>)k_aux*meta.src_ewmmd >> 3);
+                        src_thresh = meta.src_ewma + ((bit<32>)k_aux*meta.src_ewmmd >> 3);  // k has 3 fractional bits.
 
                         bit<32> dst_thresh;
                         dst_thresh = meta.dst_ewma - ((bit<32>)k_aux*meta.dst_ewmmd >> 3);
@@ -388,10 +394,15 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                             meta.alarm = 1;
                     }
 
-                    if (meta.alarm == 0) {
+                    if (meta.alarm == 0) {                          // No attack detected. Update EWMA and EWMMD. 
                         bit<8> alpha_aux;
                         alpha.read(alpha_aux, 0);
 
+                        // Alpha: 8 fractional bits. 
+                        // Entropies: 4 fractional bits. 
+                        // EWMA and EWMMD: 18 fractional bits.  
+
+                        // Bit alignments:                  8+4=12             12+6=18                                    8+18=26         26-8=18
                         meta.src_ewma = (((bit<32>)alpha_aux*meta.src_entropy) << 6) + (((0x00000100 - (bit<32>)alpha_aux)*meta.src_ewma) >> 8);
                         if ((meta.src_entropy << 14) >= meta.src_ewma)
                            meta.src_ewmmd = (((bit<32>)alpha_aux*((meta.src_entropy << 14) - meta.src_ewma)) >> 8) + (((0x00000100 - (bit<32>)alpha_aux)*meta.src_ewmmd) >> 8);
