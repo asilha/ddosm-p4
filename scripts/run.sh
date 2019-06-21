@@ -12,19 +12,19 @@ sigint_handler() {
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 
-$SCRIPT_DIR/veth.sh setup 6
+$SCRIPT_DIR/veth.sh setup 8
 
 SS_PREFIX="../../aclapolli-bmv2/targets/simple_switch"
 
 SS_PARAMS="--log-level info --log-console"
 
 trap sigint_handler SIGINT
-$SS_PREFIX/simple_switch -i 0@veth0 -i 1@veth2 -i 2@veth4 $SS_PARAMS $SCRIPT_DIR/../build/ddosd.json &
+$SS_PREFIX/simple_switch -i 1@veth0 -i 2@veth2 -i 3@veth4 -i 4@veth6 $SS_PARAMS $SCRIPT_DIR/../build/ddosd.json &
 pid=$!
 sleep 15
 $SS_PREFIX/simple_switch_CLI < $SCRIPT_DIR/control_rules.txt
 wait $pid
 
-$SCRIPT_DIR/veth.sh delete 6
+$SCRIPT_DIR/veth.sh delete 8
 
 exit 0
