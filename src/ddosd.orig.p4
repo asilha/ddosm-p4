@@ -41,26 +41,6 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
     register<bit<8>>(CS_WIDTH) dst_cs3_ow;
     register<bit<8>>(CS_WIDTH) dst_cs4_ow;
 
-    // Count Sketch Counters (t-1)
-    register<int<32>>(CS_WIDTH) src_cs1_pre;
-    register<int<32>>(CS_WIDTH) src_cs2_pre;
-    register<int<32>>(CS_WIDTH) src_cs3_pre;
-    register<int<32>>(CS_WIDTH) src_cs4_pre;
-    register<int<32>>(CS_WIDTH) dst_cs1_pre;
-    register<int<32>>(CS_WIDTH) dst_cs2_pre;
-    register<int<32>>(CS_WIDTH) dst_cs3_pre;
-    register<int<32>>(CS_WIDTH) dst_cs4_pre;
-
-    // Count Sketch Observation Window Annotation (t-1)
-    register<bit<8>>(CS_WIDTH) src_cs1_ow_pre;
-    register<bit<8>>(CS_WIDTH) src_cs2_ow_pre;
-    register<bit<8>>(CS_WIDTH) src_cs3_ow_pre;
-    register<bit<8>>(CS_WIDTH) src_cs4_ow_pre;
-    register<bit<8>>(CS_WIDTH) dst_cs1_ow_pre;
-    register<bit<8>>(CS_WIDTH) dst_cs2_ow_pre;
-    register<bit<8>>(CS_WIDTH) dst_cs3_ow_pre;
-    register<bit<8>>(CS_WIDTH) dst_cs4_ow_pre;  
-
     // Entropy Norms - Fixed point representation: 28 integer bits, 4 fractional bits.
     register<bit<32>>(1) src_S;
     register<bit<32>>(1) dst_S;
@@ -163,13 +143,6 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             bit<32> current_ow;
             ow_counter.read(current_ow, 0);
 
-            // Previous Observation Window
-            bit<32> previous_ow;
-            if (current_ow > 0) {
-                previous_ow = current_ow - 1;
-            } else {
-                previous_ow = 0;
-            }
 
             // Source IP Address Frequency Estimation
 
@@ -194,15 +167,12 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             src_cs1_ow.read(src_cs1_ow_aux, src_h1);
 
             int<32> src_c1;
-            src_cs1.read(src_c1, src_h1);                       // Read the current counter value from src_cs1(src_h1) into src_c1.
-
             if (src_cs1_ow_aux != current_ow[7:0]) {            // If we're in a different window: 
-                src_cs1_pre.write(src_h1, src_c1);                      // Save the current counter as previous counter.
-                src_cs1_ow_pre.write(src_h1, previous_ow[7:0]);         // Annotate the current counter as previous counter.
-                src_c1 = 0;                                             // Reset the current counter.
-                src_cs1_ow.write(src_h1, current_ow[7:0]);              // Annotate the current counter. 
+                src_c1 = 0;                                         // a) reinitialize the counter,
+                src_cs1_ow.write(src_h1, current_ow[7:0]);          // b) annotate the current window number. 
+            } else {                                            // Otherwise:
+                src_cs1.read(src_c1, src_h1);                       // a) read the current counter value from src_cs1(src_h1) into src_c1.
             }
-
             src_c1 = src_c1 + src_g1;                           // Update the counter value according to ghash.
             src_cs1.write(src_h1, src_c1);                      // Write the new counter value from src_c1 into src_cs1(src_h1)
 
