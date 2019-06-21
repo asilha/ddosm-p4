@@ -1,19 +1,13 @@
-sudo sysctl net.ipv4.ip_forward=1
+Using the 'pure' switch: 
 
-sudo ip addr add 10.100.0.100/24 dev veth0
-sudo ip addr add 10.102.0.100/24 dev veth2
+./run.sh 
 
-sudo ip rule add from 10.100.0.0/24 to 10.102.0.0/24 lookup veth01 prio 100
-sudo ip rule add from 10.100.0.0/24 to 10.102.0.0/24 lookup veth23 prio 101
+tcpreplay -q --limit=20480 --pps=10 -i veth0  /media/p4/ddos/datasets/ddos5.pcap 2>&1
 
-sudo ip rule del lookup local prio 0 
-sudo ip rule add lookup local prio 128
+Using the 'mininet' environment: 
 
-sudo ip route add to 10.102.0.0/24 via 10.100.0.100 dev veth0 table veth01
-sudo ip route add to 10.100.0.0/24 via 10.102.0.100 dev veth2 table veth23
+./mininet.sh 
+./control.sh
 
-p4@p4:~/p4sec/ddosd-p4/scripts$ sudo lib/run_exercise.py -t topology.json -b ../../aclapolli-bmv2/targets/simple_switch/simple_switch -j ../build/ddosd.json 
+tcpreplay -q --limit=20480 --pps=10 -i s1-eth1  /media/p4/ddos/datasets/ddos5.pcap 2>&1
 
-sysctl net.ipv6.conf.s1-eth1.disable_ipv6=1
-sysctl net.ipv6.conf.s1-eth2.disable_ipv6=1
-sysctl net.ipv6.conf.s1-eth3.disable_ipv6=1
