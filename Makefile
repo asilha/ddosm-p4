@@ -5,7 +5,7 @@ SOURCE_DIR=src
 SOURCES:=$(wildcard $(SOURCE_DIR)/*.p4)
 BUILD_DIR=build
 
-P4C=../aclapolli-p4c/build/p4c
+P4C=/home/p4/p4sec/aclapolli-p4c/build/p4c
 P4C_FLAGS:=-b $(ARCHITECTURE) -I$(SOURCE_DIR)
 
 $(PROJECT): $(SOURCES)
