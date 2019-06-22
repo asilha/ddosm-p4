@@ -1,13 +1,141 @@
 Using the 'pure' switch: 
 
-./run.sh 
-
-tcpreplay -q --limit=20480 --pps=10 -i veth0  /media/p4/ddos/datasets/ddos5.pcap 2>&1
+    ./veth.sh setup 8
+    ./run.sh 
 
 Using the 'mininet' environment: 
 
-./mininet.sh 
-./control.sh
+    ./mininet.sh 
+    ./control.sh
 
-tcpreplay -q --limit=20480 --pps=10 -i s1-eth1  /media/p4/ddos/datasets/ddos5.pcap 2>&1
+Starting Several Wireshark Instances
 
+    for i in {1..5..2}; do wireshark -i veth$i -k & done
+
+General Parameters
+
+    Training Length:     32 windows. 
+    Window Size (m):    256 packets.
+    Alpha:                0.078125
+    K:                    3.5
+
+    In control_rules.txt:
+
+        register_write ingress.log2_m 0 8
+        register_write ingress.training_len 0 32
+        register_write ingress.alpha 0 20           20/256=0.078125
+        register_write ingress.k 0 28               28/4=3.5
+
+    In ddos.json: 
+
+        "window_size": 256,
+
+    In TCAD: 
+
+        ../bin/tcad -t 32 -s 0.078125 -k 3.5
+
+
+TCP Replay Parameters
+
+    tcpreplay -q --limit=32768 --pps=256 -i s1-eth1  /media/p4/ddos/datasets/ddos5.pcap 2>&1
+
+Using the 'ee' utility:
+
+    time ../bin/ee -c ddos.json /media/p4/ddos/datasets/ddos5.pcap | ../bin/tcad -t 32 -s 0.078125 -k 3.5
+
+Fixed-Point Representations
+
+    Alpha   24.8    (/256) 
+    K       29.3    (/8)
+    Entropy	 28.4   (/16)
+    Ewmmd	 14.18  (/2^18)
+
+Custom Hash Functions in aclapolli-bmv2/targets/simple_switch/simple_switch.cpp:60 
+
+    struct h1 {
+    uint32_t operator()(const char *buf, size_t s) const {
+        uint32_t hash = 0;
+        if (s == 4) {
+        uint32_t data = ntohl(*reinterpret_cast<const uint32_t*>(buf));
+        hash = ((static_cast<uint64_t>(155878125)*data + 144393013) % 179424691) % 976;
+        }
+        return hash;
+    }
+    };
+
+    struct h2 {
+    uint32_t operator()(const char *buf, size_t s) const {
+        uint32_t hash = 0;
+        if (s == 4) {
+        uint32_t data = ntohl(*reinterpret_cast<const uint32_t*>(buf));
+        hash = ((static_cast<uint64_t>(113292259)*data + 68483982) % 179424691) % 976;
+        }
+        return hash;
+    }
+    };
+
+    struct h3 {
+    uint32_t operator()(const char *buf, size_t s) const {
+        uint32_t hash = 0;
+        if (s == 4) {
+        uint32_t data = ntohl(*reinterpret_cast<const uint32_t*>(buf));
+        hash = ((static_cast<uint64_t>(35316782)*data + 126831809) % 179424691) % 976;
+        }
+        return hash;
+    }
+    };
+
+    struct h4 {
+    uint32_t operator()(const char *buf, size_t s) const {
+        uint32_t hash = 0;
+        if (s == 4) {
+        uint32_t data = ntohl(*reinterpret_cast<const uint32_t*>(buf));
+        hash = ((static_cast<uint64_t>(159559853)*data + 107589136) % 179424691) % 976;
+        }
+        return hash;
+    }
+    };
+    
+    struct g1 {
+    uint32_t operator()(const char *buf, size_t s) const {
+        uint32_t hash = 0;
+        if (s == 4) {
+        uint32_t data = ntohl(*reinterpret_cast<const uint32_t*>(buf));
+        hash = ((static_cast<uint64_t>(81840042)*data + 13527551) % 179424691) % 2;
+        }
+        return hash;
+    }
+    };
+
+    struct g2 {
+    uint32_t operator()(const char *buf, size_t s) const {
+        uint32_t hash = 0;
+        if (s == 4) {
+        uint32_t data = ntohl(*reinterpret_cast<const uint32_t*>(buf));
+        hash = ((static_cast<uint64_t>(19537968)*data + 97145494) % 179424691) % 2;
+        }
+        return hash;
+    }
+    };
+
+    struct g3 {
+    uint32_t operator()(const char *buf, size_t s) const {
+        uint32_t hash = 0;
+        if (s == 4) {
+        uint32_t data = ntohl(*reinterpret_cast<const uint32_t*>(buf));
+        hash = ((static_cast<uint64_t>(50123735)*data + 142091935) % 179424691) % 2;
+        }
+        return hash;
+    }
+    };
+
+    struct g4 {
+    uint32_t operator()(const char *buf, size_t s) const {
+        uint32_t hash = 0;
+        if (s == 4) {
+        uint32_t data = ntohl(*reinterpret_cast<const uint32_t*>(buf));
+        hash = ((static_cast<uint64_t>(133965917)*data + 4784577) % 179424691) % 2;
+        }
+        return hash;
+    }
+    };

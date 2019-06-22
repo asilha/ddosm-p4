@@ -12,7 +12,7 @@ sigint_handler() {
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 
-$SCRIPT_DIR/veth.sh setup 8
+#$SCRIPT_DIR/veth.sh setup 8
 
 SS_PREFIX="/home/p4/p4sec/aclapolli-bmv2/targets/simple_switch"
 
@@ -25,6 +25,6 @@ sleep 15
 $SS_PREFIX/simple_switch_CLI < $SCRIPT_DIR/control_rules.txt
 wait $pid
 
-$SCRIPT_DIR/veth.sh delete 8
+#$SCRIPT_DIR/veth.sh delete 8
 
 exit 0
