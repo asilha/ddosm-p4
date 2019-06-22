@@ -14,7 +14,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 
 $SCRIPT_DIR/veth.sh setup 8
 
-SS_PREFIX="../../aclapolli-bmv2/targets/simple_switch"
+SS_PREFIX="/home/p4/p4sec/aclapolli-bmv2/targets/simple_switch"
 
 SS_PARAMS="--log-level info --log-console"
 
