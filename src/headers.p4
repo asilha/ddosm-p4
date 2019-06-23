@@ -18,7 +18,9 @@ header ddosd_t {
     bit<32> dst_ewma;       // 34-37
     bit<32> dst_ewmmd;      // 38-41
     bit<8> alarm;           // 42
-    bit<16> ether_type;     // 43-44 [Copied from Ethernet]
+    bit<8> defcon;          // 43
+    bit<16> reserved;       // 44-45    [Because IETF does it all the time.]
+    bit<16> ether_type;     // 46-47    [Copied from Ethernet.]
 }
 
 header ipv4_t {
@@ -54,6 +56,7 @@ struct metadata {
     bit<32> dst_ewma;
     bit<32> dst_ewmmd;
     bit<8> alarm;
+    bit<8> defcon; 
 }
 
 #endif /* HEADERS_P4 */
