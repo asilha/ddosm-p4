@@ -75,6 +75,9 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
     register<bit<8>>(1) alpha;    // Fixed point representation: 0 integer bits, 8 fractional bits.
     register<bit<8>>(1) k;        // Fixed point representation: 5 integer bits, 3 fractional bits.
 
+    // DEFCON Status
+    register<bit<8>>(1) defcon; 
+
     action drop() {
         mark_to_drop();
     }
@@ -421,7 +424,9 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                         dst_thresh = meta.dst_ewma - ((bit<32>)k_aux*meta.dst_ewmmd >> 3);
 
                         if ((meta.src_entropy << 14) > src_thresh || (meta.dst_entropy << 14) < dst_thresh) { // Anomaly detected. 
-                            meta.alarm = 1;
+                            meta.alarm = 1;  
+                            meta.defcon = 1; 
+                            defcon.write(0, 1); 
                         }
                             
                     }
@@ -447,7 +452,9 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                            meta.dst_ewmmd = (((bit<32>)alpha_aux*((meta.dst_entropy << 14) - meta.dst_ewma)) >> 8) + (((0x00000100 - (bit<32>)alpha_aux)*meta.dst_ewmmd) >> 8);
                         else
                             meta.dst_ewmmd = (((bit<32>)alpha_aux*(meta.dst_ewma - (meta.dst_entropy << 14))) >> 8) + (((0x00000100 - (bit<32>)alpha_aux)*meta.dst_ewmmd) >> 8);
+                    
                     }
+                    
                 }
 
                 src_ewma.write(0, meta.src_ewma);
@@ -455,12 +462,24 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                 dst_ewma.write(0, meta.dst_ewma);
                 dst_ewmmd.write(0, meta.dst_ewmmd);
 
-                clone3(CloneType.I2E, CPU_SESSION, { meta.pkt_num, meta.src_entropy, meta.src_ewma, meta.src_ewmmd, meta.dst_entropy, meta.dst_ewma, meta.dst_ewmmd, meta.alarm });
+                defcon.read(meta.defcon,0);
+                if (meta.alarm == 0 && meta.defcon == 1) {
+                    defcon.write(0, 0);
+                }
+
+                clone3(CloneType.I2E, CPU_SESSION, { meta.pkt_num, meta.src_entropy, meta.src_ewma, meta.src_ewmmd, meta.dst_entropy, meta.dst_ewma, meta.dst_ewmmd, meta.alarm, meta.defcon });
 
                 // Reset
                 pkt_counter.write(0, 0);
                 src_S.write(0, 0);
                 dst_S.write(0, 0);
+
+            }
+
+            if (meta.defcon == 1) {         
+                // We're possibly under attack.
+                // Here, we'll check whether the packet is 'too frequent'. 
+                // If it is, we'll just change its course. 
             }
 
             ipv4_fib.apply();
@@ -482,6 +501,7 @@ control egress(inout headers hdr, inout metadata meta, inout standard_metadata_t
             hdr.ddosd.dst_ewma = meta.dst_ewma;
             hdr.ddosd.dst_ewmmd = meta.dst_ewmmd;
             hdr.ddosd.alarm = meta.alarm;
+            hdr.ddosd.defcon = meta.defcon;
             hdr.ddosd.ether_type = hdr.ethernet.ether_type;
             hdr.ethernet.ether_type = ETHERTYPE_DDOSD;
         }
