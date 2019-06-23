@@ -142,15 +142,20 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
 
     action median(in int<32> x1, in int<32> x2, in int<32> x3, in int<32> x4, out int<32> y) {
         // This is why we should minimize the sketch depth: the median operator is hardcoded.
-        if ((x1 <= x2 && x1 <= x3 && x1 <= x4 && x2 >= x3 && x2 >= x4) || (x2 <= x1 && x2 <= x3 && x2 <= x4 && x1 >= x3 && x1 >= x4))
+        if      ((x1 <= x2 && x1 <= x3 && x1 <= x4 && x2 >= x3 && x2 >= x4) || 
+                 (x2 <= x1 && x2 <= x3 && x2 <= x4 && x1 >= x3 && x1 >= x4))
             y = (x3 + x4) >> 1;
-        else if ((x1 <= x2 && x1 <= x3 && x1 <= x4 && x3 >= x2 && x3 >= x4) || (x3 <= x1 && x3 <= x2 && x3 <= x4 && x1 >= x2 && x1 >= x4))
+        else if ((x1 <= x2 && x1 <= x3 && x1 <= x4 && x3 >= x2 && x3 >= x4) || 
+                 (x3 <= x1 && x3 <= x2 && x3 <= x4 && x1 >= x2 && x1 >= x4))
             y = (x2 + x4) >> 1;
-        else if ((x1 <= x2 && x1 <= x3 && x1 <= x4 && x4 >= x2 && x4 >= x3) || (x4 <= x1 && x4 <= x2 && x4 <= x3 && x1 >= x2 && x1 >= x3))
+        else if ((x1 <= x2 && x1 <= x3 && x1 <= x4 && x4 >= x2 && x4 >= x3) || 
+                 (x4 <= x1 && x4 <= x2 && x4 <= x3 && x1 >= x2 && x1 >= x3))
             y = (x2 + x3) >> 1;
-        else if ((x2 <= x1 && x2 <= x3 && x2 <= x4 && x3 >= x1 && x3 >= x4) || (x3 <= x1 && x3 <= x2 && x3 <= x4 && x2 >= x1 && x2 >= x4))
+        else if ((x2 <= x1 && x2 <= x3 && x2 <= x4 && x3 >= x1 && x3 >= x4) || 
+                 (x3 <= x1 && x3 <= x2 && x3 <= x4 && x2 >= x1 && x2 >= x4))
             y = (x1 + x4) >> 1;
-        else if ((x2 <= x1 && x2 <= x3 && x2 <= x4 && x4 >= x1 && x4 >= x3) || (x4 <= x1 && x4 <= x2 && x4 <= x3 && x2 >= x1 && x2 >= x3))
+        else if ((x2 <= x1 && x2 <= x3 && x2 <= x4 && x4 >= x1 && x4 >= x3) || 
+                 (x4 <= x1 && x4 <= x2 && x4 <= x3 && x2 >= x1 && x2 >= x3))
             y = (x1 + x3) >> 1;
         else
             y = (x1 + x2) >> 1;
@@ -187,77 +192,67 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             int<32> src_g4;
             cs_ghash(hdr.ipv4.src_addr, src_g1, src_g2, src_g3, src_g4);
 
+            // Estimate Frequencies for Source Addresses
+
             // Row 1 Estimate
-
-            // Read current OW annotation
-            bit<8> src_cs1_ow_aux;
-            src_cs1_ow.read(src_cs1_ow_aux, src_h1);
-
             int<32> src_c1;
-            src_cs1.read(src_c1, src_h1);                       // Read the current counter value from src_cs1(src_h1) into src_c1.
-
-            if (src_cs1_ow_aux != current_ow[7:0]) {            // If we're in a different window: 
-                src_cs1_pre.write(src_h1, src_c1);                      // Save the current counter as previous counter.
-                src_cs1_ow_pre.write(src_h1, previous_ow[7:0]);         // Annotate the current counter as previous counter.
-                src_c1 = 0;                                             // Reset the current counter.
-                src_cs1_ow.write(src_h1, current_ow[7:0]);              // Annotate the current counter. 
+            bit<8>  src_c1_ow;
+            src_cs1.read(src_c1, src_h1);           // Read current counter.
+            src_cs1_ow.read(src_c1_ow, src_h1);     // Read annotation. 
+            if(src_c1_ow != current_ow[7:0]) {      // If we're in a different window: 
+                src_cs1_pre.write(src_h1, src_c1);          // Save the current counter.
+                src_cs1_ow_pre.write(src_h1, src_c1_ow);    // Save the current annotation.
+                src_c1 = 0;                                 // Reset the counter.
+                src_cs1_ow.write(src_h1, current_ow[7:0]);  // Update the annotation. 
             }
+            src_c1 = src_c1 + src_g1;               // Update the counter.
+            src_cs1.write(src_h1, src_c1);          // Write the counter.
+            src_c1 = src_c1 * src_g1;               // If g1 is negative, c1 will also be negative; this computes the absolute value.
 
-            src_c1 = src_c1 + src_g1;                           // Update the counter value according to ghash.
-            src_cs1.write(src_h1, src_c1);                      // Write the new counter value from src_c1 into src_cs1(src_h1)
-
-            src_c1 = src_g1*src_c1;                             // If g1 is negative, the counter value will also be negative; this computes the absolute value.
-
-            // Row 2 Estimate (follow the same logic we used for row 1)
-
-            bit<8> src_cs2_ow_aux;
-            src_cs2_ow.read(src_cs2_ow_aux, src_h2);
-
+            // Row 2 Estimate
             int<32> src_c2;
-            if (src_cs2_ow_aux != current_ow[7:0]) {
-                src_c2 = 0;
-                src_cs2_ow.write(src_h2, current_ow[7:0]);
-            } else {
-                src_cs2.read(src_c2, src_h2);
+            bit<8>  src_c2_ow;
+            src_cs2.read(src_c2, src_h2);           // Read current counter.
+            src_cs2_ow.read(src_c2_ow, src_h2);     // Read annotation. 
+            if(src_c2_ow != current_ow[7:0]) {      // If we're in a different window: 
+                src_cs2_pre.write(src_h2, src_c2);          // Save the current counter.
+                src_cs2_ow_pre.write(src_h2, src_c2_ow);    // Save the current annotation.
+                src_c2 = 0;                                 // Reset the counter.
+                src_cs2_ow.write(src_h2, current_ow[7:0]);  // Update the annotation. 
             }
-            src_c2 = src_c2 + src_g2;
-            src_cs2.write(src_h2, src_c2);
-
-            src_c2 = src_g2*src_c2;
+            src_c2 = src_c2 + src_g2;               // Update the counter.
+            src_cs2.write(src_h2, src_c2);          // Write the counter.
+            src_c2 = src_c2 * src_g2;               // If g2 is negative, c2 will also be negative; this computes the absolute value.
 
             // Row 3 Estimate
-
-            bit<8> src_cs3_ow_aux;
-            src_cs3_ow.read(src_cs3_ow_aux, src_h3);
-
             int<32> src_c3;
-            if (src_cs3_ow_aux != current_ow[7:0]) {
-                src_c3 = 0;
-                src_cs3_ow.write(src_h3, current_ow[7:0]);
-            } else {
-                src_cs3.read(src_c3, src_h3);
+            bit<8>  src_c3_ow;
+            src_cs3.read(src_c3, src_h3);           // Read current counter.
+            src_cs3_ow.read(src_c3_ow, src_h3);     // Read annotation. 
+            if(src_c3_ow != current_ow[7:0]) {      // If we're in a different window: 
+                src_cs3_pre.write(src_h3, src_c3);          // Save the current counter.
+                src_cs3_ow_pre.write(src_h3, src_c3_ow);    // Save the current annotation.
+                src_c3 = 0;                                 // Reset the counter.
+                src_cs3_ow.write(src_h3, current_ow[7:0]);  // Update the annotation. 
             }
-            src_c3 = src_c3 + src_g3;
-            src_cs3.write(src_h3, src_c3);
-
-            src_c3 = src_g3*src_c3;
+            src_c3 = src_c3 + src_g3;               // Update the counter.
+            src_cs3.write(src_h3, src_c3);          // Write the counter.
+            src_c3 = src_c3 * src_g3;               // If g3 is negative, c3 will also be negative; this computes the absolute value.
 
             // Row 4 Estimate
-
-            bit<8> src_cs4_ow_aux;
-            src_cs4_ow.read(src_cs4_ow_aux, src_h4);
-
             int<32> src_c4;
-            if (src_cs4_ow_aux != current_ow[7:0]) {
-                src_c4 = 0;
-                src_cs4_ow.write(src_h4, current_ow[7:0]);
-            } else {
-                src_cs4.read(src_c4, src_h4);
+            bit<8>  src_c4_ow;
+            src_cs4.read(src_c4, src_h4);           // Read current counter.
+            src_cs4_ow.read(src_c4_ow, src_h4);     // Read annotation. 
+            if(src_c4_ow != current_ow[7:0]) {      // If we're in a different window: 
+                src_cs4_pre.write(src_h4, src_c4);          // Save the current counter.
+                src_cs4_ow_pre.write(src_h4, src_c4_ow);    // Save the current annotation.
+                src_c4 = 0;                                 // Reset the counter.
+                src_cs4_ow.write(src_h4, current_ow[7:0]);  // Update the annotation. 
             }
-            src_c4 = src_c4 + src_g4;
-            src_cs4.write(src_h4, src_c4);
-
-            src_c4 = src_g4*src_c4;
+            src_c4 = src_c4 + src_g4;               // Update the counter.
+            src_cs4.write(src_h4, src_c4);          // Write the counter.
+            src_c4 = src_c4 * src_g4;               // If g4 is negative, c4 will also be negative; this computes the absolute value.
 
             // At this point, we have updated counters in src_c1, src_c2, src_c3, and src_c4.
 
@@ -270,12 +265,13 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             else
                 meta.entropy_term = 0;
 
-            // Source Entropy Norm Update       // At this point, meta.entropy_term has the 'increment'.
+            // At this point, meta.entropy_term has the 'increment'.    
+
+            // Source Entropy Norm Update       
             bit<32> src_S_aux;
             src_S.read(src_S_aux, 0);
             src_S_aux = src_S_aux + meta.entropy_term;
             src_S.write(0, src_S_aux);
-
 
             // Destination IP Address Frequency Estimation
 
@@ -291,73 +287,69 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             int<32> dst_g4;
             cs_ghash(hdr.ipv4.dst_addr, dst_g1, dst_g2, dst_g3, dst_g4);
 
+            // Estimate Frequencies for Destination Addresses
+
             // Row 1 Estimate
-
-            bit<8> dst_cs1_ow_aux;
-            dst_cs1_ow.read(dst_cs1_ow_aux, dst_h1);
-
             int<32> dst_c1;
-            if (dst_cs1_ow_aux != current_ow[7:0]) {
-                dst_c1 = 0;
-                dst_cs1_ow.write(dst_h1, current_ow[7:0]);
-            } else {
-                dst_cs1.read(dst_c1, dst_h1);
+            bit<8>  dst_c1_ow;
+            dst_cs1.read(dst_c1, dst_h1);           // Read current counter.
+            dst_cs1_ow.read(dst_c1_ow, dst_h1);     // Read annotation. 
+            if(dst_c1_ow != current_ow[7:0]) {      // If we're in a different window: 
+                dst_cs1_pre.write(dst_h1, dst_c1);          // Save the current counter.
+                dst_cs1_ow_pre.write(dst_h1, dst_c1_ow);    // Save the current annotation.
+                dst_c1 = 0;                                 // Reset the counter.
+                dst_cs1_ow.write(dst_h1, current_ow[7:0]);  // Update the annotation. 
             }
-            dst_c1 = dst_c1 + dst_g1;
-            dst_cs1.write(dst_h1, dst_c1);
-
-            dst_c1 = dst_g1*dst_c1;
+            dst_c1 = dst_c1 + dst_g1;               // Update the counter.
+            dst_cs1.write(dst_h1, dst_c1);          // Write the counter.
+            dst_c1 = dst_c1 * dst_g1;               // If g1 is negative, c1 will also be negative; this computes the absolute value.
 
             // Row 2 Estimate
-
-            bit<8> dst_cs2_ow_aux;
-            dst_cs2_ow.read(dst_cs2_ow_aux, dst_h2);
-
             int<32> dst_c2;
-            if (dst_cs2_ow_aux != current_ow[7:0]) {
-                dst_c2 = 0;
-                dst_cs2_ow.write(dst_h2, current_ow[7:0]);
-            } else {
-                dst_cs2.read(dst_c2, dst_h2);
+            bit<8>  dst_c2_ow;
+            dst_cs2.read(dst_c2, dst_h2);           // Read current counter.
+            dst_cs2_ow.read(dst_c2_ow, dst_h2);     // Read annotation. 
+            if(dst_c2_ow != current_ow[7:0]) {      // If we're in a different window: 
+                dst_cs2_pre.write(dst_h2, dst_c2);          // Save the current counter.
+                dst_cs2_ow_pre.write(dst_h2, dst_c2_ow);    // Save the current annotation.
+                dst_c2 = 0;                                 // Reset the counter.
+                dst_cs2_ow.write(dst_h2, current_ow[7:0]);  // Update the annotation. 
             }
-            dst_c2 = dst_c2 + dst_g2;
-            dst_cs2.write(dst_h2, dst_c2);
-
-            dst_c2 = dst_g2*dst_c2;
+            dst_c2 = dst_c2 + dst_g2;               // Update the counter.
+            dst_cs2.write(dst_h2, dst_c2);          // Write the counter.
+            dst_c2 = dst_c2 * dst_g2;               // If g2 is negative, c2 will also be negative; this computes the absolute value.
 
             // Row 3 Estimate
-
-            bit<8> dst_cs3_ow_aux;
-            dst_cs3_ow.read(dst_cs3_ow_aux, dst_h3);
-
             int<32> dst_c3;
-            if (dst_cs3_ow_aux != current_ow[7:0]) {
-                dst_c3 = 0;
-                dst_cs3_ow.write(dst_h3, current_ow[7:0]);
-            } else {
-                dst_cs3.read(dst_c3, dst_h3);
+            bit<8>  dst_c3_ow;
+            dst_cs3.read(dst_c3, dst_h3);           // Read current counter.
+            dst_cs3_ow.read(dst_c3_ow, dst_h3);     // Read annotation. 
+            if(dst_c3_ow != current_ow[7:0]) {      // If we're in a different window: 
+                dst_cs3_pre.write(dst_h3, dst_c3);          // Save the current counter.
+                dst_cs3_ow_pre.write(dst_h3, dst_c3_ow);    // Save the current annotation.
+                dst_c3 = 0;                                 // Reset the counter.
+                dst_cs3_ow.write(dst_h3, current_ow[7:0]);  // Update the annotation. 
             }
-            dst_c3 = dst_c3 + dst_g3;
-            dst_cs3.write(dst_h3, dst_c3);
-
-            dst_c3 = dst_g3*dst_c3;
+            dst_c3 = dst_c3 + dst_g3;               // Update the counter.
+            dst_cs3.write(dst_h3, dst_c3);          // Write the counter.
+            dst_c3 = dst_c3 * dst_g3;               // If g3 is negative, c3 will also be negative; this computes the absolute value.
 
             // Row 4 Estimate
-
-            bit<8> dst_cs4_ow_aux;
-            dst_cs4_ow.read(dst_cs4_ow_aux, dst_h4);
-
             int<32> dst_c4;
-            if (dst_cs4_ow_aux != current_ow[7:0]) {
-                dst_c4 = 0;
-                dst_cs4_ow.write(dst_h4, current_ow[7:0]);
-            } else {
-                dst_cs4.read(dst_c4, dst_h4);
+            bit<8>  dst_c4_ow;
+            dst_cs4.read(dst_c4, dst_h4);           // Read current counter.
+            dst_cs4_ow.read(dst_c4_ow, dst_h4);     // Read annotation. 
+            if(dst_c4_ow != current_ow[7:0]) {      // If we're in a different window: 
+                dst_cs4_pre.write(dst_h4, dst_c4);          // Save the current counter.
+                dst_cs4_ow_pre.write(dst_h4, dst_c4_ow);    // Save the current annotation.
+                dst_c4 = 0;                                 // Reset the counter.
+                dst_cs4_ow.write(dst_h4, current_ow[7:0]);  // Update the annotation. 
             }
-            dst_c4 = dst_c4 + dst_g4;
-            dst_cs4.write(dst_h4, dst_c4);
+            dst_c4 = dst_c4 + dst_g4;               // Update the counter.
+            dst_cs4.write(dst_h4, dst_c4);          // Write the counter.
+            dst_c4 = dst_c4 * dst_g4;               // If g4 is negative, c4 will also be negative; this computes the absolute value.
 
-            dst_c4 = dst_g4*dst_c4;
+            // At this point, we have updated counters in dst_c1, dst_c2, dst_c3, and dst_c4.
 
             // Count Sketch Destination IP Frequency Estimate
             median(dst_c1, dst_c2, dst_c3, dst_c4, meta.ip_count);
@@ -368,12 +360,13 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             else
                 meta.entropy_term = 0;
 
+            // At this point, meta.entropy_term has the 'increment'.    
+
             // Destination Entropy Norm Update
             bit<32> dst_S_aux;
             dst_S.read(dst_S_aux, 0);
             dst_S_aux = dst_S_aux + meta.entropy_term;
             dst_S.write(0, dst_S_aux);
-
 
             // Observation Window Size
             bit<32> m;
