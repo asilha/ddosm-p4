@@ -368,23 +368,30 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             dst_S_aux = dst_S_aux + meta.entropy_term;
             dst_S.write(0, dst_S_aux);
 
+            // At this point, we already have source and destination entropy norms (src_S and dst_S). 
+
+            // Now, we need to check whether the Observation Window has ended. 
+
             // Observation Window Size
             bit<32> m;
             bit<5> log2_m_aux;
             log2_m.read(log2_m_aux, 0);
-            m = 32w1 << log2_m_aux;
+            m = 32w1 << log2_m_aux;         // m = 2^log2(m)
 
             // Packet Count
             pkt_counter.read(meta.pkt_num, 0);
             meta.pkt_num = meta.pkt_num + 1;
 
-            if (meta.pkt_num != m) {
+            if (meta.pkt_num != m) {  // Observation Window has not ended yet; update the counter.
                 pkt_counter.write(0, meta.pkt_num);
-            } else {    // End of Observation Window
+            } else {                   // End of Observation Window; estimate the entropies. 
                 current_ow = current_ow + 1;
                 ow_counter.write(0, current_ow);
 
-                                //  Ĥ = log2(m) - Ŝ/m  =  log2(m) - Ŝ * 2^(-log2(m))
+                // We need to calculate Ĥ = log2(m) - Ŝ/m .
+                // Since our pipeline doesn't implement division, we can use the identity 1/m = 2^(-log2(m)), for positive m. 
+                // Given that m is an integer power of two and that we already know log2(m), division becomes a right shift. 
+                // Therefore,  Ĥ = log2(m) - Ŝ/m  =  log2(m) - Ŝ * 2^(-log2(m)).
                 meta.src_entropy = ((bit<32>)log2_m_aux << 4) - (src_S_aux >> log2_m_aux);
                 meta.dst_entropy = ((bit<32>)log2_m_aux << 4) - (dst_S_aux >> log2_m_aux);
 
@@ -393,7 +400,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                 dst_ewma.read(meta.dst_ewma, 0);
                 dst_ewmmd.read(meta.dst_ewmmd, 0);
 
-                if (current_ow == 1) {                              // In the first window..
+                if (current_ow == 1) {                              // In the first window...
                     meta.src_ewma = meta.src_entropy << 14;         // Initialize EWMAs with the first estimated entropies. EWMAs have 18 fractional bits. 
                     meta.src_ewmmd = 0;
                     meta.dst_ewma = meta.dst_entropy << 14;
@@ -403,7 +410,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
 
                     bit<32> training_len_aux;
                     training_len.read(training_len_aux, 0);
-                    if (current_ow > training_len_aux) {            // We've finished training.
+                    if (current_ow > training_len_aux) {            // If we've finished training, we check for anomalies.
                         bit<8> k_aux;
                         k.read(k_aux, 0);
 
@@ -417,7 +424,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                             meta.alarm = 1;
                     }
 
-                    if (meta.alarm == 0) {                          // No attack detected. Update EWMA and EWMMD. 
+                    if (meta.alarm == 0) {  // No attack detected; let's update EWMA and EWMMD. 
                         bit<8> alpha_aux;
                         alpha.read(alpha_aux, 0);
 
@@ -425,14 +432,18 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                         // Entropies: 4 fractional bits. 
                         // EWMA and EWMMD: 18 fractional bits.  
 
-                        // Bit alignments:                  8+4=12             12+6=18                                    8+18=26         26-8=18
+                        // Fixed-point alignments:
+                        //   Alpha*Entropy: 8 +  4 = 12 bits; shift left  6 bits to obtain 18 bits. 
+                        //   Alpha*EWMx:    8 + 18 = 26 bits; shift right 8 bits to obtain 18 bits. 
+
                         meta.src_ewma = (((bit<32>)alpha_aux*meta.src_entropy) << 6) + (((0x00000100 - (bit<32>)alpha_aux)*meta.src_ewma) >> 8);
+                        meta.dst_ewma = (((bit<32>)alpha_aux*meta.dst_entropy) << 6) + (((0x00000100 - (bit<32>)alpha_aux)*meta.dst_ewma) >> 8);
+
                         if ((meta.src_entropy << 14) >= meta.src_ewma)
                            meta.src_ewmmd = (((bit<32>)alpha_aux*((meta.src_entropy << 14) - meta.src_ewma)) >> 8) + (((0x00000100 - (bit<32>)alpha_aux)*meta.src_ewmmd) >> 8);
                         else
-                            meta.src_ewmmd = (((bit<32>)alpha_aux*(meta.src_ewma - (meta.src_entropy << 14))) >> 8) + (((0x00000100 - (bit<32>)alpha_aux)*meta.src_ewmmd) >> 8);
+                           meta.src_ewmmd = (((bit<32>)alpha_aux*(meta.src_ewma - (meta.src_entropy << 14))) >> 8) + (((0x00000100 - (bit<32>)alpha_aux)*meta.src_ewmmd) >> 8);
 
-                        meta.dst_ewma = (((bit<32>)alpha_aux*meta.dst_entropy) << 6) + (((0x00000100 - (bit<32>)alpha_aux)*meta.dst_ewma) >> 8);
                         if ((meta.dst_entropy << 14) >= meta.dst_ewma)
                            meta.dst_ewmmd = (((bit<32>)alpha_aux*((meta.dst_entropy << 14) - meta.dst_ewma)) >> 8) + (((0x00000100 - (bit<32>)alpha_aux)*meta.dst_ewmmd) >> 8);
                         else
