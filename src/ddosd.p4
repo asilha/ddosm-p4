@@ -420,19 +420,18 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                         bit<32> dst_thresh;
                         dst_thresh = meta.dst_ewma - ((bit<32>)k_aux*meta.dst_ewmmd >> 3);
 
-                        if ((meta.src_entropy << 14) > src_thresh || (meta.dst_entropy << 14) < dst_thresh)
+                        if ((meta.src_entropy << 14) > src_thresh || (meta.dst_entropy << 14) < dst_thresh) { // Anomaly detected. 
                             meta.alarm = 1;
+                        }
+                            
                     }
 
                     if (meta.alarm == 0) {  // No attack detected; let's update EWMA and EWMMD. 
                         bit<8> alpha_aux;
                         alpha.read(alpha_aux, 0);
-
-                        // Alpha: 8 fractional bits. 
-                        // Entropies: 4 fractional bits. 
-                        // EWMA and EWMMD: 18 fractional bits.  
-
+ 
                         // Fixed-point alignments:
+                        //   Alpha: 8 fractional bits; Entropy: 4 fractional bits. EWMA and EWMMD: 18 fractional bits.  
                         //   Alpha*Entropy: 8 +  4 = 12 bits; shift left  6 bits to obtain 18 bits. 
                         //   Alpha*EWMx:    8 + 18 = 26 bits; shift right 8 bits to obtain 18 bits. 
 
