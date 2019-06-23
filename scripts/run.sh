@@ -21,7 +21,7 @@ SS_PARAMS="--log-level info --log-console"
 trap sigint_handler SIGINT
 $SS_PREFIX/simple_switch -i 1@veth0 -i 2@veth2 -i 3@veth4 -i 4@veth6 $SS_PARAMS $SCRIPT_DIR/../build/ddosd.json &
 pid=$!
-sleep 15
+sleep 5
 $SS_PREFIX/simple_switch_CLI < $SCRIPT_DIR/control_rules.txt
 wait $pid
 
