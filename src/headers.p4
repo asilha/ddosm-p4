@@ -1,13 +1,14 @@
 #ifndef HEADERS_P4
 #define HEADERS_P4
 
+                            // Byte Offsets
 header ethernet_t {
-    bit<48> dst_addr;
-    bit<48> src_addr;
-    bit<16> ether_type;
+    bit<48> dst_addr;       // 00-05
+    bit<48> src_addr;       // 06-11
+    bit<16> ether_type;     // 12-13
 }
 
-// EtherType 0x6605         // Offsets
+// EtherType 0x6605         
 header ddosd_t {
     bit<32> pkt_num;        // 14-17
     bit<32> src_entropy;    // 18-21
