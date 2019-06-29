@@ -42,24 +42,44 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
     register<bit<8>>(CS_WIDTH) dst_cs4_ow;
 
     // Count Sketch Counters (t-1)
-    register<int<32>>(CS_WIDTH) src_cs1_pre;
-    register<int<32>>(CS_WIDTH) src_cs2_pre;
-    register<int<32>>(CS_WIDTH) src_cs3_pre;
-    register<int<32>>(CS_WIDTH) src_cs4_pre;
-    register<int<32>>(CS_WIDTH) dst_cs1_pre;
-    register<int<32>>(CS_WIDTH) dst_cs2_pre;
-    register<int<32>>(CS_WIDTH) dst_cs3_pre;
-    register<int<32>>(CS_WIDTH) dst_cs4_pre;
+    register<int<32>>(CS_WIDTH) src_cs1_tm1;
+    register<int<32>>(CS_WIDTH) src_cs2_tm1;
+    register<int<32>>(CS_WIDTH) src_cs3_tm1;
+    register<int<32>>(CS_WIDTH) src_cs4_tm1;
+    register<int<32>>(CS_WIDTH) dst_cs1_tm1;
+    register<int<32>>(CS_WIDTH) dst_cs2_tm1;
+    register<int<32>>(CS_WIDTH) dst_cs3_tm1;
+    register<int<32>>(CS_WIDTH) dst_cs4_tm1;
 
     // Count Sketch Observation Window Annotation (t-1)
-    register<bit<8>>(CS_WIDTH) src_cs1_ow_pre;
-    register<bit<8>>(CS_WIDTH) src_cs2_ow_pre;
-    register<bit<8>>(CS_WIDTH) src_cs3_ow_pre;
-    register<bit<8>>(CS_WIDTH) src_cs4_ow_pre;
-    register<bit<8>>(CS_WIDTH) dst_cs1_ow_pre;
-    register<bit<8>>(CS_WIDTH) dst_cs2_ow_pre;
-    register<bit<8>>(CS_WIDTH) dst_cs3_ow_pre;
-    register<bit<8>>(CS_WIDTH) dst_cs4_ow_pre;  
+    register<bit<8>>(CS_WIDTH) src_cs1_ow_tm1;
+    register<bit<8>>(CS_WIDTH) src_cs2_ow_tm1;
+    register<bit<8>>(CS_WIDTH) src_cs3_ow_tm1;
+    register<bit<8>>(CS_WIDTH) src_cs4_ow_tm1;
+    register<bit<8>>(CS_WIDTH) dst_cs1_ow_tm1;
+    register<bit<8>>(CS_WIDTH) dst_cs2_ow_tm1;
+    register<bit<8>>(CS_WIDTH) dst_cs3_ow_tm1;
+    register<bit<8>>(CS_WIDTH) dst_cs4_ow_tm1;  
+
+    // Count Sketch Counters (t-2)
+    register<int<32>>(CS_WIDTH) src_cs1_tm2;
+    register<int<32>>(CS_WIDTH) src_cs2_tm2;
+    register<int<32>>(CS_WIDTH) src_cs3_tm2;
+    register<int<32>>(CS_WIDTH) src_cs4_tm2;
+    register<int<32>>(CS_WIDTH) dst_cs1_tm2;
+    register<int<32>>(CS_WIDTH) dst_cs2_tm2;
+    register<int<32>>(CS_WIDTH) dst_cs3_tm2;
+    register<int<32>>(CS_WIDTH) dst_cs4_tm2;
+
+    // Count Sketch Observation Window Annotation (t-2)
+    register<bit<8>>(CS_WIDTH) src_cs1_ow_tm2;
+    register<bit<8>>(CS_WIDTH) src_cs2_ow_tm2;
+    register<bit<8>>(CS_WIDTH) src_cs3_ow_tm2;
+    register<bit<8>>(CS_WIDTH) src_cs4_ow_tm2;
+    register<bit<8>>(CS_WIDTH) dst_cs1_ow_tm2;
+    register<bit<8>>(CS_WIDTH) dst_cs2_ow_tm2;
+    register<bit<8>>(CS_WIDTH) dst_cs3_ow_tm2;
+    register<bit<8>>(CS_WIDTH) dst_cs4_ow_tm2;  
 
     // Entropy Norms - Fixed point representation: 28 integer bits, 4 fractional bits.
     register<bit<32>>(1) src_S;
@@ -197,14 +217,22 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
 
             // Estimate Frequencies for Source Addresses
 
+            // Auxiliary counter and annotation:
+            int<32> c_aux;
+            bit<8>  ow_aux;
+
             // Row 1 Estimate
             int<32> src_c1;
             bit<8>  src_c1_ow;
             src_cs1.read(src_c1, src_h1);           // Read current counter.
-            src_cs1_ow.read(src_c1_ow, src_h1);     // Read annotation. 
-            if(src_c1_ow != current_ow[7:0]) {      // If we're in a different window: 
-                src_cs1_pre.write(src_h1, src_c1);          // Save the current counter.
-                src_cs1_ow_pre.write(src_h1, src_c1_ow);    // Save the current annotation.
+            src_cs1_ow.read(src_c1_ow, src_h1);     // Read current annotation. 
+            if(src_c1_ow != current_ow[7:0]) {      // If we're in a different window:
+                src_cs1_tm1.read(c_aux, src_h1);            // Read w-1 counter.
+                src_cs1_ow_tm1.read(ow_aux, src_h1);        // Read w-1 annotation. 
+                src_cs1_tm2.write(src_h1, c_aux);           // Copy w-1 counter to w-2.
+                src_cs1_ow_tm2.write(src_h1, ow_aux);       // Copy w-1 annotation to w-2.
+                src_cs1_tm1.write(src_h1, src_c1);          // Copy w counter to w-1.
+                src_cs1_ow_tm1.write(src_h1, src_c1_ow);    // Copy w annotation to w-1.
                 src_c1 = 0;                                 // Reset the counter.
                 src_cs1_ow.write(src_h1, current_ow[7:0]);  // Update the annotation. 
             }
@@ -218,8 +246,8 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             src_cs2.read(src_c2, src_h2);           // Read current counter.
             src_cs2_ow.read(src_c2_ow, src_h2);     // Read annotation. 
             if(src_c2_ow != current_ow[7:0]) {      // If we're in a different window: 
-                src_cs2_pre.write(src_h2, src_c2);          // Save the current counter.
-                src_cs2_ow_pre.write(src_h2, src_c2_ow);    // Save the current annotation.
+                src_cs2_tm1.write(src_h2, src_c2);          // Save the current counter.
+                src_cs2_ow_tm1.write(src_h2, src_c2_ow);    // Save the current annotation.
                 src_c2 = 0;                                 // Reset the counter.
                 src_cs2_ow.write(src_h2, current_ow[7:0]);  // Update the annotation. 
             }
@@ -233,8 +261,8 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             src_cs3.read(src_c3, src_h3);           // Read current counter.
             src_cs3_ow.read(src_c3_ow, src_h3);     // Read annotation. 
             if(src_c3_ow != current_ow[7:0]) {      // If we're in a different window: 
-                src_cs3_pre.write(src_h3, src_c3);          // Save the current counter.
-                src_cs3_ow_pre.write(src_h3, src_c3_ow);    // Save the current annotation.
+                src_cs3_tm1.write(src_h3, src_c3);          // Save the current counter.
+                src_cs3_ow_tm1.write(src_h3, src_c3_ow);    // Save the current annotation.
                 src_c3 = 0;                                 // Reset the counter.
                 src_cs3_ow.write(src_h3, current_ow[7:0]);  // Update the annotation. 
             }
@@ -248,8 +276,8 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             src_cs4.read(src_c4, src_h4);           // Read current counter.
             src_cs4_ow.read(src_c4_ow, src_h4);     // Read annotation. 
             if(src_c4_ow != current_ow[7:0]) {      // If we're in a different window: 
-                src_cs4_pre.write(src_h4, src_c4);          // Save the current counter.
-                src_cs4_ow_pre.write(src_h4, src_c4_ow);    // Save the current annotation.
+                src_cs4_tm1.write(src_h4, src_c4);          // Save the current counter.
+                src_cs4_ow_tm1.write(src_h4, src_c4_ow);    // Save the current annotation.
                 src_c4 = 0;                                 // Reset the counter.
                 src_cs4_ow.write(src_h4, current_ow[7:0]);  // Update the annotation. 
             }
@@ -298,8 +326,8 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             dst_cs1.read(dst_c1, dst_h1);           // Read current counter.
             dst_cs1_ow.read(dst_c1_ow, dst_h1);     // Read annotation. 
             if(dst_c1_ow != current_ow[7:0]) {      // If we're in a different window: 
-                dst_cs1_pre.write(dst_h1, dst_c1);          // Save the current counter.
-                dst_cs1_ow_pre.write(dst_h1, dst_c1_ow);    // Save the current annotation.
+                dst_cs1_tm1.write(dst_h1, dst_c1);          // Save the current counter.
+                dst_cs1_ow_tm1.write(dst_h1, dst_c1_ow);    // Save the current annotation.
                 dst_c1 = 0;                                 // Reset the counter.
                 dst_cs1_ow.write(dst_h1, current_ow[7:0]);  // Update the annotation. 
             }
@@ -313,8 +341,8 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             dst_cs2.read(dst_c2, dst_h2);           // Read current counter.
             dst_cs2_ow.read(dst_c2_ow, dst_h2);     // Read annotation. 
             if(dst_c2_ow != current_ow[7:0]) {      // If we're in a different window: 
-                dst_cs2_pre.write(dst_h2, dst_c2);          // Save the current counter.
-                dst_cs2_ow_pre.write(dst_h2, dst_c2_ow);    // Save the current annotation.
+                dst_cs2_tm1.write(dst_h2, dst_c2);          // Save the current counter.
+                dst_cs2_ow_tm1.write(dst_h2, dst_c2_ow);    // Save the current annotation.
                 dst_c2 = 0;                                 // Reset the counter.
                 dst_cs2_ow.write(dst_h2, current_ow[7:0]);  // Update the annotation. 
             }
@@ -328,8 +356,8 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             dst_cs3.read(dst_c3, dst_h3);           // Read current counter.
             dst_cs3_ow.read(dst_c3_ow, dst_h3);     // Read annotation. 
             if(dst_c3_ow != current_ow[7:0]) {      // If we're in a different window: 
-                dst_cs3_pre.write(dst_h3, dst_c3);          // Save the current counter.
-                dst_cs3_ow_pre.write(dst_h3, dst_c3_ow);    // Save the current annotation.
+                dst_cs3_tm1.write(dst_h3, dst_c3);          // Save the current counter.
+                dst_cs3_ow_tm1.write(dst_h3, dst_c3_ow);    // Save the current annotation.
                 dst_c3 = 0;                                 // Reset the counter.
                 dst_cs3_ow.write(dst_h3, current_ow[7:0]);  // Update the annotation. 
             }
@@ -343,8 +371,8 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             dst_cs4.read(dst_c4, dst_h4);           // Read current counter.
             dst_cs4_ow.read(dst_c4_ow, dst_h4);     // Read annotation. 
             if(dst_c4_ow != current_ow[7:0]) {      // If we're in a different window: 
-                dst_cs4_pre.write(dst_h4, dst_c4);          // Save the current counter.
-                dst_cs4_ow_pre.write(dst_h4, dst_c4_ow);    // Save the current annotation.
+                dst_cs4_tm1.write(dst_h4, dst_c4);          // Save the current counter.
+                dst_cs4_ow_tm1.write(dst_h4, dst_c4_ow);    // Save the current annotation.
                 dst_c4 = 0;                                 // Reset the counter.
                 dst_cs4_ow.write(dst_h4, current_ow[7:0]);  // Update the annotation. 
             }
