@@ -21,6 +21,9 @@ fi
 
 veth_pairs=$(($2/2))
 
+# Uncomment the following line to see an execution trace. 
+# set -x
+
 i=0
 while [ $i -lt $veth_pairs ]
 do
@@ -35,8 +38,8 @@ do
             ip link set dev $intf1 up
             TOE_OPTIONS="rx tx sg tso ufo gso gro lro rxvlan txvlan rxhash"
             for TOE_OPTION in $TOE_OPTIONS; do
-               /sbin/ethtool --offload $intf0 "$TOE_OPTION" off
-               /sbin/ethtool --offload $intf1 "$TOE_OPTION" off
+               /sbin/ethtool --offload $intf0 "$TOE_OPTION" off 2>&1 > /dev/null
+               /sbin/ethtool --offload $intf1 "$TOE_OPTION" off 2>&1 > /dev/null
             done
         fi
         sysctl net.ipv6.conf.$intf0.disable_ipv6=1
