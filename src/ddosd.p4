@@ -485,7 +485,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                         if ((meta.src_entropy << 14) > src_thresh || (meta.dst_entropy << 14) < dst_thresh) { // Anomaly detected. 
                             meta.alarm = 1;  
                             meta.defcon = 1; 
-                            defcon.write(0, 1); 
+                            defcon.write(0, 1);                     // When defcon = 1, the switch stays on alert.
                         }
                             
                     }
@@ -514,7 +514,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                     
                     }
                     
-                }
+                } // End of Anomaly Detection
 
                 src_ewma.write(0, meta.src_ewma);
                 src_ewmmd.write(0, meta.src_ewmmd);
@@ -541,15 +541,15 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             defcon.read(defcon_aux, 0);
             if (defcon_aux == 1) {         
                 // We're possibly under attack.
-                // Here, we'll check whether the packet frequency has changed too much. 
+                // Here, we'll check whether the frequency of a given source address has changed too much. 
                 // If it has, we'll just change its course. 
               
                 int<32> src_count_tm_a;
                 int<32> src_count_tm_b;
                 bit<32> src_delta;
-                int<32> dst_count_tm_a;
-                int<32> dst_count_tm_b;
-                bit<32> dst_delta;
+                // int<32> dst_count_tm_a;
+                // int<32> dst_count_tm_b;
+                // bit<32> dst_delta;
 
                 src_cs1_tm_a.read(src_c1, src_h1);
                 src_cs2_tm_a.read(src_c2, src_h2);
@@ -571,26 +571,27 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                 src_c4 = src_c4 * src_g4;
                 median(src_c1, src_c2, src_c3, src_c4, src_count_tm_b);
 
-                dst_cs1_tm_a.read(dst_c1, dst_h1);
-                dst_cs2_tm_a.read(dst_c2, dst_h2);
-                dst_cs3_tm_a.read(dst_c3, dst_h3);
-                dst_cs4_tm_a.read(dst_c4, dst_h4);
-                dst_c1 = dst_c1 * dst_g1;
-                dst_c2 = dst_c2 * dst_g2;
-                dst_c3 = dst_c3 * dst_g3;
-                dst_c4 = dst_c4 * dst_g4;
-                median(dst_c1, dst_c2, dst_c3, dst_c4, dst_count_tm_a);
+                // dst_cs1_tm_a.read(dst_c1, dst_h1);
+                // dst_cs2_tm_a.read(dst_c2, dst_h2);
+                // dst_cs3_tm_a.read(dst_c3, dst_h3);
+                // dst_cs4_tm_a.read(dst_c4, dst_h4);
+                // dst_c1 = dst_c1 * dst_g1;
+                // dst_c2 = dst_c2 * dst_g2;
+                // dst_c3 = dst_c3 * dst_g3;
+                // dst_c4 = dst_c4 * dst_g4;
+                // median(dst_c1, dst_c2, dst_c3, dst_c4, dst_count_tm_a);
 
-                dst_cs1_tm_b.read(dst_c1, dst_h1);
-                dst_cs2_tm_b.read(dst_c2, dst_h2);
-                dst_cs3_tm_b.read(dst_c3, dst_h3);
-                dst_cs4_tm_b.read(dst_c4, dst_h4);
-                dst_c1 = dst_c1 * dst_g1;
-                dst_c2 = dst_c2 * dst_g2;
-                dst_c3 = dst_c3 * dst_g3;
-                dst_c4 = dst_c4 * dst_g4;
-                median(dst_c1, dst_c2, dst_c3, dst_c4, dst_count_tm_b);
+                // dst_cs1_tm_b.read(dst_c1, dst_h1);
+                // dst_cs2_tm_b.read(dst_c2, dst_h2);
+                // dst_cs3_tm_b.read(dst_c3, dst_h3);
+                // dst_cs4_tm_b.read(dst_c4, dst_h4);
+                // dst_c1 = dst_c1 * dst_g1;
+                // dst_c2 = dst_c2 * dst_g2;
+                // dst_c3 = dst_c3 * dst_g3;
+                // dst_c4 = dst_c4 * dst_g4;
+                // median(dst_c1, dst_c2, dst_c3, dst_c4, dst_count_tm_b);
 
+                // Regular detection. 
                 // if (src_count_tm_a >= src_count_tm_b) {
                 //     src_delta = (bit<32>) (src_count_tm_a - src_count_tm_b);
                 // } 
@@ -602,7 +603,8 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                 //     detour = 1; 
                 // }
 
-                if (src_count_tm_a != src_count_tm_b || dst_count_tm_a != dst_count_tm_b) {
+                // Paranoid detection; any change is suspect. 
+                if (src_count_tm_a > src_count_tm_b) {
                     detour = 1; 
                 }
 
