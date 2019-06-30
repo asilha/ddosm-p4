@@ -542,7 +542,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             if (defcon_aux == 1) {         
                 // We're possibly under attack.
                 // Here, we'll check whether the packet frequency has changed too much. 
-                // If it is, we'll just change its course. 
+                // If it has, we'll just change its course. 
               
                 int<32> src_count_tm_a;
                 int<32> src_count_tm_b;
