@@ -5,6 +5,8 @@ register_write ingress.alpha 0 20
 register_write ingress.k 0 28
 table_clear ingress.ipv4_fib
 table_add ingress.ipv4_fib ingress.forward 0/0 => 2
+table_clear ingress.ipv4_dpi_fib
+table_add ingress.ipv4_dpi_fib ingress.forward 0/0 => 4
 table_clear ingress.src_entropy_term
 table_add ingress.src_entropy_term ingress.get_entropy_term 0/31 => 0
 table_add ingress.src_entropy_term ingress.get_entropy_term 2/32 => 32
