@@ -87,7 +87,7 @@ Synthetic Workload:
             Record area:    13.369.344.000 
             # of records:      196.608.000
 
-            Training Phase:     65.536.000      13:00:00    - 13:04:00
+            Training Phase:     65.536.000      13:03:00    - 13:04:00
             Detection Phase 1:  32.768.000      13:04:00    - 13:04:30
             Detection Phase 2:  65.536.000      13:04:30    - 13:05:30
             Detection Phase 3:  32.768.000      13:05:30    - 13:06:00 
