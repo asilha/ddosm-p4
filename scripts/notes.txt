@@ -70,10 +70,10 @@ Synthetic Workload:
         Global header: 24 bytes
         Record header: 16 bytes
 
-    Reverse-engineering Angelo's trafg files (values in bytes): 
+    Reverse-engineering the trafg-generated files: 
 
-            Pcap record size:           68
-                Record header:          16
+            Pcap record size:           68      bytes
+                Record header:          16      
                 Capture data:           52
                     Ethernet:               14
                     IPv4:                   20
@@ -82,15 +82,16 @@ Synthetic Workload:
                         Attack flag             01 [Offset: 0x32]
                     Ethernet:               01
 
-            Total size:     13.369.344.024 
-            Global header:              24   
-            Record area:    13.369.344.000 
-            # of records:      196.608.000
+            Total size:     13.369.344.024 bytes
+            Global header:              24 bytes  
+            Record area:    13.369.344.000 bytes
 
-            Training Phase:     65.536.000      13:03:00    - 13:04:00
-            Detection Phase 1:  32.768.000      13:04:00    - 13:04:30
-            Detection Phase 2:  65.536.000      13:04:30    - 13:05:30
-            Detection Phase 3:  32.768.000      13:05:30    - 13:06:00 
+            # of records:      196.608.000 packets
+
+            Training Phase:     65.536.000 packets      13:03:00    - 13:04:00
+            Detection Phase 1:  32.768.000 packets      13:04:00    - 13:04:30
+            Detection Phase 2:  65.536.000 packets      13:04:30    - 13:05:30
+            Detection Phase 3:  32.768.000 packets      13:05:30    - 13:06:00 
 
             
 
