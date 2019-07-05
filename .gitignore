@@ -1,3 +1,5 @@
 build/*
+logs/*
+pcaps/*
 .vscode/*
-.vscode/settings.json
+*.pyc
