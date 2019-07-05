@@ -16,6 +16,9 @@ $(PROJECT): $(SOURCES)
 run:	$(PROJECT)
 	./$(SCRIPT_DIR)/run.sh
 
+mininet: $(PROJECT)
+	./$(SCRIPT_DIR)/mininet.sh
+
 clean:
 	rm -rf $(BUILD_DIR)
 
