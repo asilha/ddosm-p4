@@ -36,9 +36,9 @@ sniff-start:
 sniff-stop:
 	./$(SCRIPT_DIR)/sniff.sh stop 
 
-PACKET_LIMIT=65536
-PACKET_RATE=512
-PCAP_FILE=/media/p4/ddos/datasets/ddos5.pcap
+PACKET_LIMIT=262144
+PACKET_RATE=600
+PCAP_FILE=/media/p4/ddos/datasets/sample/ddos5_test.pcap
 
 traffic:
 	tcpreplay -q --limit=$(PACKET_LIMIT) --pps=$(PACKET_RATE) -i veth0 $(PCAP_FILE) 2>&1
