@@ -52,15 +52,15 @@ Fixed-Point Representations
 
 Synthetic Workload:
 
-    Trafg takes a packet_count and generates:
-        Training phase:
-            packet_count/2 legitimate traffic
+    Trafg takes a packet_count and generates:                               Volume     
+        Training phase:                                                         
+            packet_count/2 legitimate traffic                               1/3
         Detection phase:
-            packet_count/4 legitimate traffic
-            packet_count/2 legitimate + malicious traffic:
-                malicious:         attack_proportion  * packet_count/2 
+            packet_count/4 legitimate traffic                               1/6
+            packet_count/2 legitimate + malicious traffic:                  1/3
+                malicious:         attack_proportion  * packet_count/2      
                 legitimate:     (1-attack_proportion) * packet_count/2  
-            packet_count/4 legitimate traffic 
+            packet_count/4 legitimate traffic                               1/6
 
     Timestamps in the synthetic workload ddos<proportion%>.txt files:
         Line 1: Beginning of the attack.
@@ -85,16 +85,17 @@ Synthetic Workload:
             Total size:     13.369.344.024 bytes
             Global header:              24 bytes  
             Record area:    13.369.344.000 bytes
-
             # of records:      196.608.000 packets
 
-            Training Phase:     65.536.000 packets      13:03:00    - 13:04:00
-            Detection Phase 1:  32.768.000 packets      13:04:00    - 13:04:30
-            Detection Phase 2:  65.536.000 packets      13:04:30    - 13:05:30
-            Detection Phase 3:  32.768.000 packets      13:05:30    - 13:06:00 
+            File ddos5.pcap split in 24 volumes with 8.192.000 packets each. 
 
-            
-
+            Phase       Packet Count    Start           End                Volume  Offset
+            Total        196.608.000                                       24/24   00..23        
+            Training:     65.536.000    13:03:00.000000 13:04:00.087231     8/24   00..07
+            Detection 1:  32.768.000    13:04:00.087231 13:04:31.852544     4/24   08..11
+            Detection 2:  65.536.000    13:04:31.852545 13:05:31.138658     8/24   12..19
+            Detection 3:  32.768.000    13:05:31.138659 13:06:02.808079     4/24   20..23
+        
 Custom Hash Functions in aclapolli-bmv2/targets/simple_switch/simple_switch.cpp:60 
 
     struct h1 {
