@@ -592,21 +592,27 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                 // median(dst_c1, dst_c2, dst_c3, dst_c4, dst_count_tm_b);
 
                 // Regular detection. 
-                // if (src_count_tm_a >= src_count_tm_b) {
+                if (src_count_tm_b < 4) {
+                    if (src_count_tm_a > 16) {
+                        detour = 1;        
+                    }
+                }
+
+
+                // if (src_count_tm_a > src_count_tm_b) {
                 //     src_delta = (bit<32>) (src_count_tm_a - src_count_tm_b);
                 // } 
                 // else {
-                //     src_delta = (bit<32>) (src_count_tm_b - src_count_tm_a);
+                //     src_delta = 0;
                 // } 
-
-                // if ( src_delta > 1 ) { 
+                // if ( src_delta > 160 ) { 
                 //     detour = 1; 
                 // }
 
                 // Paranoid detection; any change is suspect. 
-                if (src_count_tm_a > src_count_tm_b) {
-                    detour = 1; 
-                }
+                // if (src_count_tm_a > src_count_tm_b) {
+                //     detour = 1; 
+                // }
 
             }
 
