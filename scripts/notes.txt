@@ -95,7 +95,11 @@ Synthetic Workload:
             Detection 1:  32.768.000    13:04:00.087231 13:04:31.852544     4/24   08..11
             Detection 2:  65.536.000    13:04:31.852545 13:05:31.138658     8/24   12..19
             Detection 3:  32.768.000    13:05:31.138659 13:06:02.808079     4/24   20..23
-        
+
+PS D:\Downloads\P4\ddos\datasets\sample> editcap -r .\ddos5_00012.pcap ddos5_00012a.pcap 1-262144
+PS D:\Downloads\P4\ddos\datasets\sample> editcap -r .\ddos5_00011.pcap ddos5_00011a.pcap 7929857-8192000
+PS D:\Downloads\P4\ddos\datasets\sample> mergecap -a -w ddos5_test.pcap .\ddos5_00011a.pcap .\ddos5_00012a.pcap
+
 Custom Hash Functions in aclapolli-bmv2/targets/simple_switch/simple_switch.cpp:60 
 
     struct h1 {
