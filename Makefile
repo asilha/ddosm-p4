@@ -2,6 +2,8 @@ PROJECT=ddosd
 ARCHITECTURE=bmv2
 
 BUILD_DIR=build
+LOG_DIR=logs
+PCAP_DIR=pcaps
 SOURCE_DIR=src
 SCRIPT_DIR=scripts
 
@@ -20,7 +22,7 @@ mininet: $(PROJECT)
 	./$(SCRIPT_DIR)/mininet.sh
 
 clean:
-	rm -rf $(BUILD_DIR)
+	rm -rf $(BUILD_DIR) $(LOG_DIR) $(PCAP_DIR)
 
 INTERFACE_PAIRS=8
 
