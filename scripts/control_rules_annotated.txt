@@ -1,26 +1,28 @@
-Switch ports are connected as follows:
+# Switch ports are connected as follows:
 
-0	veth0 	router input
-1	veth2 	router output
-2	veth4 	ddosd  output
-
-# mirroring_add <mirror_id> <egress_port>
-
-mirroring_add 250 2										# mirror_id=250; egress_port=2;  
+# 1     veth0 	router input
+# 2	    veth2 	router output for regular packets
+# 3	    veth4 	router output for suspect packets
+# 4     veth6   statistics output
 
 # register_write <name> <index> <value>
-
-register_write ingress.log2_m 0 18						# Observation window = 2^18 packets (~256 k packets) 
-register_write ingress.training_len 0 250				# Training phase = 250 windows (~2^26 packets) 
+register_write ingress.log2_m 0 14						# Observation window = 2^14 packets (~16 k packets) 
+register_write ingress.training_len 0 16				# Training phase = 16 windows (~256 k packets) 
  
-// alpha: 	fixed point representation: 0 integer bits, 8 fractional bits.
-// k: 		fixed point representation: 5 integer bits, 3 fractional bits.
-
+# alpha: 	fixed point representation: 0 integer bits, 8 fractional bits.
 register_write ingress.alpha 0 20						# 20/256	= 0.078125 
-register_write ingress.k 0 28							# 28/8 	 	= 3.5
+
+# k: 		fixed point representation: 5 integer bits, 3 fractional bits.
+register_write ingress.k 0 28							# 30/8 	 	= 3.75
+
+# mirroring_add <mirror_id> <egress_port>
+mirroring_add 250 4										# mirror_id=250; egress_port=4;  
 
 table_clear ingress.ipv4_fib
-table_add ingress.ipv4_fib ingress.forward 0/0 => 1		# default forwarding to port 1 (veth2)	
+table_add ingress.ipv4_fib ingress.forward 0/0 => 2		    # default forwarding to port 2 (veth2)	
+
+table_clear ingress.ipv4_dpi_fib
+table_add ingress.ipv4_dpi_fib ingress.forward 0/0 => 3		# default forwarding to port 2 (veth2)
 
 table_clear ingress.src_entropy_term					# Key is nominal; value is in fixed point representation: 28 integer bits, 4 fractional bits.
 table_add ingress.src_entropy_term ingress.get_entropy_term 0/31 => 0

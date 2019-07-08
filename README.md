@@ -19,7 +19,7 @@ First, clone our forked repositories and follow the installation guidelines with
 ### Building
 Ensure that the `p4c` binary is within your `$PATH` and run:
 ```
-git clone https://github.com/aclapolli/ddosd-p4.git
+git clone https://github.com/asilha/ddosd-p4.git
 cd ddosd-p4
 make
 ```
@@ -31,15 +31,15 @@ This process builds the P4 program into `./build/ddosd.json`
 #### Quick Start
 For a quick test, you may execute:
 ```
-./scripts/run.sh
+make run
 ```
 This script initiates an instance of the target switch associated to virtual network interfaces.
-It configures the switch to forward every IPv4 packet to `veth2`.
-It also sets up the detection mechanism with m = 2<sup>18</sup>, &#945; = 0.078125, k = 3.5, and a training phase containing 250 observation windows.
+It configures the switch to forward regular IPv4 packets to `veth2` (which is also connected to `veth3`).
+If configures the switch to forward suspect IPv4 packets to `veth4` (which is also connected to `veth5`)
+It also sets up the detection mechanism with m = 2<sup>14</sup>, &#945; = 0.078125, k = 3.75, and a training phase containing 32 observation windows.
 You may change these parameters at runtime using the `simple_switch_CLI` tool (see [control_rules.txt](scripts/control_rules.txt) for examples).
 
-We recommend using the `veth0` interface to input packets to the detection mechanism.
-The last package of every observation window will be forwarded to `veth4` containing the following custom header:
+The last packet of every observation window will be forwarded to `veth6` (which is also connected to `veth7`) containing the following custom header:
 ```
 // EtherType 0x6605
 header ddosd_t {
@@ -51,9 +51,23 @@ header ddosd_t {
     bit<32> dst_ewma;      // The current EWMA for the entropy of destination IP address (scaled by 2^18)
     bit<32> dst_ewmmd;     // The current EWMMD for the entropy of destination IP address (scaled by 2^18)
     bit<8> alarm;          // It is set to 0x01 to indicate the detection of a DDoS attack
+    bit<8> defcon;         // It is set to 0x01 to indicate that the switch is in DEFCON state.
+    bit<16> reserved;      // Two empty octets to facilitate reading captured packets. 
     bit<16> ether_type;    // Indicates the following header EtherType
 }
 ```
+
+Afterwards, you may run: 
+```
+make sniff-start
+```
+This command will start four instances of Wireshark, capturing packets in `veth1` (input packets), `veth3` (forwarded packets), `veth5` (diverted packets), and `veth7` (statistics packets).
+
+To generate traffic, you may run:
+```
+make traffic
+```
+This will start the `tcpreplay` utility to replay a dataset of your choice (whose path you must update in the Makefile). Traffic will be sent to `veth0`.  
 
 #### Custom Deployment
 Ensure that both the `simple_switch` and the `simple_switch_CLI` binaries are within your `$PATH` and run (with custom options):
