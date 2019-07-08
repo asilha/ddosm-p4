@@ -198,14 +198,20 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
     apply {
         if (hdr.ipv4.isValid()) {
 
-            // Current Observation Window
+            // Obtain Observation Window number from the register.
             bit<32> current_ow;
             ow_counter.read(current_ow, 0);
 
+            // Obtain DEFCON state from the register.
             bit<8> defcon_aux;
             defcon.read(defcon_aux, 0);
 
-            // Source IP Address Frequency Estimation
+            // Auxiliary variables for counter and annotation:
+            int<32> c_aux;
+            bit<8>  ow_aux;
+
+            // --------------------------------------------------------------------------------------------------------            
+            // Beginning of source address frequency and entropy norm estimation.
 
             // Obtain column IDs for all rows
             bit<32> src_h1;
@@ -222,10 +228,6 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             cs_ghash(hdr.ipv4.src_addr, src_g1, src_g2, src_g3, src_g4);
 
             // Estimate Frequencies for Source Addresses
-
-            // Auxiliary counter and annotation:
-            int<32> c_aux;
-            bit<8>  ow_aux;
 
             // Row 1 Estimate
             int<32> src_c1;
@@ -321,7 +323,6 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                 src_entropy_term.apply();
             else
                 meta.entropy_term = 0;
-
             // At this point, meta.entropy_term has the 'increment'.    
 
             // Source Entropy Norm Update       
@@ -330,14 +331,20 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             src_S_aux = src_S_aux + meta.entropy_term;
             src_S.write(0, src_S_aux);
 
-            // Destination IP Address Frequency Estimation
+            // End of source address frequency and entropy norm estimation.
+            // --------------------------------------------------------------------------------------------------------
 
+            // --------------------------------------------------------------------------------------------------------
+            // Beginning of destination address frequency and entropy norm estimation. 
+
+            // Obtain column IDs for all rows
             bit<32> dst_h1;
             bit<32> dst_h2;
             bit<32> dst_h3;
             bit<32> dst_h4;
             cs_hash(hdr.ipv4.dst_addr, dst_h1, dst_h2, dst_h3, dst_h4);
 
+            // Determine whether to increase or decrease counters
             int<32> dst_g1;
             int<32> dst_g2;
             int<32> dst_g3;
@@ -440,7 +447,6 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                 dst_entropy_term.apply();
             else
                 meta.entropy_term = 0;
-
             // At this point, meta.entropy_term has the 'increment'.    
 
             // Destination Entropy Norm Update
@@ -451,43 +457,54 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
 
             // At this point, we already have source and destination entropy norms (src_S and dst_S). 
 
-            // Now, we need to check whether the Observation Window has ended. 
+            // End  of destination address frequency and entropy norm estimation. 
+            // --------------------------------------------------------------------------------------------------------
 
-            // Observation Window Size
-            bit<32> m;
+            // --------------------------------------------------------------------------------------------------------
+            // Beginning of anomaly detection. 
+            // Step 1: Check whether the Observation Window has ended.
+            // Step 2: If the OW has ended, estimate the entropies.
+            // Step 3: If we detect an entropy anomaly, signal this condition. Otherwise, just update the moving averages. 
+
+            // Step 1: Check whether the Observation Window has ended. 
+           
+            bit<32> m;                              // Observation Window Size
             bit<5> log2_m_aux;
             log2_m.read(log2_m_aux, 0);
-            m = 32w1 << log2_m_aux;         // m = 2^log2(m)
-
-            // Packet Count
-            pkt_counter.read(meta.pkt_num, 0);
+            m = 32w1 << log2_m_aux;                 // m = 2^log2(m)
+            pkt_counter.read(meta.pkt_num, 0);      // Packet Counter
             meta.pkt_num = meta.pkt_num + 1;
 
-            if (meta.pkt_num != m) {  // Observation Window has not ended yet; update the counter.
+            if (meta.pkt_num != m) {  // Observation Window has not ended yet; just update the counter.
                 pkt_counter.write(0, meta.pkt_num);
-            } else {                   // End of Observation Window; estimate the entropies. 
+            } else {                   // End of Observation Window. Begin OW Summarization.
                 current_ow = current_ow + 1;
-                ow_counter.write(0, current_ow);
+                ow_counter.write(0, current_ow); // Save the number of the new OW in its register. 
+
+                // Step 2: Estimate the entropies. 
 
                 // We need to calculate Ĥ = log2(m) - Ŝ/m .
                 // Since our pipeline doesn't implement division, we can use the identity 1/m = 2^(-log2(m)), for positive m. 
-                // Given that m is an integer power of two and that we already know log2(m), division becomes a right shift. 
+                // Given that m is an integer power of two and that we already know log2(m), division becomes a right shift by log2(m) bits. 
                 // Therefore,  Ĥ = log2(m) - Ŝ/m  =  log2(m) - Ŝ * 2^(-log2(m)).
                 meta.src_entropy = ((bit<32>)log2_m_aux << 4) - (src_S_aux >> log2_m_aux);
                 meta.dst_entropy = ((bit<32>)log2_m_aux << 4) - (dst_S_aux >> log2_m_aux);
 
+                // Read moving averages and deviations. 
                 src_ewma.read(meta.src_ewma, 0);
                 src_ewmmd.read(meta.src_ewmmd, 0);
                 dst_ewma.read(meta.dst_ewma, 0);
                 dst_ewmmd.read(meta.dst_ewmmd, 0);
 
                 if (current_ow == 1) {                              // In the first window...
-                    meta.src_ewma = meta.src_entropy << 14;         // Initialize EWMAs with the first estimated entropies. EWMAs have 18 fractional bits. 
+                    meta.src_ewma = meta.src_entropy << 14;         // Initialize averages with the first estimated entropies. Averages have 18 fractional bits. 
                     meta.src_ewmmd = 0;
                     meta.dst_ewma = meta.dst_entropy << 14;
                     meta.dst_ewmmd = 0;
-                } else {
-                    meta.alarm = 0;
+                } else {                                            // Beginning with the second window... 
+                    meta.alarm = 0;                                 // By default, there's no alarm. 
+
+                    // Step 3: If we detect an anomaly, signal this condition. Otherwise, just update the moving averages. 
 
                     bit<32> training_len_aux;
                     training_len.read(training_len_aux, 0);
@@ -501,10 +518,10 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                         bit<32> dst_thresh;
                         dst_thresh = meta.dst_ewma - ((bit<32>)k_aux*meta.dst_ewmmd >> 3);
 
-                        if ((meta.src_entropy << 14) > src_thresh || (meta.dst_entropy << 14) < dst_thresh) { // Anomaly detected. 
+                        if ((meta.src_entropy << 14) > src_thresh || (meta.dst_entropy << 14) < dst_thresh) { // ANOMALY DETECTED. 
                             meta.alarm = 1;  
                             meta.defcon = 1; 
-                            defcon.write(0, 1);                     // When defcon = 1, the switch stays on alert.
+                            defcon.write(0, 1);                     // When defcon = 1, the switch stays "on alert".
                         }
                             
                     }
@@ -532,44 +549,55 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                             meta.dst_ewmmd = (((bit<32>)alpha_aux*(meta.dst_ewma - (meta.dst_entropy << 14))) >> 8) + (((0x00000100 - (bit<32>)alpha_aux)*meta.dst_ewmmd) >> 8);
                     
                     }
-                    
-                } // End of Anomaly Detection
 
+                    // End of Step 3 (Anomaly Detection). 
+                    
+                } 
+                
+                // End of Step 2 (Entropy Estimation). 
+
+                // Write back the values for EWMA and EWMMD. 
                 src_ewma.write(0, meta.src_ewma);
                 src_ewmmd.write(0, meta.src_ewmmd);
                 dst_ewma.write(0, meta.dst_ewma);
                 dst_ewmmd.write(0, meta.dst_ewmmd);
 
+                // Reset the packet counter and the entropy term.
+                pkt_counter.write(0, 0);
+                src_S.write(0, 0);
+                dst_S.write(0, 0);
+
+                // Check whether we should reset DEFCON or not. 
                 defcon.read(meta.defcon,0);
                 if (meta.alarm == 0 && meta.defcon == 1) {
                     defcon.write(0, 0);
                 }
 
+                // Generate a signaling packet. 
                 clone3(CloneType.I2E, ALARM_SESSION, { meta.pkt_num, meta.src_entropy, meta.src_ewma, meta.src_ewmmd, meta.dst_entropy, meta.dst_ewma, meta.dst_ewmmd, meta.alarm, meta.defcon });
 
-                // Reset
-                pkt_counter.write(0, 0);
-                src_S.write(0, 0);
-                dst_S.write(0, 0);
+            } // End OW summarization. 
 
-            } // End of OW summarization. 
+            // End of Step 1 (OW Summarization)
+            // --------------------------------------------------------------------------------------------------------
 
+            // --------------------------------------------------------------------------------------------------------
+            // Beginning of conditional diversion. 
+
+            // Detour has a default value of zero.
+            // It will be set to one for packets that should undergo external inspection.
             bit<1> detour;
             detour = 0;
-            // bit<8> defcon_aux;
-            // defcon.read(defcon_aux, 0);
-            if (defcon_aux == 1) {         
-                // We're possibly under attack.
-                // Here, we'll check whether the frequency of a given source address has changed too much. 
-                // If it has, we'll just change its course. 
+
+            if (defcon_aux == 1) {  // An attack was detected at t-1 or t-2.        
               
+                // These variables will hold the estimated counters for t-1 and t-2. 
                 int<32> src_count_tm_a;
                 int<32> src_count_tm_b;
-                bit<32> src_delta;
                 int<32> dst_count_tm_a;
                 int<32> dst_count_tm_b;
-                bit<32> dst_delta;
 
+                // Get the estimated counter for the source address at t-1.
                 src_cs1_tm_a.read(src_c1, src_h1);
                 src_cs2_tm_a.read(src_c2, src_h2);
                 src_cs3_tm_a.read(src_c3, src_h3);
@@ -580,6 +608,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                 src_c4 = src_c4 * src_g4;
                 median(src_c1, src_c2, src_c3, src_c4, src_count_tm_a);
 
+                // Get the estimated counter for the source address at t-2.
                 src_cs1_tm_b.read(src_c1, src_h1);
                 src_cs2_tm_b.read(src_c2, src_h2);
                 src_cs3_tm_b.read(src_c3, src_h3);
@@ -590,6 +619,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                 src_c4 = src_c4 * src_g4;
                 median(src_c1, src_c2, src_c3, src_c4, src_count_tm_b);
 
+                // Get the estimated counter for the destination address at t-1.
                 dst_cs1_tm_a.read(dst_c1, dst_h1);
                 dst_cs2_tm_a.read(dst_c2, dst_h2);
                 dst_cs3_tm_a.read(dst_c3, dst_h3);
@@ -600,6 +630,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                 dst_c4 = dst_c4 * dst_g4;
                 median(dst_c1, dst_c2, dst_c3, dst_c4, dst_count_tm_a);
 
+                // Get the estimated counter for the destination address at t-2.
                 dst_cs1_tm_b.read(dst_c1, dst_h1);
                 dst_cs2_tm_b.read(dst_c2, dst_h2);
                 dst_cs3_tm_b.read(dst_c3, dst_h3);
@@ -610,46 +641,29 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                 dst_c4 = dst_c4 * dst_g4;
                 median(dst_c1, dst_c2, dst_c3, dst_c4, dst_count_tm_b);
 
-                // Regular detection. 
-                // if (src_count_tm_b < 4) {
-                //     if (src_count_tm_a > 16) {
-                //         detour = 1;        
-                //     }
-                // }
+                // This means that the address was not seen at t-2, but it was at t-1.
+                // Hence, we consider it more likely to be a source of attack.  
+                if (src_count_tm_b == 0 && src_count_tm_a > 0) {
+                        detour = 1;        
+                } 
 
-                // if (src_count_tm_a > src_count_tm_b) {
-                //     src_delta = (bit<32>) (src_count_tm_a - src_count_tm_b);
-                // } 
-                // else {
-                //     src_delta = 0;
-                // } 
-                // if ( src_delta > 16 ) { 
-                //     detour = 1; 
-                // }
+                // For now, we're only using the source address. 
+            } // End of DEFCON state processing. 
 
-                // Paranoid detection; any change is suspect. 
-                if (src_count_tm_a > src_count_tm_b && dst_count_tm_a > dst_count_tm_b) {
-                    src_delta = (bit<32>) (src_count_tm_a - src_count_tm_b);
-                    dst_delta = (bit<32>) (dst_count_tm_a - dst_count_tm_b);
-                    if (src_delta > 1 && dst_delta > 1) {
-                        detour = 1;
-                    }
-                }
-
-            }
-
+            // Detour is set to one for packets that must undergo further inspection.
             if (detour == 0) {
-                ipv4_fib.apply();
+                ipv4_fib.apply();       // Use the regular forwarding table.
             }
             else { 
-                ipv4_dpi_fib.apply();
+                ipv4_dpi_fib.apply();   // Use the "deep packet inspection" forwarding table. 
             }
 
+            // End of conditional diversion. 
+            // --------------------------------------------------------------------------------------------------------
 
-
-        }
-    }
-}
+        } // End of IPv4 header processing. 
+    } // End of ingress pipeline control block. 
+} // End of ingress pipeline definition. 
 
 control egress(inout headers hdr, inout metadata meta, inout standard_metadata_t standard_metadata) {
     const bit<32> CLONE = 1;
