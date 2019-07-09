@@ -96,9 +96,34 @@ Synthetic Workload:
             Detection 2:  65.536.000    13:04:31.852545 13:05:31.138658     8/24   12..19
             Detection 3:  32.768.000    13:05:31.138659 13:06:02.808079     4/24   20..23
 
-PS D:\Downloads\P4\ddos\datasets\sample> editcap -r .\ddos5_00012.pcap ddos5_00012a.pcap 1-262144
-PS D:\Downloads\P4\ddos\datasets\sample> editcap -r .\ddos5_00011.pcap ddos5_00011a.pcap 7929857-8192000
-PS D:\Downloads\P4\ddos\datasets\sample> mergecap -a -w ddos5_test.pcap .\ddos5_00011a.pcap .\ddos5_00012a.pcap
+            Window counts using m=2^18 packets per window.
+
+            Phase       Window Count    Start           End                Volume  Offset
+            Total                750                                       24/24   00..23        
+            Training:            250    13:03:00.000000 13:04:00.087231     8/24   00..07
+            Detection 1:         125    13:04:00.087231 13:04:31.852544     4/24   08..11
+            Detection 2:         250    13:04:31.852545 13:05:31.138658     8/24   12..19
+            Detection 3:         125    13:05:31.138659 13:06:02.808079     4/24   20..23
+
+time ./ddosd-cpp/bin/ee -c ./ddosd-cpp/example/ddos.json ./ddos/datasets/synthetic/ddos5.pcap | ./ddosd-cpp/bin/tcad -t 250 -s 0.078125 -k 3.5 | tee ddos5.tcad.txt
+
+Phase                            Time	            SrcEnt	    SrcMA   SrcMD   DstEnt	    DstMA	DstMD	Alarm
+After trainining (t=250)        1459947840087230	   186    3056132    9672	   183    3000850    8007	0
+After detection 1 (t=375)       1459947871852540	   186	  3059070	 8339	   183	  3007632	10234	0
+
+Experiment: 
+
+    a) Initialize with t=375 values. 
+    b) Replay windows 376-383 to verify that detection still works. 
+    c) We expect that at t=376 Defcon will be set to 1.
+    d) We expect that at t=377 packet diversion will begin.  
+
+Commands used to generated the workload for CMP182:
+
+    PS D:\Downloads\P4\ddos\datasets\sample> editcap -r .\ddos5_00012.pcap ddos5_00012a.pcap 1-262144
+    PS D:\Downloads\P4\ddos\datasets\sample> editcap -r .\ddos5_00011.pcap ddos5_00011a.pcap 7929857-8192000
+    PS D:\Downloads\P4\ddos\datasets\sample> mergecap -a -w ddos5_test.pcap .\ddos5_00011a.pcap .\ddos5_00012a.pcap
+
 
 Custom Hash Functions in aclapolli-bmv2/targets/simple_switch/simple_switch.cpp:60 
 
