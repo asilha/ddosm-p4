@@ -12,17 +12,17 @@ from scapy.all import IP, UDP, Raw
 from scapy.layers.inet import _IPOption_HDR
 
 def handle_pkt(pkt):
-    print("got a packet")
+    print('got a packet')
     pkt.show2()
     hexdump(pkt)
     sys.stdout.flush()
 
 
 def main():
-    iface = 'veth6'
+    iface = 'veth7'
     print("sniffing on %s" % iface)
     sys.stdout.flush()
-    sniff(filter="ip", iface = iface, prn = lambda x: handle_pkt(x))
+    sniff(filter='', iface = iface, prn = lambda x: handle_pkt(x))
 
 if __name__ == '__main__':
     main()
