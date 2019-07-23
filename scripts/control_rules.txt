@@ -1,4 +1,4 @@
-register_write ingress.log2_m 0 14
+register_write ingress.log2_m 0 10
 register_write ingress.training_len 0 16
 register_write ingress.alpha 0 20
 register_write ingress.k 0 30
