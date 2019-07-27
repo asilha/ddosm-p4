@@ -3,3 +3,4 @@ logs/*
 pcaps/*
 .vscode/*
 *.pyc
+scripts/__pycache__

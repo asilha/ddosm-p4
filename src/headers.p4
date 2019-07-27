@@ -19,8 +19,7 @@ header ddosd_t {
     bit<32> dst_ewmmd;      // 38-41
     bit<8> alarm;           // 42
     bit<8> defcon;          // 43
-    bit<16> reserved;       // 44-45    [Because IETF does it all the time.]
-    bit<16> ether_type;     // 46-47    [Copied from Ethernet.]
+    bit<16> ether_type;     // 44-45    [Copied from Ethernet.]
 }
 
 header ipv4_t {

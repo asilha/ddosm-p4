@@ -113,16 +113,34 @@ After detection 1 (t=375)       1459947871852540	   186	  3059070	 8339	   183	 
 
 Experiment: 
 
-    a) Initialize with t=375 values. 
-    b) Replay windows 376-383 to verify that detection still works. 
+    a) Initialize with t=373 values. 
+
+        register_write src_ewma 0 1600155
+        register_write src_ewmmd 0 97985
+        register_write dst_ewma 0 1575765
+        register_write dst_ewmmd 0 105380
+
+    b) Replay windows 374-383 to verify that detection still works. 
     c) We expect that at t=376 Defcon will be set to 1.
     d) We expect that at t=377 packet diversion will begin.  
 
-Commands used to generated the workload for CMP182:
+Sources: 
 
-    PS D:\Downloads\P4\ddos\datasets\sample> editcap -r .\ddos5_00012.pcap ddos5_00012a.pcap 1-262144
-    PS D:\Downloads\P4\ddos\datasets\sample> editcap -r .\ddos5_00011.pcap ddos5_00011a.pcap 7929857-8192000
-    PS D:\Downloads\P4\ddos\datasets\sample> mergecap -a -w ddos5_test.pcap .\ddos5_00011a.pcap .\ddos5_00012a.pcap
+    OWs 374-375: Volume 11, last 524288 packets. 
+    OWs 376-383: Volume 12, first 2^3*2^18 = 2^21 = 2097152 packets
+
+Commands to be used to generate the workload above: 
+
+    editcap -r ddos5_00011.pcap ddos5_00011x.pcap 7667713-8192000
+    editcap -r ddos5_00012.pcap ddos5_00012x.pcap 1-2097152
+    mergecap -a -w ddos5_x.pcap ddos5_00011x.pcap ddos5_00012x.pcap 
+
+Commands used to generate the workload for CMP182:
+
+    PS D:\Downloads\P4\ddos\datasets\sample> 
+    editcap -r ddos5_00012.pcap ddos5_00012a.pcap 1-262144
+    editcap -r ddos5_00011.pcap ddos5_00011a.pcap 7929857-8192000
+    mergecap -a -w ddos5_a.pcap ddos5_00011a.pcap ddos5_00012a.pcap
 
 
 Custom Hash Functions in aclapolli-bmv2/targets/simple_switch/simple_switch.cpp:60 
