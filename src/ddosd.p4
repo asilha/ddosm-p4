@@ -504,7 +504,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                     // meta.src_ewma = 3061128;         // Initialize averages with predefined entropies (to emulate previous training). 
                     // meta.src_ewmmd = 7674;
                     // meta.dst_ewma = 3009287;
-                    meta.dst_ewmmd = 10323;
+                    // meta.dst_ewmmd = 10323;
                  } else {                                            // Beginning with the second window... 
                     meta.alarm = 0;                                 // By default, there's no alarm. 
 
