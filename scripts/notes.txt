@@ -114,6 +114,12 @@ After detection 1 (t=375)       1459947871852540	   186	  3059070	 8339	   183	 
 Experiment: 
 
     a) Initialize with t=373 values. 
+
+        register_write src_ewma 0 1600155
+        register_write src_ewmmd 0 97985
+        register_write dst_ewma 0 1575765
+        register_write dst_ewmmd 0 105380
+
     b) Replay windows 374-383 to verify that detection still works. 
     c) We expect that at t=376 Defcon will be set to 1.
     d) We expect that at t=377 packet diversion will begin.  

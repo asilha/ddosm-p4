@@ -22,9 +22,6 @@ class DDoSD(Packet):
     ByteField('defcon',0), 
     XShortField('ethertype',0)]
 
-    def mysummary(self):
-        print('src_ent', self.getfieldval('src_ent')/16.0)
-
 class DDoSDPayload(Packet):
     name = "DDoSD Payload"
     fields_desc = [LongField('ts_sec',0), 
@@ -32,9 +29,17 @@ class DDoSDPayload(Packet):
     ByteField('is_attack',0)]
 
 def handle_pkt(pkt):
-    pkt.show()
+    ddosd=pkt[DDoSD] 
+    print("| Src H: {:.3f} MA: {:.6f} MD: {:.6f} | Dst H: {:.3f} MA: {:.6f} MD: {:.6f} | Alarm: {} Defcon: {} |".format(        
+        ddosd.src_ent/16.0, 
+        ddosd.src_ewma/(2.0**18), 
+        ddosd.src_ewmmd/(2.0**18), 
+        ddosd.dst_ent/16.0, 
+        ddosd.dst_ewma/(2.0**18), 
+        ddosd.dst_ewmmd/(2.0**18), 
+        ddosd.alarm, 
+        ddosd.defcon)) 
     sys.stdout.flush()
-
 
 def main():
     iface = 'veth7'
