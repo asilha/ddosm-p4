@@ -496,17 +496,13 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                 dst_ewma.read(meta.dst_ewma, 0);
                 dst_ewmmd.read(meta.dst_ewmmd, 0);
 
-                if (current_ow == 1) {                              // In the first window...
-                    meta.src_ewma = meta.src_entropy << 14;         // Initialize averages with the first estimated entropies. Averages have 18 fractional bits. 
-                    meta.src_ewmmd = 0;
-                    meta.dst_ewma = meta.dst_entropy << 14;
-                    meta.dst_ewmmd = 0;
-                    // meta.src_ewma = 3061128;         // Initialize averages with predefined entropies (to emulate previous training). 
-                    // meta.src_ewmmd = 7674;
-                    // meta.dst_ewma = 3009287;
-                    // meta.dst_ewmmd = 10323;
+                if (current_ow == 0) {                              // In the first window... [changed to 0th window, which will never happen.]
+                    // meta.src_ewma = meta.src_entropy << 14;      // Initialize averages with the first estimated entropies. Averages have 18 fractional bits. 
+                    // meta.src_ewmmd = 0;
+                    // meta.dst_ewma = meta.dst_entropy << 14;
+                    // meta.dst_ewmmd = 0;
                  } else {                                            // Beginning with the second window... 
-                    meta.alarm = 0;                                 // By default, there's no alarm. 
+                    meta.alarm = 0;                                  // By default, there's no alarm. 
 
                     // Step 3: If we detect an anomaly, signal this condition. Otherwise, just update the moving averages. 
 
