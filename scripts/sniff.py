@@ -30,7 +30,7 @@ class DDoSDPayload(Packet):
 
 def handle_pkt(pkt):
     ddosd=pkt[DDoSD] 
-    print("| Src H: {:.3f} MA: {:.6f} MD: {:.6f} | Dst H: {:.3f} MA: {:.6f} MD: {:.6f} | Alarm: {} Defcon: {} |".format(        
+    print("| Src H={:.3f} A={:.3f} MD={:.3f} | Dst H={:.3f} A={:.3f} MD={:.3f} | Alarm={} Defcon={} |".format(        
         ddosd.src_ent/16.0, 
         ddosd.src_ewma/(2.0**18), 
         ddosd.src_ewmmd/(2.0**18), 
