@@ -1,17 +1,4 @@
-Using the 'pure' switch: 
-
-    ./veth.sh setup 8
-    ./run.sh 
-
-Using the 'mininet' environment: 
-
-    ./mininet.sh 
-    ./control.sh
-
-Starting Several Wireshark Instances
-
-    for i in {1..5..2}; do wireshark -i veth$i -k & done
-
+-------------------------------------------------------------------------------
 General Parameters
 
     Training Length:     32 windows. 
@@ -34,22 +21,35 @@ General Parameters
 
         ../bin/tcad -t 32 -s 0.078125 -k 3.5
 
-
 TCP Replay Parameters
 
     tcpreplay -q --limit=32768 --pps=256 -i s1-eth1  /media/p4/ddos/datasets/ddos5.pcap 2>&1
 
-Using the 'ee' utility:
+-------------------------------------------------------------------------------
+Starting Several Wireshark Instances
 
-    time ../bin/ee -c ddos.json /media/p4/ddos/datasets/ddos5.pcap | ../bin/tcad -t 32 -s 0.078125 -k 3.5
+    for i in {1..5..2}; do wireshark -i veth$i -k & done
 
+Using the 'pure' switch: 
+
+    ./veth.sh setup 8
+    ./run.sh 
+
+Using the 'mininet' environment: 
+
+    ./mininet.sh 
+    ./control.sh
+
+
+-------------------------------------------------------------------------------
 Fixed-Point Representations
 
-    Alpha   24.8    (/256) 
-    K       29.3    (/8)
-    Entropy	 28.4   (/16)
-    Ewmmd	 14.18  (/2^18)
+    Alpha       24.8   (/256) 
+    K           29.3   (/8)
+    Entropy	    28.4   (/16)
+    Ewmmd	    14.18  (/2^18)
 
+-------------------------------------------------------------------------------
 Synthetic Workload:
 
     Trafg takes a packet_count and generates:                               Volume     
@@ -105,44 +105,153 @@ Synthetic Workload:
             Detection 2:         250    13:04:31.852545 13:05:31.138658     8/24   12..19
             Detection 3:         125    13:05:31.138659 13:06:02.808079     4/24   20..23
 
-time ./ddosd-cpp/bin/ee -c ./ddosd-cpp/example/ddos.json ./ddos/datasets/synthetic/ddos5.pcap | ./ddosd-cpp/bin/tcad -t 250 -s 0.078125 -k 3.5 | tee ddos5.tcad.txt
+-------------------------------------------------------------------------------
+Comparing P4 and TCAD Traces
 
-Phase                            Time	            SrcEnt	    SrcMA   SrcMD   DstEnt	    DstMA	DstMD	Alarm
-After trainining (t=250)        1459947840087230	   186    3056132    9672	   183    3000850    8007	0
-After detection 1 (t=375)       1459947871852540	   186	  3059070	 8339	   183	  3007632	10234	0
+In ddos.json: 
 
-Experiment: 
+    "window_size": 262144
 
-    a) Initialize with t=373 values. 
+In control_rules.txt:
 
-        register_write src_ewma 0 1600155
-        register_write src_ewmmd 0 97985
-        register_write dst_ewma 0 1575765
-        register_write dst_ewmmd 0 105380
+    register_write ingress.log2_m 0 18
+    register_write ingress.training_len 0 250
+    register_write ingress.alpha 0 20
+    register_write ingress.k 0 28
 
-    b) Replay windows 374-383 to verify that detection still works. 
-    c) We expect that at t=376 Defcon will be set to 1.
-    d) We expect that at t=377 packet diversion will begin.  
+time ./ddosd-cpp/bin/ee -c ./ddosd-cpp/example/ddos.json ./ddos/datasets/synthetic/ddos5.pcap | ./ddosd-cpp/bin/tcad -t 250 -s 0.078125 -k 3.5 | tee ddos5x.tcad.txt
 
-Sources: 
+From ddos5x.tcad.txt: 
 
-    OWs 374-375: Volume 11, last 524288 packets. 
-    OWs 376-383: Volume 12, first 2^3*2^18 = 2^21 = 2097152 packets
+    Phase                           Time	            SrcEnt	    SrcMA   SrcMD   DstEnt	    DstMA	DstMD	Alarm
+    After trainining (t=250)        1459947840087230	   186    3056132    9672	   183    3000850    8007	    0
+    Before detection 1 (t=373)      1459947871374546       187    3061128    7674      184    3009287   10323       0
+    After detection 1 (t=375)       1459947871852540	   186	  3059070	 8339	   183	  3007632	10234	    0
 
-Commands to be used to generate the workload above: 
+Analyzing ddos5x.tcad.txt: 
 
-    editcap -r ddos5_00011.pcap ddos5_00011x.pcap 7667713-8192000
-    editcap -r ddos5_00012.pcap ddos5_00012x.pcap 1-2097152
-    mergecap -a -w ddos5_x.pcap ddos5_00011x.pcap ddos5_00012x.pcap 
+    Created TCAD.xlsm, with functions to convert traces to human-readable values. 
 
+Analyzing P4 Traces:
+
+    Created a Scapy-based packet sniffer which can parse signaling packets. 
+
+-------------------------------------------------------------------------------
+Experiment With Large Windows Without Pre-Training
+
+    Parameters:
+        Window Size:        m=2^18
+        Training:           2 OWs
+        Attack:             8 OWs  
+
+    Sources: 
+
+        OWs 374-375: Volume 11, last 524288 packets. 
+        OWs 376-383: Volume 12, first 2^3*2^18 = 2^21 = 2097152 packets
+
+    Commands to generate the workload above: 
+
+        editcap -r ddos5_00011.pcap ddos5_00011x.pcap 7667713-8192000
+        editcap -r ddos5_00012.pcap ddos5_00012x.pcap 1-2097152
+        mergecap -a -w ddos5_x.pcap ddos5_00011x.pcap ddos5_00012x.pcap 
+
+    Procedure: 
+
+    a) Obtain t=373 (attack - 2) MAs and MMDs.
+
+        Obtain a trace of TCAD (using default parameters).
+        See line #373. 
+
+    b) Initialize with t=373 (attack - 2) values. 
+
+        register_write src_ewma 0 3061128
+        register_write src_ewmmd 0 7674
+        register_write dst_ewma 0 3009287
+        register_write dst_ewmmd 0 10323
+
+    c) Replay windows 374-383 to verify that detection still works. 
+    d) We expect that at t=376 defcon will be set to 1.
+    e) We expect that at t=377 packet diversion will begin.  
+
+-------------------------------------------------------------------------------
+Experiment With Small Windows Without [then With] Pre-Training
+
+    Parameters:
+        Window Size:        m=2^10
+        Training:           512  OWs
+        Attack:             2048 OWs  
+
+    Sources: 
+
+        OWs 1-512:      Volume 11, last 2^9*2^10 = 2^19 = 524288 packets.
+        OWs 511-512:    Volume 11, last 2048 packets. 
+        OWs 513-2460:   Volume 12, first 2^11*2^10 = 2^21 = 2097152 packets
+
+    Commands to generate the workload above: 
+
+        editcap -r ddos5_00011.pcap ddos5_00011y.pcap 7667713-8192000   [512k]
+        editcap -r ddos5_00011.pcap ddos5_00011z.pcap 8189953-8192000   [2k]
+        editcap -r ddos5_00012.pcap ddos5_00012y.pcap 1-2097152         [2048k]
+        mergecap -a -w ddos5_y.pcap ddos5_00011y.pcap ddos5_00012y.pcap [2560k]
+        mergecap -a -w ddos5_z.pcap ddos5_00011z.pcap ddos5_00012y.pcap [2560k]
+
+    a) Obtain t=510 (attack-2) MAs and MMDs.
+
+        Obtain a trace of TCAD (using default parameters, but with m=2^10).
+        See lines #510-516.
+
+        1459947871850801 123 1987206 49782 122 1946008 59783 0      // 510 - initialize with these. 
+
+        1459947871851689 122 1988115 46730 119 1946296 55377 0      // 511
+        1459947871852545 117 1982553 48205 115 1941441 55525 0      // 512
+        1459947871853365 118 1978706 47984 112 1933125 58852 0      // 513
+        1459947871854242 126 1985399 50405 120 1935699 56627 0      // 514
+        1459947871855084 125 1990289 50975 119 1936792 53211 0      // 515
+        1459947871856001 125 1994797 51148 119 1937800 49982 0      // 516
+
+        First lines processed in Excel: 
+
+        2016/04/06 13:04:32	7,688	7,581	0,190		7,625	7,423	0,228   // 510
+        
+        2016/04/06 13:04:32	7,625	7,584	0,178		7,438	7,425	0,211   // 511
+        2016/04/06 13:04:32	7,313	7,563	0,184		7,188	7,406	0,212   // 512
+        2016/04/06 13:04:32	7,375	7,548	0,183		7,000	7,374	0,225   // 513
+        2016/04/06 13:04:32	7,875	7,574	0,192		7,500	7,384	0,216   // 514
+        2016/04/06 13:04:32	7,813	7,592	0,194		7,438	7,388	0,203   // 515
+        2016/04/06 13:04:32	7,813	7,610	0,195		7,438	7,392	0,191   // 516
+
+    b) Initialize with t=510 (attack - 2) values. 
+
+        register_write src_ewma 0 1987206
+        register_write src_ewmmd 0 49782
+        register_write dst_ewma 0 1946008
+        register_write dst_ewmmd 0 59783
+
+    c) Replay windows 511-519 to check whether TCAD still works. 
+
+        | Src H=7.625 A=7.584 MD=0.178 | Dst H=7.438 A=7.425 MD=0.211 | Alarm=0 Defcon=0 |  // 511
+        | Src H=7.312 A=7.563 MD=0.184 | Dst H=7.188 A=7.406 MD=0.212 | Alarm=0 Defcon=0 |  // 512
+        | Src H=7.375 A=7.548 MD=0.183 | Dst H=7.000 A=7.374 MD=0.225 | Alarm=0 Defcon=0 |  // 513
+        | Src H=7.875 A=7.574 MD=0.192 | Dst H=7.500 A=7.384 MD=0.216 | Alarm=0 Defcon=0 |  // 514
+        | Src H=7.812 A=7.592 MD=0.194 | Dst H=7.438 A=7.388 MD=0.203 | Alarm=0 Defcon=0 |  // 515
+        | Src H=7.812 A=7.610 MD=0.195 | Dst H=7.438 A=7.392 MD=0.191 | Alarm=0 Defcon=0 |  // 516
+
+    ### 2019/07/29 13:45 So far, so good!!! ###
+    
+    d) We expect that at t=513 defcon will be set to 1.
+    e) We expect that at t=514 packet diversion will begin.  
+
+
+-------------------------------------------------------------------------------
 Commands used to generate the workload for CMP182:
 
     PS D:\Downloads\P4\ddos\datasets\sample> 
-    editcap -r ddos5_00012.pcap ddos5_00012a.pcap 1-262144
-    editcap -r ddos5_00011.pcap ddos5_00011a.pcap 7929857-8192000
-    mergecap -a -w ddos5_a.pcap ddos5_00011a.pcap ddos5_00012a.pcap
+    editcap -r ddos5_00011.pcap ddos5_00011a.pcap 7929857-8192000       [256k]
+    editcap -r ddos5_00012.pcap ddos5_00012a.pcap 1-262144              [256k]
+    mergecap -a -w ddos5_a.pcap ddos5_00011a.pcap ddos5_00012a.pcap     [512k]
 
 
+-------------------------------------------------------------------------------
 Custom Hash Functions in aclapolli-bmv2/targets/simple_switch/simple_switch.cpp:60 
 
     struct h1 {
