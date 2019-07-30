@@ -1,11 +1,11 @@
-register_write ingress.log2_m 0 10
-register_write ingress.training_len 0 2
+register_write ingress.log2_m 0 11
+register_write ingress.training_len 0 1
 register_write ingress.alpha 0 20
-register_write ingress.k 0 28
-register_write src_ewma 0 1987206
-register_write src_ewmmd 0 49782
-register_write dst_ewma 0 1946008
-register_write dst_ewmmd 0 59783
+register_write ingress.k 0 14
+register_write src_ewma 0 2167114
+register_write src_ewmmd 0 42243
+register_write dst_ewma 0 2120406
+register_write dst_ewmmd 0 43866  
 table_clear ingress.ipv4_fib
 table_add ingress.ipv4_fib ingress.forward 0/0 => 2
 table_clear ingress.ipv4_dpi_fib
