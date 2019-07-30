@@ -238,9 +238,36 @@ Experiment With Small Windows Without [then With] Pre-Training
 
     ### 2019/07/29 13:45 So far, so good!!! ###
     
-    d) We expect that at t=513 defcon will be set to 1.
-    e) We expect that at t=514 packet diversion will begin.  
+    Next steps: tune tcad for 2k-sized windows. 
 
+    ./ddosd-cpp/bin/ee -c ./ddosd-cpp/example/ddos.json ./ddos/datasets/sample/ddos5y.pcap | ./ddosd-cpp/bin/tcad -t 256 -s 0.078125 -k 1.75 | tee ddos5y1.tcad.txt
+
+    1459947871850801	129	2167114	42243	127	2120406	43866	0               // 255
+
+    1459947871852545	129	2162928	42800	127	2117309	43292	0               // 256
+    1459947871854242	133	2164189	40618	127	2114454	42540	0
+    1459947871856001	135	2167911	40875	128	2113102	40462	0
+    1459947871857807	136	2172622	42024	126	2109295	40808	0
+
+    255	2016/04/06 13:04:32	8,063	8,267	0,161	7,938	8,089	0,167       // 255
+
+    256	2016/04/06 13:04:32	8,063	8,251	0,163	7,938	8,077	0,165       // 256
+    257	2016/04/06 13:04:32	8,313	8,256	0,155	7,938	8,066	0,162
+    258	2016/04/06 13:04:32	8,438	8,270	0,156	8,000	8,061	0,154
+    259	2016/04/06 13:04:32	8,500	8,288	0,160	7,875	8,046	0,156
+
+    register_write src_ewma 0 2167114
+    register_write src_ewmmd 0 42243
+    register_write dst_ewma 0 2120406
+    register_write dst_ewmmd 0 43866  
+
+    | Src H=8.062 A=8.251 MD=0.163 | Dst H=7.938 A=8.077 MD=0.165 | Alarm=0 Defcon=0 |  // 256
+    | Src H=8.312 A=8.256 MD=0.155 | Dst H=7.938 A=8.066 MD=0.162 | Alarm=0 Defcon=0 |
+    | Src H=8.438 A=8.270 MD=0.156 | Dst H=8.000 A=8.061 MD=0.154 | Alarm=0 Defcon=0 |
+    | Src H=8.500 A=8.288 MD=0.160 | Dst H=7.875 A=8.046 MD=0.156 | Alarm=0 Defcon=0 |
+    | Src H=8.750 A=8.288 MD=0.160 | Dst H=8.250 A=8.046 MD=0.156 | Alarm=1 Defcon=1 |
+
+    OK! Tuning is OK! 
 
 -------------------------------------------------------------------------------
 Commands used to generate the workload for CMP182:
