@@ -338,22 +338,26 @@ Comparing P4 and TCAD Traces
         Parameters:
 
             Z[1] Run:
-                w:           960
-                k:           4.0
+                w:      960
+                k:      4.0
 
             Z[2] Run:
-                w:          960
-                k:          2.25
+                w:      960
+                k:      2.25
 
             Z[3] Run:
-                w:          960
-                k:          From 2.125 down to 0.750.  
+                w:      960
+                k:      From 2.125 down to 0.750.  
+
+            Z[4] Run:
+                w:      960
+                k:      0.75
 
 
-                              Emulation           P4               
-            Window Size:         m=2^11       m=2^11
-            Training Length:    256 OWs        1 OWs
-            Attack Length:     1024 OWs     1024 OWs  
+                              Emulation           P4        Z[4] Run             
+            Window Size:         m=2^11       m=2^11          m=2^11
+            Training Length:    256 OWs        1 OWs         256 OWs
+            Attack Length:     1024 OWs     1024 OWs        1024 OWs 
 
             Training lengths: 
                 256 OWs to obtain MAs and MMDs for pre-training. 
@@ -361,9 +365,9 @@ Comparing P4 and TCAD Traces
 
         Dataset: 
 
-            OWs 1-256:      Volume 11, last 512k packets.
-            OWs 256:        Volume 11, last 2048 packets. 
-            OWs 257-1280:   Volume 12, first 2^11*2^10 = 2^21 = 2048k packets
+            Training:       OWs 1-256:      Volume 11, last 512k packets.
+            Pre-Training:   OWs 256:        Volume 11, last 2048 packets. 
+            Attack:         OWs 257-1280:   Volume 12, first 2^11*2^10 = 2^21 = 2048k packets
 
        DS Generation: 
 
@@ -400,6 +404,9 @@ Comparing P4 and TCAD Traces
 
                 Z[3] Runs: 
 
+                ./ddosd-cpp/bin/ee -c ./ddosd-cpp/example/ddos5z1.json ./ddos/datasets/sample/ddos5y0.pcap | ./ddosd-cpp/bin/tcad -t 256 -s 0.078125 -k <val> | tee ddos5z3.tcad.txt
+
+                k=2.250 => TPR = 0,4287109375
                 k=2.125 => TPR = 0,5634765625
                 k=2.000 => TPR = 0,7568359375
                 k=1.875 => TPR = 0,7666015625
@@ -412,6 +419,33 @@ Comparing P4 and TCAD Traces
                 k=1.000 => TPR = 0,939453125
                 k=0.875 => TPR = 0,9560546875
                 k=0.750 => TPR = 0,994140625
+
+                Z[4] Run: 
+
+                ./ddosd-cpp/bin/ee -c ./ddosd-cpp/example/ddos5z1.json ./ddos/datasets/sample/ddos5y0.pcap | ./ddosd-cpp/bin/tcad -t 128 -s 0.078125 -k <val> | tee ddos5z4.tcad.txt
+
+                Training:   128
+                Negatives:  128
+                Positives: 1024
+                
+                k       TPR         FPR
+                0.750   1           0,8515625
+                0.875   1           0,8046875
+                1.000   1           0,7734375
+                1.125   1           0,7656250
+                1.250   1           0,7109375
+                1.500   1           0,59375
+                1.625   0,9921875   0,5078125   <<< 
+                1.750   0,8291015   0,453125
+                1.875   0,8935546   0,3671875
+                2.000   0,7626953   0,2890625
+                2.125   0,5908203   0,25
+                2.250   0,5166015   0,1640625  
+
+                     
+
+
+
 
             b) Initialize with t=255 (t[a]-1) values. 
 
@@ -451,7 +485,7 @@ Comparing P4 and TCAD Traces
                 We notice that exceedingly high values for k render the detection mechanism completely useless (low TPR and FPR). 
                 In the original work, the value k=4.0 for the sensitivity parameter was empirically found to be optimal; in fact, k is set to 4.0 during the accuracy tests. 
                 Hypothesis: 
-                This coefficient is used to scale ABSOLUTE mean deviations, whose values are directly proportional to the MEAN entropy observable in a given OW, i.e., log2(m)-1.
+                The k coefficient is used to scale ABSOLUTE mean deviations, whose values are directly proportional to the MEAN entropy observable in a given OW, i.e., log2(m)-1.
                 Given that the accuracy verification uses the factor log2(m)=18, it follows that kr = k / [log2(m)-1] = 4/17 is the optimal RELATIVE scaling coefficient. 
                 If we change the value of log2(m) from 18 to 11, as we do in Exp. Z[1], we should also ensure that k = [log2(m)-1] * kr, i.e., k = 10*4/17. 
                 Since 10*4/17 cannot be accurately represented in 29.3-bit fixed-point notation, we must choose a suitable approximation.
@@ -459,7 +493,7 @@ Comparing P4 and TCAD Traces
                 Since the bottom half of the operating zone yields higher TPRs, we choose the first value (k=2.25).     
                 * Next step: set k to 2.25 and observe the results. 
             Z[2] Run:
-                We have obtained a better TPR: 0,4287109375. 
+                Using k=2.25, we have obtained a better TPR: 0,4287109375. 
                 * Next step: further reduce k and observe the results. 
             Z[3] Runs:
                 We have reached an almost perfect TPR (0,994140625) at k=0.750 (6/8). 
@@ -467,7 +501,12 @@ Comparing P4 and TCAD Traces
                 * Next steps: 
                     Measure FPRs for the k values we have tested.
                     Test P4 TCAD and P4SB3 using k=0.750. 
-
+            Z[4] Runs: 
+                FPR results suggest that operation under log2(m)=11 is too unreliable. 
+                Best results obtained:
+                    k=1.625: TPR=0,9921875 FPR=0,5078125 
+                * Next steps: 
+                    Substantially increase the size of our workloads.
  
 
 -------------------------------------------------------------------------------
