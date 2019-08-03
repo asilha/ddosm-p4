@@ -594,8 +594,6 @@ Comparing P4 and TCAD Traces
                 2.625 0.109375 1.000000 0.046875 0.078125
                 2.500 0.140625 1.000000 0.046875 0.093750
 
-
-
             b) Initialize with t=255 (t[a]-1) values. 
 
                 register_write src_ewma 0 2167114
@@ -666,12 +664,12 @@ Comparing P4 and TCAD Traces
                     Experiment with larger attack proportions.
                     Experiment with larger window sizes.
             Z[5] Runs:
-                I've written a Python script to perform this experiment! 
+                I've written a Python script to perform this experiment and the following ones. 
                 Best results obtained with 2048-packet windows at a 20% attack proportion: 
                     k=2.375: TPR=0.523438 FPR=0.314453
                     k=2.250: TPR=0.894531 FPR=0.376953
                     k=2.125: TPR=0.998047 FPR=0.533203
-                This larger attack proportion does not seem to improve results. 
+                This larger attack proportion does NOT seem to improve results. 
                 * Next steps:
                     Experiment with larger window sizes. 
             Z[6] Runs:
@@ -683,11 +681,13 @@ Comparing P4 and TCAD Traces
             Z[7] Runs:
                 Best result obtained with a 1280-column count-sketch:
                     k=2.500: TPR=0.984375 FPR=0.167969
+                This wider count-sketch seems to reduce the FPR. 
                 * Next steps:
                     Experiment with an 8192-packet windows.
             Z[8] Runs:
                 Best result obtained with an 8192-packet window:
                     k=4.125 TPR=1.000000 FPR=0.007812
+                This larger observation window seems to dramatically reduce the FPR. 
                 * Next steps: 
                     Parameterize the P4 implementation:
                         log2(m)=13 
