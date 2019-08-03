@@ -355,16 +355,19 @@ Comparing P4 and TCAD Traces
 
             Z[5..6] Runs: 
                 w:      960
-                k:      TBD
+                k:      Various
                 a:      0.2 (20% attack proportion)
 
+            Z[7..8] Runs:
+                w:      1280
+                k:      Various
 
-                              Emulation           P4        Z[4] Runs     Z[5] Runs   Z[6] Runs          
-            Window Size:         m=2^11       m=2^11          m=2^11        m=2^11       m=2^12
-            Training:           256 OWs        1 OWs         128 OWs        512 OWs     256 OWs
-            Detection 1:                                     128 OWs        256 OWs     128 OWs
-            Attack:            1024 OWs     1024 OWs        1024 OWs        512 OWs     256 OWs
-            Detection 2:                                                    256 OWs     128 OWs
+                              Emulation           P4        Z[4] Runs     Z[5] Runs     Z[6..7]     Z[8]         
+            Window Size:         m=2^11       m=2^11          m=2^11        m=2^11       m=2^12     m=2^13
+            Training:           256 OWs        1 OWs         128 OWs        512 OWs     256 OWs     128 OWs
+            Detection 1:                                     128 OWs        256 OWs     128 OWs      64 OWs
+            Attack:            1024 OWs     1024 OWs        1024 OWs        512 OWs     256 OWs     128 OWs
+            Detection 2:                                                    256 OWs     128 OWs      64 OWs
 
             Training lengths for Z[1..3]:  
                 256 OWs to obtain MAs and MMDs for pre-training. 
@@ -378,14 +381,14 @@ Comparing P4 and TCAD Traces
                 Pre-Training:   OWs 256:        Volume 11, last 2048 packets. 
                 Attack:         OWs 257-1280:   Volume 12, first 2^11*2^10 = 2^21 = 2048k packets
 
-            For Z[5..6]:
+            For Z[5..8]:
 
                Detection:       1024 * m = 2^10 * 2^11 = 2^21 = 2.097.152 packets. 
 
        DS Generation: 
 
             For Z[1..4]:  Unneeded; we will reuse the workload from Experiment Y. 
-            For Z[5..6]:
+            For Z[5..8]:
 
                 Sources:
                     ddos5_00000_20160406100300.pcap - Volume 00 from the previous experiments, known to contain only legitimate packets.
@@ -520,7 +523,7 @@ Comparing P4 and TCAD Traces
                 2.750 0.093750 0.312500 0.101562 0.097656
                 2.625 0.125000 0.335938 0.109375 0.117188
                 2.500 0.187500 0.339844 0.125000 0.156250
-                2.375 0.312500 1.000000 0.328125 0.320312 <<< It's starting to become good !!! 
+                2.375 0.312500 1.000000 0.328125 0.320312 <<< It's starting to become good.
                 2.250 0.343750 1.000000 0.375000 0.359375
                 2.125 0.367188 1.000000 0.421875 0.394531
                 2.000 0.375000 1.000000 0.554688 0.464844
@@ -535,7 +538,61 @@ Comparing P4 and TCAD Traces
                 0.875 0.796875 1.000000 0.937500 0.867188
                 0.750 0.835938 1.000000 0.937500 0.886719
 
+                Z[7] Runs:
 
+                k     FPR1     TPR      FPR2     FPR
+                4.000 0.007812 0.066406 0.000000 0.003906
+                3.875 0.031250 0.109375 0.000000 0.015625
+                3.750 0.031250 0.109375 0.015625 0.023438
+                3.625 0.031250 0.109375 0.015625 0.023438
+                3.500 0.031250 0.117188 0.015625 0.023438
+                3.375 0.039062 0.117188 0.039062 0.039062
+                3.250 0.046875 0.121094 0.039062 0.042969
+                3.125 0.062500 0.132812 0.046875 0.054688
+                3.000 0.062500 0.152344 0.046875 0.054688
+                2.875 0.085938 0.203125 0.054688 0.070312
+                2.750 0.093750 0.281250 0.062500 0.078125
+                2.625 0.117188 0.335938 0.109375 0.113281
+                2.500 0.195312 0.984375 0.140625 0.167969 <<< This is even better!
+                2.375 0.296875 1.000000 0.453125 0.375000
+                2.250 0.343750 1.000000 0.562500 0.453125
+                2.125 0.367188 1.000000 0.570312 0.468750
+                2.000 0.367188 1.000000 0.609375 0.488281
+                1.875 0.476562 1.000000 0.640625 0.558594
+                1.750 0.484375 1.000000 0.664062 0.574219
+                1.625 0.515625 1.000000 0.773438 0.644531
+                1.500 0.546875 1.000000 0.804688 0.675781
+                1.375 0.562500 1.000000 0.804688 0.683594
+                1.250 0.671875 1.000000 0.820312 0.746094
+                1.125 0.695312 1.000000 0.898438 0.796875
+                1.000 0.726562 1.000000 0.929688 0.828125
+                0.875 0.750000 1.000000 0.867188 0.808594
+                0.750 0.804688 1.000000 0.960938 0.882812
+
+                Z[8] Runs:
+
+                k     FPR1     TPR      FPR2     FPR
+                5.000 0.000000 0.062500 0.000000 0.000000
+                4.875 0.015625 0.062500 0.000000 0.007812
+                4.750 0.015625 0.062500 0.000000 0.007812
+                4.625 0.015625 0.062500 0.000000 0.007812
+                4.500 0.015625 0.085938 0.000000 0.007812
+                4.375 0.015625 0.085938 0.000000 0.007812
+                4.250 0.015625 0.085938 0.000000 0.007812
+                4.125 0.015625 1.000000 0.000000 0.007812 <<< NOW we're talking!
+                4.000 0.015625 1.000000 0.000000 0.007812
+                3.875 0.015625 1.000000 0.000000 0.007812
+                3.750 0.015625 1.000000 0.000000 0.007812
+                3.625 0.015625 1.000000 0.000000 0.007812
+                3.500 0.015625 1.000000 0.000000 0.007812
+                3.375 0.015625 1.000000 0.031250 0.023438
+                3.250 0.015625 1.000000 0.031250 0.023438
+                3.125 0.015625 1.000000 0.031250 0.023438
+                3.000 0.015625 1.000000 0.031250 0.023438
+                2.875 0.015625 1.000000 0.031250 0.023438
+                2.750 0.031250 1.000000 0.031250 0.031250
+                2.625 0.109375 1.000000 0.046875 0.078125
+                2.500 0.140625 1.000000 0.046875 0.093750
 
             b) Initialize with t=255 (t[a]-1) values. 
 
@@ -596,6 +653,7 @@ Comparing P4 and TCAD Traces
             Z[4] Runs: 
                 FPR results suggest that operation under log2(m)=11 is too unreliable. 
                 Best results obtained:
+                    k=1.875: TPR=0,8935546 FPR=0,3671875
                     k=1.625: TPR=0,9921875 FPR=0,5078125 
                 The proportion of attack packets might be too low for the 2048-packet windows we have been using.
                     Entropy calculations depend on the base 2 log of absolute frequencies. 
@@ -603,19 +661,45 @@ Comparing P4 and TCAD Traces
                     The original work uses 2^18-packet windows. 5% of 2^18 results in lg(0.05 * 2^18) = ~ 13.67.      
                     If our insights are on the right path, we should obtain better results with larger windows. 
                 * Next steps: 
-                    Experiment with larger attack proportions or window sizes.
+                    Experiment with larger attack proportions.
+                    Experiment with larger window sizes.
             Z[5] Runs:
-                I've written a Python script to perform this experiment! 
-                Best results obtained: 
+                I've written a Python script to perform this experiment and the following ones. 
+                Best results obtained with 2048-packet windows at a 20% attack proportion: 
                     k=2.375: TPR=0.523438 FPR=0.314453
                     k=2.250: TPR=0.894531 FPR=0.376953
                     k=2.125: TPR=0.998047 FPR=0.533203
-                Larger attack proportions don't seem to improve results. 
+                This larger attack proportion does NOT seem to improve results. 
                 * Next steps:
                     Experiment with larger window sizes. 
             Z[6] Runs:
                 Best results obtained with 4096-packet windows: 
                     k=2.375: TPR=1.000000 FPR=0.320312
+                This larger observation window seems to reduce the FPR. 
+                * Next steps:
+                    Experiment with a wider count-sketch. 
+            Z[7] Runs:
+                Best result obtained with a 1280-column count-sketch:
+                    k=2.500: TPR=0.984375 FPR=0.167969
+                This wider count-sketch seems to reduce the FPR. 
+                * Next steps:
+                    Experiment with an 8192-packet windows.
+            Z[8] Runs:
+                Best result obtained with an 8192-packet window:
+                    k=4.125 TPR=1.000000 FPR=0.007812
+                This larger observation window seems to dramatically reduce the FPR. 
+                * Next steps: 
+                    Parameterize the P4 implementation:
+                        log2(m)=13 
+                        t=128
+                        w=1280 (count-sketch width).
+                        k=4.125 (in 29.3 fixed-point format, k=33)
+                    Re-enable training. 
+                    Replay the ddos5y0.pcap synthetic workload.
+                    Observe the signaling output. 
+                    Compare it to ddos5z8-4.125.tcad.txt.
+                    If it is OK, move back to work on P4SB3. 
+
 
 
 -------------------------------------------------------------------------------
