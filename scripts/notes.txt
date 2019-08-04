@@ -371,21 +371,17 @@ Comparing P4 and TCAD Traces
 
         Datasets: 
 
-            For Z[1..4]:   Reuse the workload from Experiment Y. 
-            For Z[5..8]:
+            For Z[1..4]:    Reuse ddos5y0.pcap - the workload from Experiment Y, with 1.280 OWs with m=2^11 packets each. 
+            For Z[5..8]:    Use trafg to generate a workload with 1.024 OWs with m=2^11 packets each.
 
-               Detection:       1024 * m = 2^10 * 2^11 = 2^21 = 2.097.152 packets. 
-
-       DS Generation: 
-
-            For Z[1..4]:   Reuse the workload from Experiment Y. 
-            For Z[5..8]:
-
+                Size: 1024 * m = 2^10 * 2^11 = 2^21 = 2.097.152 packets. 
+                
                 Sources:
+                
                     ddos5_00000_20160406100300.pcap - Volume 00 from the previous experiments, known to contain only legitimate packets.
                     ddostrace.20070804_141436.pcap - Generated from CAIDA DDoS Attack Traces, as follows: 
-
-                        mergecap -w ddostrace.20070804_141436.pcap .\ddostrace.to-victim.20070804_141436.pcap .\ddostrace.from-victim.20070804_141436.pcap
+                
+                         mergecap -w ddostrace.20070804_141436.pcap .\ddostrace.to-victim.20070804_141436.pcap .\ddostrace.from-victim.20070804_141436.pcap
 
                 Generation:
 
@@ -408,7 +404,7 @@ Comparing P4 and TCAD Traces
                 1459947871856001 135 2167911 40875 128 2113102 40462 0
                 1459947871857807 136 2172622 42024 126 2109295 40808 0
 
-                Human-readable values:
+                Human-readable values (via Excel):
 
                 8,063	8,267	0,161		7,938	8,089	0,167       // 255
                 8,063	8,251	0,163		7,938	8,077	0,165
@@ -425,21 +421,6 @@ Comparing P4 and TCAD Traces
                 [Manual]
 
                 ./ddosd-cpp/bin/ee -c ./ddosd-cpp/example/ddos5z1.json ./ddos/datasets/sample/ddos5y0.pcap | ./ddosd-cpp/bin/tcad -t 256 -s 0.078125 -k <val> | tee ddos5z3.tcad.txt
-
-                i   k       TPR
-                13	0.750	0,994140625
-                12	0.875	0,9560546875
-                11	1.000	0,939453125
-                10	1.125	0,9169921875
-                9	1.250	0,8759765625
-                8	1.375	0,8701171875
-                7	1.500	0,8359375
-                6	1.625	0,7880859375
-                5	1.750	0,7734375
-                4	1.875	0,7666015625
-                3	2.000	0,7568359375
-                2	2.125	0,5634765625
-                1	2.250	0,4287109375
 
                 [Scripted]
 
@@ -477,20 +458,6 @@ Comparing P4 and TCAD Traces
                 [Manual]
 
                 ./ddosd-cpp/bin/ee -c ./ddosd-cpp/example/ddos5z1.json ./ddos/datasets/sample/ddos5y0.pcap | ./ddosd-cpp/bin/tcad -t 128 -s 0.078125 -k <val> | tee ddos5z4.tcad.txt
-
-                i   k       TPR         FPR
-                1	0.750	1	        0,8515625
-                2	0.875	1	        0,8046875
-                3	1.000	1	        0,7734375
-                4	1.125	1	        0,7656250
-                5	1.250	1	        0,7109375
-                6	1.500	1	        0,59375
-                7	1.625	0,9921875	0,5078125
-                8	1.750	0,8291015	0,453125
-                9	1.875	0,8935546	0,3671875    
-                10	2.000	0,7626953	0,2890625   <<< Operationally "sound".
-                11	2.125	0,5908203	0,25
-                12	2.250	0,5166015	0,1640625
 
                 [Scripted]
 
@@ -681,7 +648,8 @@ Comparing P4 and TCAD Traces
 
         Observations
             Z[1] Run: 
-                P4 TCAD still exhibits a remarkably low TPR -- close to zero. This result suggests that the value of the sensitivity coefficient is exceedingly high. 
+                P4 TCAD still exhibits a remarkably low TPR -- close to zero. 
+                This result suggests that the value of the sensitivity coefficient is exceedingly high. 
                 This possiblity is consistent with (i) the curves shown in Figure 5 of the original work and (ii) the results of Experiment Z[0] -- 
                 in which we empirically found that k=1.75 increased both the FPR and the TPR. This prompts us to reason about the value of k.  
                 We notice that exceedingly high values for k render the detection mechanism completely useless (low TPR and FPR). 

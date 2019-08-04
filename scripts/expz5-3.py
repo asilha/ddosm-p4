@@ -49,7 +49,7 @@ for kvalue in kvalues:
             line=f.readline()
 
     tpr=phases[1]["alarms"]/phases[1]["length"]
-    print("{:.3f} {:6f}".format(kvalue, tpr))
+    print("{:.3f}\t{:6f}".format(kvalue, tpr))
 
 
 
