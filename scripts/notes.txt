@@ -330,7 +330,7 @@ Comparing P4 and TCAD Traces
         Notes:
             We have referred to the original work, to try to determine adequate values for k and count sketch width (w).
             Z[1] Run: 
-                k=4.0 appears to be a good start, since this is the value used during the last parts of the evaluation. 
+                k=4.0 appears to be a good starting point, since this is the value used during the last parts of the evaluation. 
                 w=960 serves as a control variable.  
             Z[2] Run: 
                 k=2.375 to account for the reduction in the value of m from 2^18 to 2^11.  
@@ -347,11 +347,11 @@ Comparing P4 and TCAD Traces
 
             Z[3] Runs:
                 w:      960
-                k:      From 2.125 down to 0.750.  
+                k:      Various  
 
             Z[4] Runs:
                 w:      960
-                k:      From 0.75 up to 2.125
+                k:      Various
 
             Z[5..6] Runs: 
                 w:      960
@@ -362,32 +362,23 @@ Comparing P4 and TCAD Traces
                 w:      1280
                 k:      Various
 
-                              Emulation           P4        Z[4] Runs     Z[5] Runs     Z[6..7]     Z[8]         
-            Window Size:         m=2^11       m=2^11          m=2^11        m=2^11       m=2^12     m=2^13
-            Training:           256 OWs        1 OWs         128 OWs        512 OWs     256 OWs     128 OWs
-            Detection 1:                                     128 OWs        256 OWs     128 OWs      64 OWs
-            Attack:            1024 OWs     1024 OWs        1024 OWs        512 OWs     256 OWs     128 OWs
-            Detection 2:                                                    256 OWs     128 OWs      64 OWs
-
-            Training lengths for Z[1..3]:  
-                256 OWs to obtain MAs and MMDs for pre-training. 
-                  1 OWs to assess pre-training. 
+                              Emulation           P4    Z[1..3]    Z[4] Runs     Z[5] Runs     Z[6..7]        Z[8]         
+            Window Size:         m=2^11       m=2^11     m=2^11       m=2^11        m=2^11      m=2^12      m=2^13
+            Training:           256 OWs        1 OWs    256 OWs      128 OWs       512 OWs     256 OWs     128 OWs
+            Detection 1:                                             128 OWs       256 OWs     128 OWs      64 OWs
+            Attack:            1024 OWs     1024 OWs   1024 OWs     1024 OWs       512 OWs     256 OWs     128 OWs
+            Detection 2:                                                           256 OWs     128 OWs      64 OWs
 
         Datasets: 
 
-            For Z[1..4]:
-
-                Training:       OWs 1-256:      Volume 11, last 512k packets.
-                Pre-Training:   OWs 256:        Volume 11, last 2048 packets. 
-                Attack:         OWs 257-1280:   Volume 12, first 2^11*2^10 = 2^21 = 2048k packets
-
+            For Z[1..4]:   Reuse the workload from Experiment Y. 
             For Z[5..8]:
 
                Detection:       1024 * m = 2^10 * 2^11 = 2^21 = 2.097.152 packets. 
 
        DS Generation: 
 
-            For Z[1..4]:  Unneeded; we will reuse the workload from Experiment Y. 
+            For Z[1..4]:   Reuse the workload from Experiment Y. 
             For Z[5..8]:
 
                 Sources:
@@ -396,7 +387,9 @@ Comparing P4 and TCAD Traces
 
                         mergecap -w ddostrace.20070804_141436.pcap .\ddostrace.to-victim.20070804_141436.pcap .\ddostrace.from-victim.20070804_141436.pcap
 
-                trafg -n 2097152 -a 0.2 ddos5_00000_20160406100300.pcap ddostrace.20070804_141436.pcap zed20percent.pcap
+                Generation:
+
+                    trafg -n 2097152 -a 0.2 ddos5_00000_20160406100300.pcap ddostrace.20070804_141436.pcap zed20percent.pcap
 
         Procedure: 
 
@@ -429,6 +422,8 @@ Comparing P4 and TCAD Traces
 
                 Z[3] Runs: 
 
+                [Manual]
+
                 ./ddosd-cpp/bin/ee -c ./ddosd-cpp/example/ddos5z1.json ./ddos/datasets/sample/ddos5y0.pcap | ./ddosd-cpp/bin/tcad -t 256 -s 0.078125 -k <val> | tee ddos5z3.tcad.txt
 
                 i   k       TPR
@@ -446,14 +441,43 @@ Comparing P4 and TCAD Traces
                 2	2.125	0,5634765625
                 1	2.250	0,4287109375
 
+                [Scripted]
+
+                k     TPR
+                4.000 0.024414
+                3.875 0.029297
+                3.750 0.030273
+                3.625 0.035156
+                3.500 0.045898
+                3.375 0.051758
+                3.250 0.062500
+                3.125 0.080078
+                3.000 0.097656
+                2.875 0.120117
+                2.750 0.159180
+                2.625 0.276367
+                2.500 0.304688
+                2.375 0.337891
+                2.250 0.428711
+                2.125 0.563477
+                2.000 0.756836
+                1.875 0.766602
+                1.750 0.773438
+                1.625 0.788086
+                1.500 0.835938
+                1.375 0.870117
+                1.250 0.875977
+                1.125 0.916992
+                1.000 0.939453
+                0.875 0.956055
+                0.750 0.994141
+
                 Z[4] Runs: 
+
+                [Manual]
 
                 ./ddosd-cpp/bin/ee -c ./ddosd-cpp/example/ddos5z1.json ./ddos/datasets/sample/ddos5y0.pcap | ./ddosd-cpp/bin/tcad -t 128 -s 0.078125 -k <val> | tee ddos5z4.tcad.txt
 
-                Training:   128
-                Negatives:  128
-                Positives: 1024
-                
                 i   k       TPR         FPR
                 1	0.750	1	        0,8515625
                 2	0.875	1	        0,8046875
@@ -467,6 +491,37 @@ Comparing P4 and TCAD Traces
                 10	2.000	0,7626953	0,2890625   <<< Operationally "sound".
                 11	2.125	0,5908203	0,25
                 12	2.250	0,5166015	0,1640625
+
+                [Scripted]
+
+                k     TPR      FPR
+                4.000 0.024414 0.007812
+                3.875 0.029297 0.015625
+                3.750 0.030273 0.023438
+                3.625 0.035156 0.031250
+                3.500 0.046875 0.046875
+                3.375 0.051758 0.046875
+                3.250 0.064453 0.046875
+                3.125 0.080078 0.046875
+                3.000 0.107422 0.054688
+                2.875 0.126953 0.062500
+                2.750 0.159180 0.062500
+                2.625 0.288086 0.125000
+                2.500 0.323242 0.125000
+                2.375 0.372070 0.132812
+                2.250 0.516602 0.164062
+                2.125 0.590820 0.250000
+                2.000 0.762695 0.289062 <<< Operationally "sound"...
+                1.875 0.893555 0.367188
+                1.750 0.829102 0.453125
+                1.625 0.992188 0.507812
+                1.500 1.000000 0.593750
+                1.375 1.000000 0.625000
+                1.250 1.000000 0.710938
+                1.125 1.000000 0.765625
+                1.000 1.000000 0.773438
+                0.875 1.000000 0.804688
+                0.750 1.000000 0.851562
 
                 Z[5] Runs: 
 
@@ -647,9 +702,8 @@ Comparing P4 and TCAD Traces
             Z[3] Runs:
                 We have reached an almost perfect TPR (0,994140625) at k=0.750 (6/8). 
                 It appears that the ajustment of k to the size of the window is not exactly as described in the observations for Z[1]. 
-                * Next steps: 
+                * Next step: 
                     Measure FPRs for the k values we have tested.
-                    Test P4 TCAD and P4SB3 using k=0.750. 
             Z[4] Runs: 
                 FPR results suggest that operation under log2(m)=11 is too unreliable. 
                 Best results obtained:
@@ -664,30 +718,30 @@ Comparing P4 and TCAD Traces
                     Experiment with larger attack proportions.
                     Experiment with larger window sizes.
             Z[5] Runs:
-                I've written a Python script to perform this experiment and the following ones. 
+                I've written a Python script to perform this experiment and the following ones!
                 Best results obtained with 2048-packet windows at a 20% attack proportion: 
                     k=2.375: TPR=0.523438 FPR=0.314453
                     k=2.250: TPR=0.894531 FPR=0.376953
                     k=2.125: TPR=0.998047 FPR=0.533203
-                This larger attack proportion does NOT seem to improve results. 
+                This larger attack proportion DOES NOT seem to improve results. 
                 * Next steps:
                     Experiment with larger window sizes. 
             Z[6] Runs:
                 Best results obtained with 4096-packet windows: 
                     k=2.375: TPR=1.000000 FPR=0.320312
-                This larger observation window seems to reduce the FPR. 
+                This larger observation window DOES seem to reduce the FPR. 
                 * Next steps:
                     Experiment with a wider count-sketch. 
             Z[7] Runs:
                 Best result obtained with a 1280-column count-sketch:
                     k=2.500: TPR=0.984375 FPR=0.167969
-                This wider count-sketch seems to reduce the FPR. 
+                This wider count-sketch DOES seem to reduce the FPR. 
                 * Next steps:
                     Experiment with an 8192-packet windows.
             Z[8] Runs:
                 Best result obtained with an 8192-packet window:
                     k=4.125 TPR=1.000000 FPR=0.007812
-                This larger observation window seems to dramatically reduce the FPR. 
+                This larger observation window DOES seem to dramatically reduce the FPR. 
                 * Next steps: 
                     Parameterize the P4 implementation:
                         log2(m)=13 
