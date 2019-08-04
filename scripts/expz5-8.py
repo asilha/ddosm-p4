@@ -2,6 +2,8 @@
 
 import os
 
+expname = "ddos5z8"
+
 t_len = 128
 
 phases = []
@@ -16,26 +18,23 @@ phases.append({"start" : 1+5*t_len/2,   "length" : t_len/2, "alarms" : 0.0})  # 
 
 kvalues = []
 
-#for i in range(32,5,-1):    # This goes from 4.00 down to 0.75
-for i in range(40,32,-1):    # This goes from 5.00 down to 4.125
+for i in range(40,19,-1):    # This goes from 5.00 down to 2.5
     kvalues.append(i/8.0)
 
 paths = {}
 
 paths["ee_bin"] = "/media/p4/ddosd-cpp/bin"
-paths["ee_json"] = "/media/p4/ddosd-cpp/example"
+paths["ee_json"] = "/media/p4/ddosd-p4/scripts"
 paths["ee_pcap"] = "/media/p4/ddos/datasets/zed"
 paths["tcad_bin"]= "/media/p4/ddosd-cpp/bin"
 paths["working_dir"] = "/media/p4"
-
-expname = "ddos5z8"
 
 for kvalue in kvalues:
     filename="{}/{}-{:.3f}.tcad.txt".format(paths["working_dir"],expname,kvalue)
     command="{}/ee -c {}/{}.json {}/zed20percent.pcap | {}/tcad -t {} -s 0.078125 -k {:f} > {}".\
         format(paths["ee_bin"],paths["ee_json"],expname,paths["ee_pcap"],paths["tcad_bin"],t_len,kvalue,filename)
     #print(command)
-    os.system(command)
+    #os.system(command)
     with open(filename) as f:
         for phase in phases:
             phase["alarms"] = 0
