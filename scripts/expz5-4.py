@@ -54,7 +54,7 @@ for kvalue in kvalues:
 
     tpr=phases[2]["alarms"]/phases[2]["length"]
     fpr=phases[1]["alarms"]/phases[1]["length"]
-    print("{:.3f} {:6f} {:6f}".format(kvalue, tpr, fpr))
+    print("{:.3f}\t{:6f}\t{:6f}".format(kvalue, tpr, fpr))
 
 
 
