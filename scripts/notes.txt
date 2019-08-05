@@ -333,7 +333,21 @@ Comparing P4 and TCAD Traces
                 k=4.0 appears to be a good starting point, since this is the value used during the last parts of the evaluation. 
                 w=960 serves as a control variable.  
             Z[2] Run: 
-                k=2.375 to account for the reduction in the value of m from 2^18 to 2^11.  
+                k=2.250 to account for the reduction in the value of m from 2^18 to 2^11.  
+            Z[3] Runs:
+                Iterate using different k-values.
+            Z[4] Runs: 
+                Include estimations for TPR and FPR. 
+            Z[5] Runs: 
+                Introduce a workload with a 20% attack proportion.  
+            Z[6] Runs: 
+                Increase window size to m=2^12. 
+            Z[7] Runs: 
+                Increase count-sketch width from 960 to 1280.
+            Z[8] Runs:  
+                Increase window size to m=2^13. 
+            Z[9] Runs: 
+                Resume tests with the P4 implementation.
 
         Parameters:
 
@@ -345,13 +359,9 @@ Comparing P4 and TCAD Traces
                 w:      960
                 k:      2.25
 
-            Z[3] Runs:
+            Z[3..4] Runs:
                 w:      960
                 k:      Various  
-
-            Z[4] Runs:
-                w:      960
-                k:      Various
 
             Z[5..6] Runs: 
                 w:      960
@@ -362,17 +372,17 @@ Comparing P4 and TCAD Traces
                 w:      1280
                 k:      Various
 
-                              Emulation           P4    Z[1..3]    Z[4] Runs     Z[5] Runs     Z[6..7]        Z[8]         
-            Window Size:         m=2^11       m=2^11     m=2^11       m=2^11        m=2^11      m=2^12      m=2^13
-            Training:           256 OWs        1 OWs    256 OWs      128 OWs       512 OWs     256 OWs     128 OWs
-            Detection 1:                                             128 OWs       256 OWs     128 OWs      64 OWs
-            Attack:            1024 OWs     1024 OWs   1024 OWs     1024 OWs       512 OWs     256 OWs     128 OWs
-            Detection 2:                                                           256 OWs     128 OWs      64 OWs
+                                   P4 Z[1]    Z[1..3]    Z[4] Runs     Z[5] Runs     Z[6..7]        Z[8]         
+            Window Size:            m=2^11     m=2^11       m=2^11        m=2^11      m=2^12      m=2^13
+            Training:                1 OWs    256 OWs      128 OWs       512 OWs     256 OWs     128 OWs
+            Detection 1:                                   128 OWs       256 OWs     128 OWs      64 OWs
+            Attack:               1024 OWs   1024 OWs     1024 OWs       512 OWs     256 OWs     128 OWs
+            Detection 2:                                                 256 OWs     128 OWs      64 OWs
 
         Datasets: 
 
             For Z[1..4]:    Reuse ddos5y0.pcap - the workload from Experiment Y, with 1.280 OWs with m=2^11 packets each. 
-            For Z[5..8]:    Use trafg to generate a workload with 1.024 OWs with m=2^11 packets each.
+            For Z[5..8]:    Generate a workload with 1.024 OWs of m=2^11 packets each.
 
                 Size: 1024 * m = 2^10 * 2^11 = 2^21 = 2.097.152 packets. 
                 
@@ -389,10 +399,7 @@ Comparing P4 and TCAD Traces
 
         Procedure: 
 
-            a) Obtain t=255 (t[a]-2) MAs and MMDs.
-
-                Obtain a TCAD trace.
-                See lines #255-259.
+            a1) Obtain t[a]-2 MAs and MMDs.
 
                 Z[1] Run:
 
@@ -412,9 +419,13 @@ Comparing P4 and TCAD Traces
                 8,438	8,270	0,156		8,000	8,061	0,154
                 8,500	8,288	0,160		7,875	8,046	0,156
 
+            a2) Analyze accuracy under k=2.25.
+
                 Z[2] Run: 
 
                 ./ddosd-cpp/bin/ee -c ./ddosd-cpp/example/ddos5z1.json ./ddos/datasets/sample/ddos5y0.pcap | ./ddosd-cpp/bin/tcad -t 256 -s 0.078125 -k 2.25 | tee ddos5z2.tcad.txt
+
+            a3) Analyze accuracy (TPR) under various k-values. 
 
                 Z[3] Runs: 
 
@@ -453,6 +464,8 @@ Comparing P4 and TCAD Traces
                 0.875 0.956055
                 0.750 0.994141
 
+            a4) Analyze accuracy (TPR+FPR) under various k-values
+
                 Z[4] Runs: 
 
                 [Manual]
@@ -489,6 +502,8 @@ Comparing P4 and TCAD Traces
                 1.000 1.000000 0.773438
                 0.875 1.000000 0.804688
                 0.750 1.000000 0.851562
+
+            a5-8) Analyze accuracy (TPR+FPR) under various k-values, window sizes, and sketch widths.
 
                 Z[5] Runs: 
 
@@ -616,51 +631,49 @@ Comparing P4 and TCAD Traces
                 2.625 0.109375 1.000000 0.046875 0.078125
                 2.500 0.140625 1.000000 0.046875 0.093750
 
-            b) Initialize with t=255 (t[a]-1) values. 
+            b) Initialize with pre-training values. 
+
+                Z[1] Values from OW 255:
 
                 register_write src_ewma 0 2167114
                 register_write src_ewmmd 0 42243
                 register_write dst_ewma 0 2120406
                 register_write dst_ewmmd 0 43866  
 
-            c) Replay windows 256-END to check whether TCAD still works. 
+                Z[9] Values from OW 128:
 
-                Z[1] Run:
+                register_write src_ewma 0 2483928
+                register_write src_ewmmd 0 36592
+                register_write dst_ewma 0 2433309
+                register_write dst_ewmmd 0 32135                  
+
+                Z[9] Other parameters:
+
+                register_write ingress.log2_m 0 13
+                register_write ingress.training_len 0 0
+                register_write ingress.alpha 0 20
+                register_write ingress.k 0 33
+
+            c) Replay post-training OWs to check whether TCAD still works. 
+
+                Z[1] Run: OWs 256-END 
 
                 | Src H=8.062 A=8.251 MD=0.163 | Dst H=7.938 A=8.077 MD=0.165 | Alarm=0 Defcon=0 |
-                | Src H=8.312 A=8.256 MD=0.155 | Dst H=7.938 A=8.066 MD=0.162 | Alarm=0 Defcon=0 |
-                | Src H=8.438 A=8.270 MD=0.156 | Dst H=8.000 A=8.061 MD=0.154 | Alarm=0 Defcon=0 |
-                | Src H=8.500 A=8.288 MD=0.160 | Dst H=7.875 A=8.046 MD=0.156 | Alarm=0 Defcon=0 |
-                | Src H=8.750 A=8.324 MD=0.181 | Dst H=8.250 A=8.062 MD=0.158 | Alarm=0 Defcon=0 |
-                | Src H=8.812 A=8.362 MD=0.202 | Dst H=8.188 A=8.072 MD=0.155 | Alarm=0 Defcon=0 |
-                | Src H=8.938 A=8.407 MD=0.228 | Dst H=8.500 A=8.105 MD=0.174 | Alarm=0 Defcon=0 |
-                | Src H=8.250 A=8.395 MD=0.221 | Dst H=7.875 A=8.087 MD=0.177 | Alarm=0 Defcon=0 |
-                | Src H=8.500 A=8.403 MD=0.212 | Dst H=7.938 A=8.076 MD=0.174 | Alarm=0 Defcon=0 |
-                | Src H=8.562 A=8.415 MD=0.206 | Dst H=8.000 A=8.070 MD=0.165 | Alarm=0 Defcon=0 |
-                | Src H=8.062 A=8.388 MD=0.216 | Dst H=7.625 A=8.035 MD=0.185 | Alarm=0 Defcon=0 |
-                | Src H=8.312 A=8.382 MD=0.204 | Dst H=7.750 A=8.013 MD=0.191 | Alarm=0 Defcon=0 |
-                | Src H=8.750 A=8.411 MD=0.215 | Dst H=8.250 A=8.031 MD=0.193 | Alarm=0 Defcon=0 |
-                | Src H=8.750 A=8.437 MD=0.223 | Dst H=8.188 A=8.044 MD=0.189 | Alarm=0 Defcon=0 |
-                | Src H=8.438 A=8.437 MD=0.205 | Dst H=8.000 A=8.040 MD=0.177 | Alarm=0 Defcon=0 |
-                | Src H=8.375 A=8.432 MD=0.194 | Dst H=7.875 A=8.027 MD=0.175 | Alarm=0 Defcon=0 |
+                  (15 lines with Alarm=0 ommitted.)
                 | Src H=6.938 A=8.432 MD=0.194 | Dst H=6.375 A=8.027 MD=0.175 | Alarm=1 Defcon=1 |
                 | Src H=8.625 A=8.447 MD=0.192 | Dst H=8.125 A=8.035 MD=0.169 | Alarm=0 Defcon=1 |
+
+                Z[9] Run: OWs 129-END
+
+
 
         Observations
             Z[1] Run: 
                 P4 TCAD still exhibits a remarkably low TPR -- close to zero. 
                 This result suggests that the value of the sensitivity coefficient is exceedingly high. 
                 This possiblity is consistent with (i) the curves shown in Figure 5 of the original work and (ii) the results of Experiment Z[0] -- 
-                in which we empirically found that k=1.75 increased both the FPR and the TPR. This prompts us to reason about the value of k.  
-                We notice that exceedingly high values for k render the detection mechanism completely useless (low TPR and FPR). 
+                in which we empirically found that k=1.75 increased both the FPR and the TPR. 
                 In the original work, the value k=4.0 for the sensitivity parameter was empirically found to be optimal; in fact, k is set to 4.0 during the accuracy tests. 
-                Hypothesis: 
-                The k coefficient is used to scale ABSOLUTE mean deviations, whose values are directly proportional to the MEAN entropy observable in a given OW, i.e., log2(m)-1.
-                Given that the accuracy verification uses the factor log2(m)=18, it follows that kr = k / [log2(m)-1] = 4/17 is the optimal RELATIVE scaling coefficient. 
-                If we change the value of log2(m) from 18 to 11, as we do in Exp. Z[1], we should also ensure that k = [log2(m)-1] * kr, i.e., k = 10*4/17. 
-                Since 10*4/17 cannot be accurately represented in 29.3-bit fixed-point notation, we must choose a suitable approximation.
-                Two candidates are (i) floor(2.35 * 8)/8 = 18/8 = 2.25 and (ii) ceiling(2.35 * 8)/8 = 19/8 = 2.375.
-                Since the bottom half of the operating zone yields higher TPRs, we choose the first value (k=2.25).     
                 * Next steps: 
                     Set k to 2.25 and observe the results. 
             Z[2] Run:
@@ -679,8 +692,6 @@ Comparing P4 and TCAD Traces
                     k=1.625: TPR=0,9921875 FPR=0,5078125 
                 The proportion of attack packets might be too low for the 2048-packet windows we have been using.
                     Entropy calculations depend on the base 2 log of absolute frequencies. 
-                    Our experiments use 2^11-packet windows. 5% of 2^11 results in an average of 0.05 * 2^11 attack packets per window, which gives lg(0.05 * 1024) ~ 6.67. 
-                    The original work uses 2^18-packet windows. 5% of 2^18 results in lg(0.05 * 2^18) = ~ 13.67.      
                     If our insights are on the right path, we should obtain better results with larger windows. 
                 * Next steps: 
                     Experiment with larger attack proportions.
@@ -716,11 +727,16 @@ Comparing P4 and TCAD Traces
                         t=128
                         w=1280 (count-sketch width).
                         k=4.125 (in 29.3 fixed-point format, k=33)
-                    Re-enable training. 
-                    Replay the ddos5y0.pcap synthetic workload.
+                    Obtain the MAs and MMDs from ddos5z8-4.125.tcad.txt, OW number 129.
+                    Remove the training part from zed20percent.pcap. 
+                    Replay zed20percent-notraining.pcap to the P4 switch.  
                     Observe the signaling output. 
                     Compare it to ddos5z8-4.125.tcad.txt.
                     If it is OK, move back to work on P4SB3. 
+            Z[9] Run:
+                The mechanism works exactly like the emulation tools do.
+                * Next steps:
+                    Move back to work on P4SB3.   
 
 
 
