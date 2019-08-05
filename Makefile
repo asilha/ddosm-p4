@@ -40,7 +40,7 @@ sniff-stop:
 
 PACKET_LIMIT=2621440
 PACKET_RATE=256
-PCAP_FILE=/media/p4/ddos/datasets/sample/ddos5y1.pcap
+PCAP_FILE=/media/p4/ddos/datasets/zed/zed20percent-notraining.pcap
 
 traffic:
 	tcpreplay --preload-pcap --quiet --limit=$(PACKET_LIMIT) --pps=$(PACKET_RATE) -i veth0 $(PCAP_FILE) 2>&1
