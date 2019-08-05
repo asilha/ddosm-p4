@@ -80,15 +80,15 @@ Comparing P4 and TCAD Traces
             Training:           250 OWs     2 OWs
             Attack:             125 OWs     8 OWs  
 
-            In ddos5x.json: 
+            ddos5x.json: 
                 "window_size": 262144
 
-            Among tcad.cpp command-line parameters:
+            tcad.cpp command-line parameters:
                 -t 250
                 -s 0.078125
                 -k 3.5  
 
-            In control_rules.txt:
+            control_rules.txt:
                 register_write ingress.log2_m 0 18
                 register_write ingress.training_len 0 250
                 register_write ingress.alpha 0 20
@@ -105,8 +105,6 @@ Comparing P4 and TCAD Traces
 
                 We know that the attack begins at t=376 (t[a]). Therefore, we will use: 
 
-        DS Generation:
-
                 OWs 374-375: Volume 11, last 512k = 524288 packets. 
                 OWs 376-383: Volume 12, first 2^3*2^18 = 2^21 = 2048k = 2097152 packets
 
@@ -118,8 +116,7 @@ Comparing P4 and TCAD Traces
 
             a) Obtain t=373 (t[a] - 3) MAs and MMDs.
 
-                Obtain a TCAD trace.
-                See line #373. 
+                Obtain a TCAD trace. See line #373. 
 
                 time ./ddosd-cpp/bin/ee -c ./ddosd-cpp/example/ddos5x.json ./ddos/datasets/synthetic/ddos5.pcap | ./ddosd-cpp/bin/tcad -t 250 -s 0.078125 -k 3.5 | tee ddos5x.tcad.txt
 
@@ -128,7 +125,7 @@ Comparing P4 and TCAD Traces
                 Before detection 1 (t=373)      1459947871374546       187    3061128    7674      184    3009287   10323       0
                 After detection 1 (t=375)       1459947871852540	   186	  3059070	 8339	   183	  3007632	10234	    0
 
-            b) Initialize the P4 pipeline with t=373 (t[a] - 2) MAs and MMDs. 
+            b) Initialize the P4 pipeline with t=373 (t[a] - 3) MAs and MMDs. 
 
                 register_write src_ewma 0 3061128
                 register_write src_ewmmd 0 7674
@@ -158,7 +155,6 @@ Comparing P4 and TCAD Traces
 
         Tools
 
-            Running this experiment required the creation of additional tools: 
             TCAD.xlsm, a spreadsheet with VBA functions to convert TCAD traces to human-readable values. 
             Sniff.py, a Scapy-based packet sniffer which can parse signaling packets and convert these to human-readable values.  
 
@@ -187,20 +183,19 @@ Comparing P4 and TCAD Traces
             OWs 511-512:    Volume 11, last 2048 packets. 
             OWs 513-2560:   Volume 12, first 2^11*2^10 = 2^21 = 2048k packets
 
-        DS Generation (values in brackets: numbers of packets): 
+            DS Generation (values in brackets: numbers of packets): 
 
-            editcap -r ddos5_00011.pcap ddos5_00011y0.pcap 7667713-8192000   [512k]
-            editcap -r ddos5_00011.pcap ddos5_00011y1.pcap 8189953-8192000   [2k]
-            editcap -r ddos5_00012.pcap ddos5_00012y.pcap 1-2097152         [2048k]
-            mergecap -a -w ddos5y0.pcap ddos5_00011y0.pcap ddos5_00012y.pcap [2560k]
-            mergecap -a -w ddos5y1.pcap ddos5_00011y1.pcap ddos5_00012y.pcap [2050k]
+                editcap -r ddos5_00011.pcap ddos5_00011y0.pcap 7667713-8192000   [512k]
+                editcap -r ddos5_00011.pcap ddos5_00011y1.pcap 8189953-8192000   [2k]
+                editcap -r ddos5_00012.pcap ddos5_00012y.pcap 1-2097152          [2048k]
+                mergecap -a -w ddos5y0.pcap ddos5_00011y0.pcap ddos5_00012y.pcap [2560k]
+                mergecap -a -w ddos5y1.pcap ddos5_00011y1.pcap ddos5_00012y.pcap [2050k]
 
         Procedure
 
             a) Obtain t=510 (t[a]-3) MAs and MMDs.
 
-                Obtain a TCAD trace.
-                See lines #510-516.
+                Obtain a TCAD trace. See lines #510-516.
 
                 ./ddosd-cpp/bin/ee -c ./ddosd-cpp/example/ddos5y.json ./ddos/datasets/sample/ddos5y0.pcap | ./ddosd-cpp/bin/tcad -t 512 -s 0.078125 -k 3.5 | tee ddos5y.tcad.txt
 
@@ -212,7 +207,7 @@ Comparing P4 and TCAD Traces
                 1459947871855084 125 1990289 50975 119 1936792 53211 0      // 515
                 1459947871856001 125 1994797 51148 119 1937800 49982 0      // 516
 
-                Lines #510-516 processed in Excel: 
+                Excel: 
 
                 2016/04/06 13:04:32	7,688	7,581	0,190		7,625	7,423	0,228   // 510 
                 2016/04/06 13:04:32	7,625	7,584	0,178		7,438	7,425	0,211   // 511  
@@ -241,7 +236,7 @@ Comparing P4 and TCAD Traces
         Observations
             
             2019/07/29 13:45 
-            P4-based and emulation-based Entropy and TCAD values are equivalent! So far, so good!!!
+            P4-based and emulation-based Entropy and TCAD values are equivalent! So far, so good!
             However, TCAD accuracy was TERRIBLE. 
                 We will attempt to improve it by using 2k-sized windows. 
                 We will reuse our workload, whose beginning contains exactly 2k non-malicious packets. 
@@ -250,7 +245,7 @@ Comparing P4 and TCAD Traces
     Experiment Z: P4 Trial Run With 2048-Packet Windows Without [then With] Pre-Training
     
         Objective:
-            To obtain higher TCAD accuracy, as compared to Experiment X results. 
+            To obtain higher TCAD accuracy, as compared to Experiment Y results. 
 
         Parameters:
 
@@ -270,7 +265,7 @@ Comparing P4 and TCAD Traces
             OWs 256:        Volume 11, last 2048 packets. 
             OWs 257-1280:   Volume 12, first 2^11*2^10 = 2^21 = 2048k packets
 
-        DS Generation: 
+            DS Generation: 
 
             Unneeded; we will reuse the workload from Experiment Y. 
 
@@ -278,8 +273,7 @@ Comparing P4 and TCAD Traces
 
             a) Obtain t=255 (t[a]-2) MAs and MMDs.
 
-                Obtain a TCAD trace.
-                See lines #255-259.
+                Obtain a TCAD trace. See lines #255-259.
 
                 ./ddosd-cpp/bin/ee -c ./ddosd-cpp/example/ddos5z.json ./ddos/datasets/sample/ddos5y0.pcap | ./ddosd-cpp/bin/tcad -t 256 -s 0.078125 -k 1.75 | tee ddos5z.tcad.txt
 
@@ -315,11 +309,11 @@ Comparing P4 and TCAD Traces
         Observations
 
                 Tuning _seems_ OK.
-                    However, we had to _half_ the value of the sensitivity coefficient to ensure DDoS attack detection.
-                        This is an extreme measure which we will have to revisit. 
-                        Next steps:
-                            Increase the sensitivity coefficient. 
-                            Increase the count sketch width.
+                However, we had to _half_ the value of the sensitivity coefficient to ensure DDoS attack detection.
+                    This is an extreme measure which we will have to revisit. 
+                    Next steps:
+                        Increase the sensitivity coefficient. 
+                        Increase the count sketch width.
 
     --------------------------------------------------------------------------------------------
     Experiments Z[1..n]: P4 Trial Runs With 2048-Packet Windows Without [then With] Pre-Training
@@ -327,57 +321,44 @@ Comparing P4 and TCAD Traces
         Objective:
             To improve TCAD accuracy, as compared to experiments Y and Z. 
 
-        Notes:
-            We have referred to the original work, to try to determine adequate values for k and count sketch width (w).
-            Z[1] Run: 
-                k=4.0 appears to be a good starting point, since this is the value used during the last parts of the evaluation. 
-                w=960 serves as a control variable.  
-            Z[2] Run: 
-                k=2.250 to account for the reduction in the value of m from 2^18 to 2^11.  
-            Z[3] Runs:
-                Iterate using different k-values.
-            Z[4] Runs: 
-                Include estimations for TPR and FPR. 
-            Z[5] Runs: 
-                Introduce a workload with a 20% attack proportion.  
-            Z[6] Runs: 
-                Increase window size to m=2^12. 
-            Z[7] Runs: 
-                Increase count-sketch width from 960 to 1280.
-            Z[8] Runs:  
-                Increase window size to m=2^13. 
-            Z[9] Runs: 
-                Resume tests with the P4 implementation.
-
         Parameters:
 
             Z[1] Run:
-                w:      960
-                k:      4.0
+                We have referred to the original work, to try to determine adequate values for k and count sketch width (w).
+                w:      976     Control
+                k:      4.0     This is the value used during the last parts of the evaluation. 
 
             Z[2] Run:
-                w:      960
-                k:      2.25
+                k:      2.25    To account for the reduction in the value of m from 2^18 to 2^11.  
 
-            Z[3..4] Runs:
-                w:      960
-                k:      Various  
+            Z[3] Runs:
+                k:              Iterate using different k-values.
 
-            Z[5..6] Runs: 
-                w:      960
-                k:      Various
-                a:      0.2 (20% attack proportion)
+            Z[3] Runs:
+                No change, but we include estimations for TPR and FPR.                 
 
-            Z[7..8] Runs:
-                w:      1280
-                k:      Various
+            Z[5] Runs: 
+                a:      0.2     Introduce a workload with a 20% attack proportion.  
+
+            Z[6] Runs: 
+                m:      2^12    Increase window size to m=2^12. 
+
+            Z[7] Runs:
+                w:      1280    Increase count-sketch width from 960 to 1280.
+
+            Z[8] Runs:
+                m:      2^13    Increase window size to m=2^13.
+
+            Z[9]
+                Resume tests with the P4 implementation.
+
 
                                    P4 Z[1]    Z[1..3]    Z[4] Runs     Z[5] Runs     Z[6..7]        Z[8]         
             Window Size:            m=2^11     m=2^11       m=2^11        m=2^11      m=2^12      m=2^13
             Training:                1 OWs    256 OWs      128 OWs       512 OWs     256 OWs     128 OWs
-            Detection 1:                                   128 OWs       256 OWs     128 OWs      64 OWs
-            Attack:               1024 OWs   1024 OWs     1024 OWs       512 OWs     256 OWs     128 OWs
-            Detection 2:                                                 256 OWs     128 OWs      64 OWs
+            Pre-Attack:                                    128 OWs       256 OWs     128 OWs      64 OWs
+            Under Attack:         1024 OWs   1024 OWs     1024 OWs       512 OWs     256 OWs     128 OWs
+            Post-Attack:                                                 256 OWs     128 OWs      64 OWs
 
         Datasets: 
 
@@ -411,8 +392,9 @@ Comparing P4 and TCAD Traces
                 1459947871856001 135 2167911 40875 128 2113102 40462 0
                 1459947871857807 136 2172622 42024 126 2109295 40808 0
 
-                Human-readable values (via Excel):
+                Excel: 
 
+                SrcEnt  SrcMA   SrcMMD      DstEnt  DstMA   DstMMD
                 8,063	8,267	0,161		7,938	8,089	0,167       // 255
                 8,063	8,251	0,163		7,938	8,077	0,165
                 8,313	8,256	0,155		7,938	8,066	0,162
@@ -631,7 +613,7 @@ Comparing P4 and TCAD Traces
                 2.625 0.109375 1.000000 0.046875 0.078125
                 2.500 0.140625 1.000000 0.046875 0.093750
 
-            b) Initialize with pre-training values. 
+            b) Initialize P4 data plane with post-training values. 
 
                 Z[1] Values from OW 255:
 
