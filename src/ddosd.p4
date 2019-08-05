@@ -3,7 +3,7 @@
 #include "parser.p4"
 
 #define ALARM_SESSION 250
-#define CS_WIDTH 976
+#define CS_WIDTH 1280
 
 control verifyChecksum(inout headers hdr, inout metadata meta) {
     apply {
@@ -497,10 +497,10 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                 dst_ewmmd.read(meta.dst_ewmmd, 0);
 
                 if (current_ow == 0) {                              // In the first window... [changed to 0th window, which will never happen.]
-                    // meta.src_ewma = meta.src_entropy << 14;      // Initialize averages with the first estimated entropies. Averages have 18 fractional bits. 
-                    // meta.src_ewmmd = 0;
-                    // meta.dst_ewma = meta.dst_entropy << 14;
-                    // meta.dst_ewmmd = 0;
+                    meta.src_ewma = meta.src_entropy << 14;      // Initialize averages with the first estimated entropies. Averages have 18 fractional bits. 
+                    meta.src_ewmmd = 0;
+                    meta.dst_ewma = meta.dst_entropy << 14;
+                    meta.dst_ewmmd = 0;
                  } else {                                            // Beginning with the second window... 
                     meta.alarm = 0;                                  // By default, there's no alarm. 
 
