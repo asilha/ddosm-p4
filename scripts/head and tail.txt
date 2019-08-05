@@ -1,0 +1,15 @@
+tail -n +257 ddos5z4.tcad.txt | grep "1$" | wc -l
+head -n 256 ddos5z4.tcad.txt | grep "1$" | wc -l
+
+
+From 513 to 768
+tail -n +513 ddos5z5-2.250.tcad.txt | head -n 256
+
+From 769 to 1024
+tail -n +769 ddos5z5-2.250.tcad.txt | head -n 256
+
+From 1025 to 1280
+tail -n +1025 ddos5z5-2.250.tcad.txt | head -n 512
+
+From 1281 to 1536
+tail -n +1281 ddos5z5-2.250.tcad.txt | head -n 256
