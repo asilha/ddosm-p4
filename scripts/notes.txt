@@ -53,6 +53,8 @@ Synthetic Workload
             Detection 2:  65.536.000    13:04:31.852545 13:05:31.138658     8/24   12..19
             Detection 3:  32.768.000    13:05:31.138659 13:06:02.808079     4/24   20..23
 
+            Files saved in D:\Downloads\P4\ddos\datasets\aclapolli\synthetic\ddos5
+
         Window counts using m=2^18 packets per window.
 
             Phase       Window Count    Start           End                Volume  Offset
@@ -118,7 +120,8 @@ Comparing P4 and TCAD Traces
 
                 Obtain a TCAD trace. See line #373. 
 
-                time ./ddosd-cpp/bin/ee -c ./ddosd-cpp/example/ddos5x.json ./ddos/datasets/synthetic/ddos5.pcap | ./ddosd-cpp/bin/tcad -t 250 -s 0.078125 -k 3.5 | tee ddos5x.tcad.txt
+                ./ddosd-cpp/bin/ee -c ./ddosd-p4/scripts/ddos5x.json ./ddos/datasets/aclapolli/synthetic/ddos5.pcap \
+                                    | ./ddosd-cpp/bin/tcad -t 250 -s 0.078125 -k 3.5 | tee ddos5x.tcad.txt
 
                 Phase                           Time	            SrcEnt	    SrcMA   SrcMD   DstEnt	    DstMA	DstMD	Alarm
                 After trainining (t=250)        1459947840087230	   186    3056132    9672	   183    3000850    8007	    0
@@ -191,13 +194,16 @@ Comparing P4 and TCAD Traces
                 mergecap -a -w ddos5y0.pcap ddos5_00011y0.pcap ddos5_00012y.pcap [2560k]
                 mergecap -a -w ddos5y1.pcap ddos5_00011y1.pcap ddos5_00012y.pcap [2050k]
 
+                Files saved in D:\Downloads\P4\ddos\datasets\xyz 
+
         Procedure
 
             a) Obtain t=510 (t[a]-3) MAs and MMDs.
 
                 Obtain a TCAD trace. See lines #510-516.
 
-                ./ddosd-cpp/bin/ee -c ./ddosd-cpp/example/ddos5y.json ./ddos/datasets/sample/ddos5y0.pcap | ./ddosd-cpp/bin/tcad -t 512 -s 0.078125 -k 3.5 | tee ddos5y.tcad.txt
+                ./ddosd-cpp/bin/ee -c ./ddosd-p4/scripts/ddos5y.json ./ddos/datasets/xyz/ddos5y0.pcap \
+                                    | ./ddosd-cpp/bin/tcad -t 512 -s 0.078125 -k 3.5 | tee ddos5y.tcad.txt
 
                 1459947871850801 123 1987206 49782 122 1946008 59783 0      // 510 - initialize with these. 
                 1459947871851689 122 1988115 46730 119 1946296 55377 0      // 511 - start replaying here. 
@@ -275,7 +281,8 @@ Comparing P4 and TCAD Traces
 
                 Obtain a TCAD trace. See lines #255-259.
 
-                ./ddosd-cpp/bin/ee -c ./ddosd-cpp/example/ddos5z.json ./ddos/datasets/sample/ddos5y0.pcap | ./ddosd-cpp/bin/tcad -t 256 -s 0.078125 -k 1.75 | tee ddos5z.tcad.txt
+                ./ddosd-cpp/bin/ee -c ./ddosd-p4/scripts/ddos5z.json ./ddos/datasets/xyz/ddos5y0.pcap \
+                                    | ./ddosd-cpp/bin/tcad -t 256 -s 0.078125 -k 1.75 | tee ddos5z.tcad.txt
 
                 1459947871850801	129	2167114	42243	127	2120406	43866	0               // 255
                 1459947871852545	129	2162928	42800	127	2117309	43292	0               // 256
@@ -353,7 +360,7 @@ Comparing P4 and TCAD Traces
                 Resume tests with the P4 implementation.
 
 
-                                   P4 Z[1]    Z[1..3]    Z[4] Runs     Z[5] Runs     Z[6..7]        Z[8]         
+                                   P4 Z[1]    Z[1..3]    Z[4] Runs     Z[5] Runs     Z[6..7]    Z[8..10]         
             Window Size:            m=2^11     m=2^11       m=2^11        m=2^11      m=2^12      m=2^13
             Training:                1 OWs    256 OWs      128 OWs       512 OWs     256 OWs     128 OWs
             Pre-Attack:                                    128 OWs       256 OWs     128 OWs      64 OWs
@@ -362,8 +369,8 @@ Comparing P4 and TCAD Traces
 
         Datasets: 
 
-            For Z[1..4]:    Reuse ddos5y0.pcap - the workload from Experiment Y, with 1.280 OWs with m=2^11 packets each. 
-            For Z[5..8]:    Generate a workload with 1.024 OWs of m=2^11 packets each.
+            Z[1..4]:    Reuse ddos5y0.pcap - the workload from Experiment Y, with 1.280 OWs with m=2^11 packets each. 
+            Z[5..8]:    Generate a workload with 1.024 OWs of m=2^11 packets each.
 
                 Size: 1024 * m = 2^10 * 2^11 = 2^21 = 2.097.152 packets. 
                 
@@ -372,19 +379,32 @@ Comparing P4 and TCAD Traces
                     ddos5_00000_20160406100300.pcap - Volume 00 from the previous experiments, known to contain only legitimate packets.
                     ddostrace.20070804_141436.pcap - Generated from CAIDA DDoS Attack Traces, as follows: 
                 
-                         mergecap -w ddostrace.20070804_141436.pcap .\ddostrace.to-victim.20070804_141436.pcap .\ddostrace.from-victim.20070804_141436.pcap
+                        mergecap -w ddostrace.20070804_141436.pcap .\ddostrace.to-victim.20070804_141436.pcap .\ddostrace.from-victim.20070804_141436.pcap
 
                 Generation:
 
                     trafg -n 2097152 -a 0.2 ddos5_00000_20160406100300.pcap ddostrace.20070804_141436.pcap zed20percent.pcap
 
+                        File saved in D:\Downloads\P4\ddos\datasets\zed
+
+            Z[9]:       Remove the training part from zed20percent.pcap (beginning at t=129)
+
+                    editcap -r .\zed20percent.pcap .\zed20percent-notraining.pcap 1048577-3145728
+
+            Z[10]:      Remove training part and 60 pre-attack windows from zed20percent.pcap (beginning at t=189).
+
+                    editcap -r .\zed20percent.pcap .\zed20percent-fast.pcap 1540097-3145728
+
+
+
         Procedure: 
 
             a1) Obtain t[a]-2 MAs and MMDs.
 
-                Z[1] Run:
+                Z[1]:
 
-                ./ddosd-cpp/bin/ee -c ./ddosd-cpp/example/ddos5z1.json ./ddos/datasets/sample/ddos5y0.pcap | ./ddosd-cpp/bin/tcad -t 256 -s 0.078125 -k 4.0 | tee ddos5z1.tcad.txt
+                ./ddosd-cpp/bin/ee -c ./ddosd-p4/scripts/ddos5z1.json ./ddos/datasets/xyz/ddos5y0.pcap \
+                                    | ./ddosd-cpp/bin/tcad -t 256 -s 0.078125 -k 4.0 | tee ddos5z1.tcad.txt
 
                 1459947871850801 129 2167114 42243 127 2120406 43866 0  // 255
                 1459947871852545 129 2162928 42800 127 2117309 43292 0
@@ -403,17 +423,19 @@ Comparing P4 and TCAD Traces
 
             a2) Analyze accuracy under k=2.25.
 
-                Z[2] Run: 
+                Z[2]: 
 
-                ./ddosd-cpp/bin/ee -c ./ddosd-cpp/example/ddos5z1.json ./ddos/datasets/sample/ddos5y0.pcap | ./ddosd-cpp/bin/tcad -t 256 -s 0.078125 -k 2.25 | tee ddos5z2.tcad.txt
+                ./ddosd-cpp/bin/ee -c ./ddosd-p4/scripts/ddos5z1.json ./ddos/datasets/xyz/ddos5y0.pcap \
+                                    | ./ddosd-cpp/bin/tcad -t 256 -s 0.078125 -k 2.25 | tee ddos5z2.tcad.txt
 
             a3) Analyze accuracy (TPR) under various k-values. 
 
-                Z[3] Runs: 
+                Z[3]: 
 
                 [Manual]
 
-                ./ddosd-cpp/bin/ee -c ./ddosd-cpp/example/ddos5z1.json ./ddos/datasets/sample/ddos5y0.pcap | ./ddosd-cpp/bin/tcad -t 256 -s 0.078125 -k <val> | tee ddos5z3.tcad.txt
+                ./ddosd-cpp/bin/ee -c ./ddosd-p4/scripts/ddos5z1.json ./ddos/datasets/xyz/ddos5y0.pcap \
+                                    | ./ddosd-cpp/bin/tcad -t 256 -s 0.078125 -k <val> | tee ddos5z3.tcad.txt
 
                 [Scripted]
 
@@ -448,11 +470,12 @@ Comparing P4 and TCAD Traces
 
             a4) Analyze accuracy (TPR+FPR) under various k-values
 
-                Z[4] Runs: 
+                Z[4]: 
 
                 [Manual]
 
-                ./ddosd-cpp/bin/ee -c ./ddosd-cpp/example/ddos5z1.json ./ddos/datasets/sample/ddos5y0.pcap | ./ddosd-cpp/bin/tcad -t 128 -s 0.078125 -k <val> | tee ddos5z4.tcad.txt
+                ./ddosd-cpp/bin/ee -c ./ddosd-p4/scripts/ddos5z1.json ./ddos/datasets/xyz/ddos5y0.pcap \
+                                    | ./ddosd-cpp/bin/tcad -t 128 -s 0.078125 -k <val> | tee ddos5z4.tcad.txt
 
                 [Scripted]
 
@@ -487,7 +510,7 @@ Comparing P4 and TCAD Traces
 
             a5-8) Analyze accuracy (TPR+FPR) under various k-values, window sizes, and sketch widths.
 
-                Z[5] Runs: 
+                Z[5]: 
 
                 k     FPR1     TPR      FPR2     FPR
                 5.000 0.000000 0.007812 0.003906 0.001953
@@ -512,7 +535,7 @@ Comparing P4 and TCAD Traces
                 2.625 0.214844 0.328125 0.167969 0.191406
                 2.500 0.316406 0.478516 0.191406 0.253906
                 2.375 0.363281 0.523438 0.265625 0.314453
-                2.250 0.390625 0.894531 0.363281 0.376953 <<< Best
+                2.250 0.390625 0.894531 0.363281 0.376953
                 2.125 0.496094 0.998047 0.570312 0.533203
                 2.000 0.531250 1.000000 0.652344 0.591797
                 1.875 0.597656 1.000000 0.785156 0.691406
@@ -526,7 +549,7 @@ Comparing P4 and TCAD Traces
                 0.875 0.843750 1.000000 0.941406 0.892578
                 0.750 0.855469 1.000000 0.953125 0.904297
 
-                Z[6] Runs:
+                Z[6]:
 
                 k     FPR1     TPR      FPR2     FPR
                 4.000 0.007812 0.070312 0.007812 0.007812
@@ -557,7 +580,7 @@ Comparing P4 and TCAD Traces
                 0.875 0.796875 1.000000 0.937500 0.867188
                 0.750 0.835938 1.000000 0.937500 0.886719
 
-                Z[7] Runs:
+                Z[7]:
 
                 k     FPR1     TPR      FPR2     FPR
                 4.000 0.007812 0.066406 0.000000 0.003906
@@ -588,7 +611,7 @@ Comparing P4 and TCAD Traces
                 0.875 0.750000 1.000000 0.867188 0.808594
                 0.750 0.804688 1.000000 0.960938 0.882812
 
-                Z[8] Runs:
+                Z[8]:
 
                 k     FPR1     TPR      FPR2     FPR
                 5.000 0.000000 0.062500 0.000000 0.000000
@@ -617,35 +640,45 @@ Comparing P4 and TCAD Traces
 
                 Z[1] Values from OW 255:
 
-                register_write src_ewma 0 2167114
-                register_write src_ewmmd 0 42243
-                register_write dst_ewma 0 2120406
-                register_write dst_ewmmd 0 43866  
+                    register_write src_ewma 0 2167114
+                    register_write src_ewmmd 0 42243
+                    register_write dst_ewma 0 2120406
+                    register_write dst_ewmmd 0 43866  
 
                 Z[9] Values from OW 128:
 
-                register_write src_ewma 0 2483928
-                register_write src_ewmmd 0 36592
-                register_write dst_ewma 0 2433309
-                register_write dst_ewmmd 0 32135                  
+                    register_write src_ewma 0 2483928
+                    register_write src_ewmmd 0 36592
+                    register_write dst_ewma 0 2433309
+                    register_write dst_ewmmd 0 32135                  
 
-                Z[9] Other parameters:
+                    Other parameters:
 
-                register_write ingress.log2_m 0 13
-                register_write ingress.training_len 0 0
-                register_write ingress.alpha 0 20
-                register_write ingress.k 0 33
+                    register_write ingress.log2_m 0 13
+                    register_write ingress.training_len 0 0
+                    register_write ingress.alpha 0 20
+                    register_write ingress.k 0 33
+
+                Z[10] Values from OW 188:
+
+                    register_write src_ewma 0 2500001
+                    register_write src_ewmmd 0 38953
+                    register_write dst_ewma 0 2452881
+                    register_write dst_ewmmd 0 36773                  
+
 
             c) Replay post-training OWs to check whether TCAD still works. 
 
-                Z[1] Run: OWs 256-END 
+                Z[1]  OWs 256-END 
 
                 | Src H=8.062 A=8.251 MD=0.163 | Dst H=7.938 A=8.077 MD=0.165 | Alarm=0 Defcon=0 |
                   (15 lines with Alarm=0 ommitted.)
                 | Src H=6.938 A=8.432 MD=0.194 | Dst H=6.375 A=8.027 MD=0.175 | Alarm=1 Defcon=1 |
                 | Src H=8.625 A=8.447 MD=0.192 | Dst H=8.125 A=8.035 MD=0.169 | Alarm=0 Defcon=1 |
 
-                Z[9] Run: OWs 129-END
+                Z[9]  OWs 129-END
+
+                Z[10] OWS 189-END
 
 
 

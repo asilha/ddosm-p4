@@ -38,9 +38,16 @@ sniff-start:
 sniff-stop:
 	./$(SCRIPT_DIR)/sniff.sh stop 
 
-PACKET_LIMIT=2621440
-PACKET_RATE=256
-PCAP_FILE=/media/p4/ddos/datasets/zed/zed20percent-notraining.pcap
+# PACKET_LIMIT=172032 	# e01
+# PACKET_RATE=256 		# e01
+
+PACKET_LIMIT=565248 # e02
+PACKET_RATE=512 	# e02 
+
+# PCAP_FILE=/media/p4/ddos/datasets/sample/ddos5y0.pcap
+# PCAP_FILE=/media/p4/ddos/datasets/zed/zed20percent.pcap
+# PCAP_FILE=/media/p4/ddos/datasets/zed/zed20percent-notraining.pcap
+PCAP_FILE=/media/p4/ddos/datasets/zed/zed20percent-fast.pcap # e01
 
 traffic:
 	tcpreplay --preload-pcap --quiet --limit=$(PACKET_LIMIT) --pps=$(PACKET_RATE) -i veth0 $(PCAP_FILE) 2>&1
