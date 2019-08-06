@@ -235,12 +235,12 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             src_cs1.read(src_c1, src_h1);           // Read current counter.
             src_cs1_ow.read(src_c1_ow, src_h1);     // Read current annotation. 
             if (src_c1_ow != current_ow[7:0]) {      // If we're in a different window:
-                if (defcon_aux == 0) {
+                if (current_ow[7:0] > 1 && defcon_aux == 0) {
                     src_cs1_tm_a.read(c_aux, src_h1);            // Read tm_a counter.
                     src_cs1_ow_tm_a.read(ow_aux, src_h1);        // Read tm_a annotation. 
                     src_cs1_tm_b.write(src_h1, c_aux);           // Copy tm_a counter to tm_b.
                     src_cs1_ow_tm_b.write(src_h1, ow_aux);       // Copy tm_a annotation to tm_b.
-                }
+                }     
                 src_cs1_tm_a.write(src_h1, src_c1);          // Copy w counter to tm_a.
                 src_cs1_ow_tm_a.write(src_h1, src_c1_ow);    // Copy w annotation to tm_a.
                 src_c1 = 0;                                  // Reset the counter.
@@ -255,13 +255,13 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             bit<8>  src_c2_ow;
             src_cs2.read(src_c2, src_h2);           // Read current counter.
             src_cs2_ow.read(src_c2_ow, src_h2);     // Read annotation. 
-            if (src_c2_ow != current_ow[7:0]) {      // If we're in a different window: 
-                if (defcon_aux == 0) {
+            if (src_c2_ow != current_ow[7:0]) {      // If we're in a different window:
+                if (current_ow[7:0] > 1 && defcon_aux == 0) {
                     src_cs2_tm_a.read(c_aux, src_h2);            // Read tm_a counter.
                     src_cs2_ow_tm_a.read(ow_aux, src_h2);        // Read tm_a annotation. 
                     src_cs2_tm_b.write(src_h2, c_aux);           // Copy tm_a counter to tm_b.
                     src_cs2_ow_tm_b.write(src_h2, ow_aux);       // Copy tm_a annotation to tm_b.
-                }
+                }     
                 src_cs2_tm_a.write(src_h2, src_c2);          // Copy w counter to tm_a.
                 src_cs2_ow_tm_a.write(src_h2, src_c2_ow);    // Copy w annotation to tm_a.
                 src_c2 = 0;                                  // Reset the counter.
@@ -276,13 +276,13 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             bit<8>  src_c3_ow;
             src_cs3.read(src_c3, src_h3);           // Read current counter.
             src_cs3_ow.read(src_c3_ow, src_h3);     // Read annotation. 
-            if (src_c3_ow != current_ow[7:0]) {      // If we're in a different window: 
-                if (defcon_aux == 0) {
+            if (src_c3_ow != current_ow[7:0]) {      // If we're in a different window:
+                if (current_ow[7:0] > 1 && defcon_aux == 0) {
                     src_cs3_tm_a.read(c_aux, src_h3);            // Read tm_a counter.
                     src_cs3_ow_tm_a.read(ow_aux, src_h3);        // Read tm_a annotation. 
                     src_cs3_tm_b.write(src_h3, c_aux);           // Copy tm_a counter to tm_b.
                     src_cs3_ow_tm_b.write(src_h3, ow_aux);       // Copy tm_a annotation to tm_b.
-                }
+                }     
                 src_cs3_tm_a.write(src_h3, src_c3);          // Copy w counter to tm_a.
                 src_cs3_ow_tm_a.write(src_h3, src_c3_ow);    // Copy w annotation to tm_a.
                 src_c3 = 0;                                  // Reset the counter.
@@ -297,13 +297,13 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             bit<8>  src_c4_ow;
             src_cs4.read(src_c4, src_h4);           // Read current counter.
             src_cs4_ow.read(src_c4_ow, src_h4);     // Read annotation. 
-            if (src_c4_ow != current_ow[7:0]) {      // If we're in a different window: 
-                if (defcon_aux == 0) {
+            if (src_c4_ow != current_ow[7:0]) {      // If we're in a different window:
+                if (current_ow[7:0] > 1 && defcon_aux == 0) {
                     src_cs4_tm_a.read(c_aux, src_h4);            // Read tm_a counter.
                     src_cs4_ow_tm_a.read(ow_aux, src_h4);        // Read tm_a annotation. 
                     src_cs4_tm_b.write(src_h4, c_aux);           // Copy tm_a counter to tm_b.
                     src_cs4_ow_tm_b.write(src_h4, ow_aux);       // Copy tm_a annotation to tm_b.
-                }
+                }     
                 src_cs4_tm_a.write(src_h4, src_c4);          // Copy w counter to tm_a.
                 src_cs4_ow_tm_a.write(src_h4, src_c4_ow);    // Copy w annotation to tm_a.
                 src_c4 = 0;                                  // Reset the counter.
@@ -358,13 +358,13 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             bit<8>  dst_c1_ow;
             dst_cs1.read(dst_c1, dst_h1);           // Read current counter.
             dst_cs1_ow.read(dst_c1_ow, dst_h1);     // Read annotation. 
-            if (dst_c1_ow != current_ow[7:0]) {      // If we're in a different window: 
-                if (defcon_aux == 0) {
+            if (dst_c1_ow != current_ow[7:0]) {      // If we're in a different window:
+                if (current_ow[7:0] > 1 && defcon_aux == 0) {
                     dst_cs1_tm_a.read(c_aux, dst_h1);            // Read tm_a counter.
                     dst_cs1_ow_tm_a.read(ow_aux, dst_h1);        // Read tm_a annotation. 
                     dst_cs1_tm_b.write(dst_h1, c_aux);           // Copy tm_a counter to tm_b.
                     dst_cs1_ow_tm_b.write(dst_h1, ow_aux);       // Copy tm_a annotation to tm_b.
-                }
+                }     
                 dst_cs1_tm_a.write(dst_h1, dst_c1);          // Copy w counter to tm_a.
                 dst_cs1_ow_tm_a.write(dst_h1, dst_c1_ow);    // Copy w annotation to tm_a.
                 dst_c1 = 0;                                  // Reset the counter.
@@ -379,13 +379,13 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             bit<8>  dst_c2_ow;
             dst_cs2.read(dst_c2, dst_h2);           // Read current counter.
             dst_cs2_ow.read(dst_c2_ow, dst_h2);     // Read annotation. 
-            if (dst_c2_ow != current_ow[7:0]) {      // If we're in a different window: 
-                if (defcon_aux == 0) {
+            if (dst_c2_ow != current_ow[7:0]) {      // If we're in a different window:
+                if (current_ow[7:0] > 1 && defcon_aux == 0) {
                     dst_cs2_tm_a.read(c_aux, dst_h2);            // Read tm_a counter.
                     dst_cs2_ow_tm_a.read(ow_aux, dst_h2);        // Read tm_a annotation. 
                     dst_cs2_tm_b.write(dst_h2, c_aux);           // Copy tm_a counter to tm_b.
                     dst_cs2_ow_tm_b.write(dst_h2, ow_aux);       // Copy tm_a annotation to tm_b.
-                }
+                }     
                 dst_cs2_tm_a.write(dst_h2, dst_c2);          // Copy w counter to tm_a.
                 dst_cs2_ow_tm_a.write(dst_h2, dst_c2_ow);    // Copy w annotation to tm_a.
                 dst_c2 = 0;                                  // Reset the counter.
@@ -400,13 +400,13 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             bit<8>  dst_c3_ow;
             dst_cs3.read(dst_c3, dst_h3);           // Read current counter.
             dst_cs3_ow.read(dst_c3_ow, dst_h3);     // Read annotation. 
-            if (dst_c3_ow != current_ow[7:0]) {      // If we're in a different window: 
-                if (defcon_aux == 0) {
+            if (dst_c3_ow != current_ow[7:0]) {      // If we're in a different window:
+                if (current_ow[7:0] > 1 && defcon_aux == 0) {
                     dst_cs3_tm_a.read(c_aux, dst_h3);            // Read tm_a counter.
                     dst_cs3_ow_tm_a.read(ow_aux, dst_h3);        // Read tm_a annotation. 
                     dst_cs3_tm_b.write(dst_h3, c_aux);           // Copy tm_a counter to tm_b.
                     dst_cs3_ow_tm_b.write(dst_h3, ow_aux);       // Copy tm_a annotation to tm_b.
-                }
+                }     
                 dst_cs3_tm_a.write(dst_h3, dst_c3);          // Copy w counter to tm_a.
                 dst_cs3_ow_tm_a.write(dst_h3, dst_c3_ow);    // Copy w annotation to tm_a.
                 dst_c3 = 0;                                  // Reset the counter.
@@ -421,13 +421,13 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             bit<8>  dst_c4_ow;
             dst_cs4.read(dst_c4, dst_h4);           // Read current counter.
             dst_cs4_ow.read(dst_c4_ow, dst_h4);     // Read annotation. 
-            if (dst_c4_ow != current_ow[7:0]) {      // If we're in a different window: 
-                if (defcon_aux == 0) {
+            if (dst_c4_ow != current_ow[7:0]) {      // If we're in a different window:
+                if (current_ow[7:0] > 1 && defcon_aux == 0) {
                     dst_cs4_tm_a.read(c_aux, dst_h4);            // Read tm_a counter.
                     dst_cs4_ow_tm_a.read(ow_aux, dst_h4);        // Read tm_a annotation. 
                     dst_cs4_tm_b.write(dst_h4, c_aux);           // Copy tm_a counter to tm_b.
                     dst_cs4_ow_tm_b.write(dst_h4, ow_aux);       // Copy tm_a annotation to tm_b.
-                }
+                }     
                 dst_cs4_tm_a.write(dst_h4, dst_c4);          // Copy w counter to tm_a.
                 dst_cs4_ow_tm_a.write(dst_h4, dst_c4_ow);    // Copy w annotation to tm_a.
                 dst_c4 = 0;                                  // Reset the counter.
@@ -496,7 +496,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                 dst_ewma.read(meta.dst_ewma, 0);
                 dst_ewmmd.read(meta.dst_ewmmd, 0);
 
-                if (current_ow == 0) {                              // In the first window... [changed to 0th window, which will never happen.]
+                if (current_ow == 0) {                           // In the first window... [changed to 0th window, which will never happen.]
                     meta.src_ewma = meta.src_entropy << 14;      // Initialize averages with the first estimated entropies. Averages have 18 fractional bits. 
                     meta.src_ewmmd = 0;
                     meta.dst_ewma = meta.dst_entropy << 14;
@@ -597,6 +597,8 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                 int<32> dst_count_tm_a;
                 int<32> dst_count_tm_b;
 
+                int<32> src_delta;
+
                 // Get the estimated counter for the source address at t-1.
                 src_cs1_tm_a.read(src_c1, src_h1);
                 src_cs2_tm_a.read(src_c2, src_h2);
@@ -641,13 +643,16 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                 dst_c4 = dst_c4 * dst_g4;
                 median(dst_c1, dst_c2, dst_c3, dst_c4, dst_count_tm_b);
 
-                // This means that the address was not seen at t-2, but it was at t-1.
+                // This means that the address has had a significant increase in frequency. 
                 // Hence, we consider it more likely to be a source of attack.  
-                if (src_count_tm_b == 0 && src_count_tm_a > 0) {
-                        detour = 1;        
+                // For now, we're only using the source address. 
+                if (src_count_tm_a > src_count_tm_b) {
+                        src_delta = src_count_tm_a - src_count_tm_b;
+                        if (src_delta > 80) { // 1% of window size: 0.01 * 8192  =~ 81. 
+                            detour = 1;
+                        }
                 } 
 
-                // For now, we're only using the source address. 
             } // End of DEFCON state processing. 
 
             // Detour is set to one for packets that must undergo further inspection.
