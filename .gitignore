@@ -4,3 +4,4 @@ pcaps/*
 .vscode/*
 *.pyc
 scripts/__pycache__
+scripts/lib/__pycache__
