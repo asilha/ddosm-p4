@@ -273,7 +273,17 @@ Comparing P4 and TCAD Traces
 
             DS Generation: 
 
-            Unneeded; we will reuse the workload from Experiment Y. 
+            We will reuse the workload from Experiment Y. 
+
+            DS Generation (values in brackets: numbers of packets): 
+
+                editcap -r ddos5_00011.pcap ddos5_00011y0.pcap 7667713-8192000   [512k]
+                editcap -r ddos5_00011.pcap ddos5_00011y1.pcap 8189953-8192000   [2k]
+                editcap -r ddos5_00012.pcap ddos5_00012y.pcap 1-2097152          [2048k]
+                mergecap -a -w ddos5y0.pcap ddos5_00011y0.pcap ddos5_00012y.pcap [2560k]
+                mergecap -a -w ddos5y1.pcap ddos5_00011y1.pcap ddos5_00012y.pcap [2050k]
+
+                Files saved in D:\Downloads\P4\ddos\datasets\xyz             
 
         Procedure: 
 
@@ -341,7 +351,7 @@ Comparing P4 and TCAD Traces
             Z[3] Runs:
                 k:              Iterate using different k-values.
 
-            Z[3] Runs:
+            Z[4] Runs:
                 No change, but we include estimations for TPR and FPR.                 
 
             Z[5] Runs: 
@@ -468,6 +478,8 @@ Comparing P4 and TCAD Traces
                 0.875 0.956055
                 0.750 0.994141
 
+                D:\Downloads\P4\logs-ddos5xyz\expz5-3.txt
+
             a4) Analyze accuracy (TPR+FPR) under various k-values
 
                 Z[4]: 
@@ -496,7 +508,7 @@ Comparing P4 and TCAD Traces
                 2.375 0.372070 0.132812
                 2.250 0.516602 0.164062
                 2.125 0.590820 0.250000
-                2.000 0.762695 0.289062 <<< Operationally "sound"...
+                2.000 0.762695 0.289062 
                 1.875 0.893555 0.367188
                 1.750 0.829102 0.453125
                 1.625 0.992188 0.507812
@@ -507,6 +519,8 @@ Comparing P4 and TCAD Traces
                 1.000 1.000000 0.773438
                 0.875 1.000000 0.804688
                 0.750 1.000000 0.851562
+
+                D:\Downloads\P4\logs-ddos5xyz\expz5-4.txt
 
             a5-8) Analyze accuracy (TPR+FPR) under various k-values, window sizes, and sketch widths.
 
@@ -549,6 +563,8 @@ Comparing P4 and TCAD Traces
                 0.875 0.843750 1.000000 0.941406 0.892578
                 0.750 0.855469 1.000000 0.953125 0.904297
 
+                D:\Downloads\P4\logs-ddos5xyz\expz5-5.txt
+
                 Z[6]:
 
                 k     FPR1     TPR      FPR2     FPR
@@ -579,6 +595,8 @@ Comparing P4 and TCAD Traces
                 1.000 0.765625 1.000000 0.937500 0.851562
                 0.875 0.796875 1.000000 0.937500 0.867188
                 0.750 0.835938 1.000000 0.937500 0.886719
+
+                D:\Downloads\P4\logs-ddos5xyz\expz5-6.txt
 
                 Z[7]:
 
@@ -611,6 +629,8 @@ Comparing P4 and TCAD Traces
                 0.875 0.750000 1.000000 0.867188 0.808594
                 0.750 0.804688 1.000000 0.960938 0.882812
 
+                D:\Downloads\P4\logs-ddos5xyz\expz5-7.txt
+
                 Z[8]:
 
                 k     FPR1     TPR      FPR2     FPR
@@ -635,6 +655,8 @@ Comparing P4 and TCAD Traces
                 2.750 0.031250 1.000000 0.031250 0.031250
                 2.625 0.109375 1.000000 0.046875 0.078125
                 2.500 0.140625 1.000000 0.046875 0.093750
+
+                D:\Downloads\P4\logs-ddos5xyz\expz5-8.txt
 
             b) Initialize P4 data plane with post-training values. 
 
