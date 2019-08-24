@@ -28,9 +28,19 @@ class DDoSDPayload(Packet):
     LongField('ts_usec',0), 
     ByteField('is_attack',0)]
 
-def handle_pkt(pkt):
-    ddosd=pkt[DDoSD] 
-    print("| Src H={:.3f} A={:.3f} MD={:.3f} | Dst H={:.3f} A={:.3f} MD={:.3f} | Alarm={} Defcon={} |".format(        
+def pkt_to_string(ddosd):
+    return "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(        
+        ddosd.src_ent, 
+        ddosd.src_ewma, 
+        ddosd.src_ewmmd, 
+        ddosd.dst_ent, 
+        ddosd.dst_ewma, 
+        ddosd.dst_ewmmd, 
+        ddosd.alarm, 
+        ddosd.defcon)
+
+def pkt_to_string_human_readable(ddosd):
+    return "{:.3f}\t{:.3f}\t{:.3f}\t{:.3f}\t{:.3f}\t{:.3f}\t{}\t{}".format(        
         ddosd.src_ent/16.0, 
         ddosd.src_ewma/(2.0**18), 
         ddosd.src_ewmmd/(2.0**18), 
@@ -38,8 +48,11 @@ def handle_pkt(pkt):
         ddosd.dst_ewma/(2.0**18), 
         ddosd.dst_ewmmd/(2.0**18), 
         ddosd.alarm, 
-        ddosd.defcon)) 
-    sys.stdout.flush()
+        ddosd.defcon)
+
+def handle_pkt(pkt):
+    ddosd=pkt[DDoSD] 
+    print(pkt_to_string_human_readable(ddosd))
 
 def main():
     iface = 'veth7'
