@@ -775,7 +775,10 @@ Comparing P4 and TCAD Traces
                 * Next steps:
                     Move back to work on P4SB3.   
 
+-------------------------------------------------------------------------------
+Experiments P4SB3E[01..n]: P4 Runs With 8192-Packet Windows
 
+Moved to a Jupyter Notebook.
 
 -------------------------------------------------------------------------------
 CMP182:
