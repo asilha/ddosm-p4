@@ -27,7 +27,7 @@ def run_tshark(output_name):
     os.system(command)
     command = "tshark -r " + output_name + ".pcap -T fields -e ip.src -e ip.dst -e data.data | " + \
               "awk 'BEGIN {OFS=\",\"} {print $1,$2,substr($3,50,1) }' >> " + output_name + ".csv"
-    print(command)
+    # print(command)
     os.system(command)
 
 def main():
