@@ -648,7 +648,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                 // For now, we're only using the source address. 
                 if (src_count_tm_a > src_count_tm_b) {
                         src_delta = src_count_tm_a - src_count_tm_b;
-                        if (src_delta > 20) { // 1% of window size: 0.01 * 8192  =~ 81. 
+                        if (src_delta > 10) { // 1% of window size: 0.01 * 8192  =~ 81. 
                             detour = 1;
                         }
                 } 
