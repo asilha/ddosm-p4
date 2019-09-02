@@ -804,8 +804,6 @@ Experiments P4SB3E[01..n]: P4 Runs With 8192-Packet Windows
     Metrics:
         Proportions of correctly- and incorrectly-classified packets.
         
-        Note: we must deduct 
-
         How to calculate these metrics?
 
             Initialize the switch.
@@ -815,10 +813,10 @@ Experiments P4SB3E[01..n]: P4 Runs With 8192-Packet Windows
                 veth5: classified as malicious 
             Play the workload traffic.
             Obtain the following numbers of packets:
-                Legitimate PCAP:
-                    Marked      incorrectly classified
+                Legitimate PCAP:    [saved as p4sb3e01n.pcap.gz]
+                    Marked      incorrectly classified          
                     Unmarked    correctly classified
-                Malicious PCAP:
+                Malicious PCAP:     [saved as p4sb3e01p.pcap.gz]
                     Marked      correctly classified
                     Unmarked    incorrectly classified
             Note:
@@ -869,12 +867,31 @@ Experiments P4SB3E[01..n]: P4 Runs With 8192-Packet Windows
                     ddostrace.20070804_141436.pcap 
                     zed20percent.pcap
 
-    Procedure
-
-
-
-
     Observations
+
+        We seem to have reached the maximum performance achievable under this observation window size. 
+
+    Next steps
+
+        Increase the size of the workload to 2^24 packets. 
+        
+        Perform a factorial experiment using:
+            m={2^13; 2^14; 2^15; 2^16; 2^17; 2^18}
+            t={0.001; 0.002; ... ; 0.020}
+        
+        To do this experiment:
+
+            Generate the base workload.
+            For each m:
+                Calculate the number of windows. 
+                Use an experimental script to obtain the best k coefficient. 
+                Use ee+tcad to obtain the traffic characterization values under the optimal k coefficient.
+                Use an experimental script to obtain the numbers related to variations in t.   
+
+
+
+
+
 
 
 -------------------------------------------------------------------------------
