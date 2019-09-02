@@ -884,9 +884,13 @@ Experiments P4SB3E[01..n]: P4 Runs With 8192-Packet Windows
             Generate the base workload.
             For each m:
                 Calculate the number of windows. 
-                Use an experimental script to obtain the best k coefficient. 
-                Use ee+tcad to obtain the traffic characterization values under the optimal k coefficient.
-                Use an experimental script to obtain the numbers related to variations in t.   
+                Use an experimental script to obtain the best k coefficient. Save all tcad logs. 
+                Read the logs to obtain the traffic characterization values under the optimal k coefficient. 
+                Use an experimental script to obtain the numbers related to different levels of t.
+                    [Re]initialize the registers on the data plane. 
+                    Replay the workload. 
+                    Collect pcaps.
+                    Collect statistics. 
 
 
 
