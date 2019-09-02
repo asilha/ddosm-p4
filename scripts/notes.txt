@@ -775,6 +775,106 @@ Comparing P4 and TCAD Traces
                 * Next steps:
                     Move back to work on P4SB3.   
 
+-------------------------------------------------------------------------------
+Experiments P4SB3E[01..n]: P4 Runs With 8192-Packet Windows
+
+    Objective:
+        To evaluate P4DAMP accuracy under different mitigation thresholds. 
+
+    Parameters:
+        a		0.2		Attack Proportion	
+        k		4.125	Sensitivity Coefficient
+        w		1280	Count-sketch Width
+        m		2^13	Window Size
+        n       69		Total Windows 
+
+        Traffic characterization at t=188:
+
+            src_ewma		2500001
+            src_ewmmd		38953
+            dst_ewma		2452881
+            dst_ewmmd		36773  
+
+            Values obtained from line 188 of ddos5z8-4.125.tcad.txt. 
+            This log file was generated as described in experiment 5Z8. 
+
+    Factors:
+        t     {80;40;20;10}     Mitigation thresholds.
+
+    Metrics:
+        Proportions of correctly- and incorrectly-classified packets.
+        
+        Note: we must deduct 
+
+        How to calculate these metrics?
+
+            Initialize the switch.
+                * Note: we can reset it by zeroing the registers.
+            Start capturing the outgoing packets:
+                veth3: classified as legitimate
+                veth5: classified as malicious 
+            Play the workload traffic.
+            Obtain the following numbers of packets:
+                Legitimate PCAP:
+                    Marked      incorrectly classified
+                    Unmarked    correctly classified
+                Malicious PCAP:
+                    Marked      correctly classified
+                    Unmarked    incorrectly classified
+            Note:
+                Deduct 5*8192=40960 packets from the legitimate count (first 5 OWs).
+
+    Dataset: 
+
+        Files saved in D:\Downloads\P4\ddos\datasets\zed
+
+        zed20percent-fast.pcap 
+        
+            Dataset has 192 OWs of 2^13 packets each.
+            We utilize OWs 1 to 69 [69 * 8192 = 565248 packets]
+            
+                tcpreplay --limit 565248
+
+            Generation:
+
+                This dataset skips the training and pre-attack parts of zed20percent.pcap.
+                These correspond to the first 188 OWs. So:
+
+                First packet:	(189-1) * 8192 + 1 = 1540097 
+                Last packet:	384 * 8192 = 3145728
+
+                editcap -r .\zed20percent.pcap .\zed20percent-fast.pcap 1540097-3145728
+
+            Attack starts at t=5. 
+            We ignore measurements from t=1 to t=5. 
+
+
+        zed20percent.pcap 
+
+            Dataset has 384 OWs of 2^13 packets each. 
+            
+            Sources:
+            
+                ddos5_00000_20160406100300.pcap - Volume 00 [known to contain only legitimate packets]
+                ddostrace.20070804_141436.pcap - Generated from CAIDA DDoS Attack Traces, as follows: 
+            
+                    mergecap -w ddostrace.20070804_141436.pcap 
+                            .\ddostrace.to-victim.20070804_141436.pcap 
+                            .\ddostrace.from-victim.20070804_141436.pcap
+
+            Generation:
+
+                trafg -n 2097152 -a 0.2 
+                    ddos5_00000_20160406100300.pcap 
+                    ddostrace.20070804_141436.pcap 
+                    zed20percent.pcap
+
+    Procedure
+
+
+
+
+    Observations
 
 
 -------------------------------------------------------------------------------
