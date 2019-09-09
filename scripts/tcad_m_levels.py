@@ -21,7 +21,6 @@ summary_log = paths["working_dir"]+"/summary.log"
 with open(summary_log, "w") as f:
     f.write("log2m,k,n,t,p1len,p1alm,p2len,p2alm,p3len,p3alm,tpr,fpr,fpr1,fpr3\n")
 
-
 for mvalue in mvalues:
     ee_log = paths["working_dir"]+"/ee_m_2_"+str(mvalue)+".log"
     # print(ee_log)
@@ -66,19 +65,13 @@ for mvalue in mvalues:
             fpr3=phases[3]["alarms"]/phases[3]["length"]
             fpr=(phases[1]["alarms"] + phases[3]["alarms"])/phases[2]["length"]
             with open(summary_log,"a") as f:
-                # f.write("log2m,k,n,t,p1len,p1alm,p2len,p2alm,p3len,p3alm,tpr,fpr,fpr1,fpr3\n")
-
+              # f.write("log2m,k,n,t,p1len,p1alm,p2len,p2alm,p3len,p3alm,tpr,fpr,fpr1,fpr3\n")
                 f.write("{},{:.3f},{},{},{},{},{},{},{},{},{:.3f},{:.3f},{:.3f},{:.3f}\n".format(
                     mvalue,kvalue,count,training_length,
                     phases[1]["length"],phases[1]["alarms"],
                     phases[2]["length"],phases[2]["alarms"],
                     phases[3]["length"],phases[3]["alarms"],
                     tpr,fpr,fpr1,fpr3))
-
-
-
-
-
 
 
 
