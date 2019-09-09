@@ -3,7 +3,7 @@
 import os
 
 kvalues = []
-for i in range(8,41):    # This goes from 1.00 to 5.00
+for i in range(8,49):    # This goes from 1.00 to 6.00
     kvalues.append(i/8.0)
 
 mvalues = []
