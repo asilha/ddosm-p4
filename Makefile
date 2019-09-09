@@ -15,11 +15,11 @@ SOURCES:=$(wildcard $(SOURCE_DIR)/*.p4)
 $(PROJECT): $(SOURCES)
 	$(P4C) $(P4C_FLAGS) -o $(BUILD_DIR) $(SOURCE_DIR)/$(PROJECT).p4
 
-run:	$(PROJECT)
-	./$(SCRIPT_DIR)/run.sh
+run_plain:	$(PROJECT)
+	./$(SCRIPT_DIR)/run_plain.sh
 
-mininet: $(PROJECT)
-	./$(SCRIPT_DIR)/mininet.sh
+run_mininet: $(PROJECT)
+	./$(SCRIPT_DIR)/run_mininet.sh
 
 clean:
 	rm -rf $(BUILD_DIR) $(LOG_DIR) $(PCAP_DIR)
@@ -27,16 +27,16 @@ clean:
 INTERFACE_PAIRS=8
 
 veth-setup:	
-	./$(SCRIPT_DIR)/veth.sh setup $(INTERFACE_PAIRS)
+	./$(SCRIPT_DIR)/setup_veth.sh setup $(INTERFACE_PAIRS)
 
 veth-delete:
-	./$(SCRIPT_DIR)/veth.sh delete $(INTERFACE_PAIRS)
+	./$(SCRIPT_DIR)/setup_veth.sh delete $(INTERFACE_PAIRS)
 
 sniff-start:
-	./$(SCRIPT_DIR)/sniff.sh start
+	./$(SCRIPT_DIR)/run_wiresharks.sh start
 
 sniff-stop:
-	./$(SCRIPT_DIR)/sniff.sh stop 
+	./$(SCRIPT_DIR)/run_wiresharks.sh stop 
 
 
 # Experiments X, Y, Z. 
@@ -61,5 +61,5 @@ PACKET_RATE=3072
 PCAP_FILE=/media/p4/ddos/datasets/zed/zed20percent-fast.pcap # e01, e02
 
 traffic:
-	tcpreplay --preload-pcap --quiet --limit=$(PACKET_LIMIT) --pps=$(PACKET_RATE) -i veth0 $(PCAP_FILE) 2>&1
+	sudo tcpreplay --preload-pcap --quiet --limit=$(PACKET_LIMIT) --pps=$(PACKET_RATE) -i veth0 $(PCAP_FILE) 2>&1
 
