@@ -3,9 +3,9 @@
 import os
 
 ee_bin = "/media/p4/ddosd-cpp/bin/ee"
-json_path = "/media/p4/ddosd-p4/scripts"
-log_path = "/media/p4/ddos/datasets/p4damp"
-workload_file = "/media/p4/ddos/datasets/p4damp/ddos20.pcap" 
+json_path = "/media/p4/ddosd-p4/scripts/p4d_ddos20"
+log_path = "/media/p4/p4damp/datasets/ddos20/temp"
+workload_file = "/media/p4/p4damp/datasets/ddos20/ddos20.pcap" 
 
 for i in range(13,19):
     base_name = "ee_m_2_" + str(i) 
