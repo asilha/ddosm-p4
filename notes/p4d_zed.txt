@@ -1,0 +1,442 @@
+--------------------------------------------------------------------------------------------
+Experiments Z[1..n]: P4 Trial Runs With 2048-Packet Windows Without [then With] Pre-Training
+
+    Objective:
+        To improve TCAD accuracy, as compared to experiments Y and Z. 
+
+    Parameters:
+
+        Z[1] Run:
+            We have referred to the original work, to try to determine adequate values for k and count sketch width (w).
+            w:      976     Control
+            k:      4.0     This is the value used during the last parts of the evaluation. 
+
+        Z[2] Run:
+            k:      2.25    To account for the reduction in the value of m from 2^18 to 2^11.  
+
+        Z[3] Runs:
+            k:              Iterate using different k-values.
+
+        Z[4] Runs:
+            No change, but we include estimations for TPR and FPR.                 
+
+        Z[5] Runs: 
+            a:      0.2     Introduce a workload with a 20% attack proportion.  
+
+        Z[6] Runs: 
+            m:      2^12    Increase window size to m=2^12. 
+
+        Z[7] Runs:
+            w:      1280    Increase count-sketch width from 960 to 1280.
+
+        Z[8] Runs:
+            m:      2^13    Increase window size to m=2^13.
+
+        Z[9]
+            Resume tests with the P4 implementation.
+
+
+                                P4 Z[1]    Z[1..3]    Z[4] Runs     Z[5] Runs     Z[6..7]    Z[8..10]         
+        Window Size:            m=2^11     m=2^11       m=2^11        m=2^11      m=2^12      m=2^13
+        Training:                1 OWs    256 OWs      128 OWs       512 OWs     256 OWs     128 OWs
+        Pre-Attack:                                    128 OWs       256 OWs     128 OWs      64 OWs
+        Under Attack:         1024 OWs   1024 OWs     1024 OWs       512 OWs     256 OWs     128 OWs
+        Post-Attack:                                                 256 OWs     128 OWs      64 OWs
+
+    Datasets: 
+
+        Z[1..4]:    Reuse ddos5y0.pcap - the workload from Experiment Y, with 1.280 OWs with m=2^11 packets each. 
+        Z[5..8]:    Generate a workload with 1.024 OWs of m=2^11 packets each.
+
+            Size: 1024 * m = 2^10 * 2^11 = 2^21 = 2.097.152 packets. 
+            
+            Sources:
+            
+                ddos5_00000_20160406100300.pcap - Volume 00 from the previous experiments, known to contain only legitimate packets.
+                ddostrace.20070804_141436.pcap - Generated from CAIDA DDoS Attack Traces, as follows: 
+            
+                    mergecap -w ddostrace.20070804_141436.pcap .\ddostrace.to-victim.20070804_141436.pcap .\ddostrace.from-victim.20070804_141436.pcap
+
+            Generation:
+
+                trafg -n 2097152 -a 0.2 ddos5_00000_20160406100300.pcap ddostrace.20070804_141436.pcap zed20percent.pcap
+
+                    File saved in D:\Downloads\P4\ddos\datasets\zed
+
+        Z[9]:       Remove the training part from zed20percent.pcap (beginning at t=129)
+
+                editcap -r .\zed20percent.pcap .\zed20percent-notraining.pcap 1048577-3145728
+
+        Z[10]:      Remove training part and 60 pre-attack windows from zed20percent.pcap (beginning at t=189).
+
+                editcap -r .\zed20percent.pcap .\zed20percent-fast.pcap 1540097-3145728
+
+
+
+    Procedure: 
+
+        a1) Obtain t[a]-2 MAs and MMDs.
+
+            Z[1]:
+
+            ./ddosd-cpp/bin/ee -c ./ddosd-p4/scripts/ddos5z1.json ./ddos/datasets/xyz/ddos5y0.pcap \
+                                | ./ddosd-cpp/bin/tcad -t 256 -s 0.078125 -k 4.0 | tee ddos5z1.tcad.txt
+
+            1459947871850801 129 2167114 42243 127 2120406 43866 0  // 255
+            1459947871852545 129 2162928 42800 127 2117309 43292 0
+            1459947871854242 133 2164189 40618 127 2114454 42540 0
+            1459947871856001 135 2167911 40875 128 2113102 40462 0
+            1459947871857807 136 2172622 42024 126 2109295 40808 0
+
+            Excel: 
+
+            SrcEnt  SrcMA   SrcMMD      DstEnt  DstMA   DstMMD
+            8,063	8,267	0,161		7,938	8,089	0,167       // 255
+            8,063	8,251	0,163		7,938	8,077	0,165
+            8,313	8,256	0,155		7,938	8,066	0,162
+            8,438	8,270	0,156		8,000	8,061	0,154
+            8,500	8,288	0,160		7,875	8,046	0,156
+
+        a2) Analyze accuracy under k=2.25.
+
+            Z[2]: 
+
+            ./ddosd-cpp/bin/ee -c ./ddosd-p4/scripts/ddos5z1.json ./ddos/datasets/xyz/ddos5y0.pcap \
+                                | ./ddosd-cpp/bin/tcad -t 256 -s 0.078125 -k 2.25 | tee ddos5z2.tcad.txt
+
+        a3) Analyze accuracy (TPR) under various k-values. 
+
+            Z[3]: 
+
+            [Manual]
+
+            ./ddosd-cpp/bin/ee -c ./ddosd-p4/scripts/ddos5z1.json ./ddos/datasets/xyz/ddos5y0.pcap \
+                                | ./ddosd-cpp/bin/tcad -t 256 -s 0.078125 -k <val> | tee ddos5z3.tcad.txt
+
+            [Scripted]
+
+            k     TPR
+            4.000 0.024414
+            3.875 0.029297
+            3.750 0.030273
+            3.625 0.035156
+            3.500 0.045898
+            3.375 0.051758
+            3.250 0.062500
+            3.125 0.080078
+            3.000 0.097656
+            2.875 0.120117
+            2.750 0.159180
+            2.625 0.276367
+            2.500 0.304688
+            2.375 0.337891
+            2.250 0.428711
+            2.125 0.563477
+            2.000 0.756836
+            1.875 0.766602
+            1.750 0.773438
+            1.625 0.788086
+            1.500 0.835938
+            1.375 0.870117
+            1.250 0.875977
+            1.125 0.916992
+            1.000 0.939453
+            0.875 0.956055
+            0.750 0.994141
+
+            D:\Downloads\P4\logs-ddos5xyz\expz5-3.txt
+
+        a4) Analyze accuracy (TPR+FPR) under various k-values
+
+            Z[4]: 
+
+            [Manual]
+
+            ./ddosd-cpp/bin/ee -c ./ddosd-p4/scripts/ddos5z1.json ./ddos/datasets/xyz/ddos5y0.pcap \
+                                | ./ddosd-cpp/bin/tcad -t 128 -s 0.078125 -k <val> | tee ddos5z4.tcad.txt
+
+            [Scripted]
+
+            k     TPR      FPR
+            4.000 0.024414 0.007812
+            3.875 0.029297 0.015625
+            3.750 0.030273 0.023438
+            3.625 0.035156 0.031250
+            3.500 0.046875 0.046875
+            3.375 0.051758 0.046875
+            3.250 0.064453 0.046875
+            3.125 0.080078 0.046875
+            3.000 0.107422 0.054688
+            2.875 0.126953 0.062500
+            2.750 0.159180 0.062500
+            2.625 0.288086 0.125000
+            2.500 0.323242 0.125000
+            2.375 0.372070 0.132812
+            2.250 0.516602 0.164062
+            2.125 0.590820 0.250000
+            2.000 0.762695 0.289062 
+            1.875 0.893555 0.367188
+            1.750 0.829102 0.453125
+            1.625 0.992188 0.507812
+            1.500 1.000000 0.593750
+            1.375 1.000000 0.625000
+            1.250 1.000000 0.710938
+            1.125 1.000000 0.765625
+            1.000 1.000000 0.773438
+            0.875 1.000000 0.804688
+            0.750 1.000000 0.851562
+
+            D:\Downloads\P4\logs-ddos5xyz\expz5-4.txt
+
+        a5-8) Analyze accuracy (TPR+FPR) under various k-values, window sizes, and sketch widths.
+
+            Z[5]: 
+
+            k     FPR1     TPR      FPR2     FPR
+            5.000 0.000000 0.007812 0.003906 0.001953
+            4.875 0.003906 0.007812 0.003906 0.003906
+            4.750 0.003906 0.011719 0.003906 0.003906
+            4.625 0.003906 0.011719 0.003906 0.003906
+            4.500 0.003906 0.013672 0.003906 0.003906
+            4.375 0.003906 0.027344 0.007812 0.005859
+            4.250 0.003906 0.029297 0.011719 0.007812
+            4.125 0.003906 0.033203 0.015625 0.009766
+            4.000 0.011719 0.033203 0.015625 0.013672
+            3.875 0.023438 0.035156 0.015625 0.019531
+            3.750 0.027344 0.060547 0.015625 0.021484
+            3.625 0.031250 0.070312 0.031250 0.031250
+            3.500 0.058594 0.074219 0.035156 0.046875
+            3.375 0.078125 0.085938 0.035156 0.056641
+            3.250 0.078125 0.097656 0.054688 0.066406
+            3.125 0.113281 0.140625 0.054688 0.083984
+            3.000 0.125000 0.152344 0.054688 0.089844
+            2.875 0.128906 0.226562 0.070312 0.099609
+            2.750 0.195312 0.261719 0.089844 0.142578
+            2.625 0.214844 0.328125 0.167969 0.191406
+            2.500 0.316406 0.478516 0.191406 0.253906
+            2.375 0.363281 0.523438 0.265625 0.314453
+            2.250 0.390625 0.894531 0.363281 0.376953
+            2.125 0.496094 0.998047 0.570312 0.533203
+            2.000 0.531250 1.000000 0.652344 0.591797
+            1.875 0.597656 1.000000 0.785156 0.691406
+            1.750 0.617188 1.000000 0.785156 0.701172
+            1.625 0.718750 1.000000 0.824219 0.771484
+            1.500 0.730469 1.000000 0.824219 0.777344
+            1.375 0.742188 1.000000 0.824219 0.783203
+            1.250 0.742188 1.000000 0.824219 0.783203
+            1.125 0.789062 1.000000 0.925781 0.857422
+            1.000 0.820312 1.000000 0.921875 0.871094
+            0.875 0.843750 1.000000 0.941406 0.892578
+            0.750 0.855469 1.000000 0.953125 0.904297
+
+            D:\Downloads\P4\logs-ddos5xyz\expz5-5.txt
+
+            Z[6]:
+
+            k     FPR1     TPR      FPR2     FPR
+            4.000 0.007812 0.070312 0.007812 0.007812
+            3.875 0.015625 0.074219 0.015625 0.015625
+            3.750 0.039062 0.113281 0.015625 0.027344
+            3.625 0.039062 0.113281 0.015625 0.027344
+            3.500 0.039062 0.113281 0.031250 0.035156
+            3.375 0.039062 0.125000 0.039062 0.039062
+            3.250 0.054688 0.140625 0.039062 0.046875
+            3.125 0.054688 0.140625 0.046875 0.050781
+            3.000 0.070312 0.218750 0.054688 0.062500
+            2.875 0.070312 0.242188 0.054688 0.062500
+            2.750 0.093750 0.312500 0.101562 0.097656
+            2.625 0.125000 0.335938 0.109375 0.117188
+            2.500 0.187500 0.339844 0.125000 0.156250
+            2.375 0.312500 1.000000 0.328125 0.320312 
+            2.250 0.343750 1.000000 0.375000 0.359375
+            2.125 0.367188 1.000000 0.421875 0.394531
+            2.000 0.375000 1.000000 0.554688 0.464844
+            1.875 0.429688 1.000000 0.585938 0.507812
+            1.750 0.507812 1.000000 0.648438 0.578125
+            1.625 0.539062 1.000000 0.687500 0.613281
+            1.500 0.601562 1.000000 0.718750 0.660156
+            1.375 0.664062 1.000000 0.812500 0.738281
+            1.250 0.703125 1.000000 0.859375 0.781250
+            1.125 0.710938 1.000000 0.937500 0.824219
+            1.000 0.765625 1.000000 0.937500 0.851562
+            0.875 0.796875 1.000000 0.937500 0.867188
+            0.750 0.835938 1.000000 0.937500 0.886719
+
+            D:\Downloads\P4\logs-ddos5xyz\expz5-6.txt
+
+            Z[7]:
+
+            k     FPR1     TPR      FPR2     FPR
+            4.000 0.007812 0.066406 0.000000 0.003906
+            3.875 0.031250 0.109375 0.000000 0.015625
+            3.750 0.031250 0.109375 0.015625 0.023438
+            3.625 0.031250 0.109375 0.015625 0.023438
+            3.500 0.031250 0.117188 0.015625 0.023438
+            3.375 0.039062 0.117188 0.039062 0.039062
+            3.250 0.046875 0.121094 0.039062 0.042969
+            3.125 0.062500 0.132812 0.046875 0.054688
+            3.000 0.062500 0.152344 0.046875 0.054688
+            2.875 0.085938 0.203125 0.054688 0.070312
+            2.750 0.093750 0.281250 0.062500 0.078125
+            2.625 0.117188 0.335938 0.109375 0.113281
+            2.500 0.195312 0.984375 0.140625 0.167969 
+            2.375 0.296875 1.000000 0.453125 0.375000
+            2.250 0.343750 1.000000 0.562500 0.453125
+            2.125 0.367188 1.000000 0.570312 0.468750
+            2.000 0.367188 1.000000 0.609375 0.488281
+            1.875 0.476562 1.000000 0.640625 0.558594
+            1.750 0.484375 1.000000 0.664062 0.574219
+            1.625 0.515625 1.000000 0.773438 0.644531
+            1.500 0.546875 1.000000 0.804688 0.675781
+            1.375 0.562500 1.000000 0.804688 0.683594
+            1.250 0.671875 1.000000 0.820312 0.746094
+            1.125 0.695312 1.000000 0.898438 0.796875
+            1.000 0.726562 1.000000 0.929688 0.828125
+            0.875 0.750000 1.000000 0.867188 0.808594
+            0.750 0.804688 1.000000 0.960938 0.882812
+
+            D:\Downloads\P4\logs-ddos5xyz\expz5-7.txt
+
+            Z[8]:
+
+            k     FPR1     TPR      FPR2     FPR
+            5.000 0.000000 0.062500 0.000000 0.000000
+            4.875 0.015625 0.062500 0.000000 0.007812
+            4.750 0.015625 0.062500 0.000000 0.007812
+            4.625 0.015625 0.062500 0.000000 0.007812
+            4.500 0.015625 0.085938 0.000000 0.007812
+            4.375 0.015625 0.085938 0.000000 0.007812
+            4.250 0.015625 0.085938 0.000000 0.007812
+            4.125 0.015625 1.000000 0.000000 0.007812 
+            4.000 0.015625 1.000000 0.000000 0.007812
+            3.875 0.015625 1.000000 0.000000 0.007812
+            3.750 0.015625 1.000000 0.000000 0.007812
+            3.625 0.015625 1.000000 0.000000 0.007812
+            3.500 0.015625 1.000000 0.000000 0.007812
+            3.375 0.015625 1.000000 0.031250 0.023438
+            3.250 0.015625 1.000000 0.031250 0.023438
+            3.125 0.015625 1.000000 0.031250 0.023438
+            3.000 0.015625 1.000000 0.031250 0.023438
+            2.875 0.015625 1.000000 0.031250 0.023438
+            2.750 0.031250 1.000000 0.031250 0.031250
+            2.625 0.109375 1.000000 0.046875 0.078125
+            2.500 0.140625 1.000000 0.046875 0.093750
+
+            D:\Downloads\P4\logs-ddos5xyz\expz5-8.txt
+
+        b) Initialize P4 data plane with post-training values. 
+
+            Z[1] Values from OW 255:
+
+                register_write src_ewma 0 2167114
+                register_write src_ewmmd 0 42243
+                register_write dst_ewma 0 2120406
+                register_write dst_ewmmd 0 43866  
+
+            Z[9] Values from OW 128:
+
+                register_write src_ewma 0 2483928
+                register_write src_ewmmd 0 36592
+                register_write dst_ewma 0 2433309
+                register_write dst_ewmmd 0 32135                  
+
+                Other parameters:
+
+                register_write ingress.log2_m 0 13
+                register_write ingress.training_len 0 0
+                register_write ingress.alpha 0 20
+                register_write ingress.k 0 33
+
+            Z[10] Values from OW 188:
+
+                register_write src_ewma 0 2500001
+                register_write src_ewmmd 0 38953
+                register_write dst_ewma 0 2452881
+                register_write dst_ewmmd 0 36773                  
+
+
+        c) Replay post-training OWs to check whether TCAD still works. 
+
+            Z[1]  OWs 256-END 
+
+            | Src H=8.062 A=8.251 MD=0.163 | Dst H=7.938 A=8.077 MD=0.165 | Alarm=0 Defcon=0 |
+                (15 lines with Alarm=0 ommitted.)
+            | Src H=6.938 A=8.432 MD=0.194 | Dst H=6.375 A=8.027 MD=0.175 | Alarm=1 Defcon=1 |
+            | Src H=8.625 A=8.447 MD=0.192 | Dst H=8.125 A=8.035 MD=0.169 | Alarm=0 Defcon=1 |
+
+            Z[9]  OWs 129-END
+
+            Z[10] OWS 189-END
+
+
+
+    Observations
+        Z[1] Run: 
+            P4 TCAD still exhibits a remarkably low TPR -- close to zero. 
+            This result suggests that the value of the sensitivity coefficient is exceedingly high. 
+            This possiblity is consistent with (i) the curves shown in Figure 5 of the original work and (ii) the results of Experiment Z[0] -- 
+            in which we empirically found that k=1.75 increased both the FPR and the TPR. 
+            In the original work, the value k=4.0 for the sensitivity parameter was empirically found to be optimal; in fact, k is set to 4.0 during the accuracy tests. 
+            * Next steps: 
+                Set k to 2.25 and observe the results. 
+        Z[2] Run:
+            Using k=2.25, we have obtained a better TPR: 0,4287109375. 
+            * Next steps: 
+                Further reduce k and observe the results. 
+        Z[3] Runs:
+            We have reached an almost perfect TPR (0,994140625) at k=0.750 (6/8). 
+            It appears that the ajustment of k to the size of the window is not exactly as described in the observations for Z[1]. 
+            * Next step: 
+                Measure FPRs for the k values we have tested.
+        Z[4] Runs: 
+            FPR results suggest that operation under log2(m)=11 is too unreliable. 
+            Best results obtained:
+                k=1.875: TPR=0,8935546 FPR=0,3671875
+                k=1.625: TPR=0,9921875 FPR=0,5078125 
+            The proportion of attack packets might be too low for the 2048-packet windows we have been using.
+                Entropy calculations depend on the base 2 log of absolute frequencies. 
+                If our insights are on the right path, we should obtain better results with larger windows. 
+            * Next steps: 
+                Experiment with larger attack proportions.
+                Experiment with larger window sizes.
+        Z[5] Runs:
+            I've written a Python script to perform this experiment and the following ones!
+            Best results obtained with 2048-packet windows at a 20% attack proportion: 
+                k=2.375: TPR=0.523438 FPR=0.314453
+                k=2.250: TPR=0.894531 FPR=0.376953
+                k=2.125: TPR=0.998047 FPR=0.533203
+            This larger attack proportion DOES NOT seem to improve results. 
+            * Next steps:
+                Experiment with larger window sizes. 
+        Z[6] Runs:
+            Best results obtained with 4096-packet windows: 
+                k=2.375: TPR=1.000000 FPR=0.320312
+            This larger observation window DOES seem to reduce the FPR. 
+            * Next steps:
+                Experiment with a wider count-sketch. 
+        Z[7] Runs:
+            Best result obtained with a 1280-column count-sketch:
+                k=2.500: TPR=0.984375 FPR=0.167969
+            This wider count-sketch DOES seem to reduce the FPR. 
+            * Next steps:
+                Experiment with an 8192-packet windows.
+        Z[8] Runs:
+            Best result obtained with an 8192-packet window:
+                k=4.125 TPR=1.000000 FPR=0.007812
+            This larger observation window DOES seem to dramatically reduce the FPR. 
+            * Next steps: 
+                Parameterize the P4 implementation:
+                    log2(m)=13 
+                    t=128
+                    w=1280 (count-sketch width).
+                    k=4.125 (in 29.3 fixed-point format, k=33)
+                Obtain the MAs and MMDs from ddos5z8-4.125.tcad.txt, OW number 129.
+                Remove the training part from zed20percent.pcap. 
+                Replay zed20percent-notraining.pcap to the P4 switch.  
+                Observe the signaling output. 
+                Compare it to ddos5z8-4.125.tcad.txt.
+                If it is OK, move back to work on P4SB3. 
+        Z[9] Run:
+            The mechanism works exactly like the emulation tools do.
+            * Next steps:
+                Move back to work on P4SB3.   
