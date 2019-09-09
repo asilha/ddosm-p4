@@ -44,6 +44,8 @@ Synthetic Workload
             Record area:    13.369.344.000 bytes
             # of records:      196.608.000 packets
 
+            Lapolli used packet_count = 131.072.000 (2^7*2^10*1000) as an input to trafg. 
+
         Splitting ddos5.pcap in 24 volumes with 8.192.000 packets each. 
 
             Phase       Packet Count    Start           End                Volume  Offset
