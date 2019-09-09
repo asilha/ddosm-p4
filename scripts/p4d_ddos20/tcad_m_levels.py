@@ -3,7 +3,7 @@
 import os
 
 kvalues = []
-for i in range(8,49):    # This goes from 1.00 to 6.00
+for i in range(1,65):    # This goes from 0.125 to 8.000
     kvalues.append(i/8.0)
 
 mvalues = []
@@ -14,7 +14,7 @@ training_packets_log2_n = 24
 
 paths = {}
 paths["tcad_bin"]= "/media/p4/ddosd-cpp/bin"
-paths["working_dir"] = "/media/p4/ddos/datasets/p4damp"
+paths["working_dir"] = "/media/p4/p4damp/datasets/ddos20/temp"
 
 summary_log = paths["working_dir"]+"/summary.log"   
 
@@ -33,7 +33,7 @@ for mvalue in mvalues:
         # print(tcad_command)
         command = "cat " + ee_log + " | " + tcad_command + " > " + tcad_log
         print(command)
-        # os.system(command)
+        os.system(command)
         phases = []
         phases.append({"start" : 1,                       "length" : training_length,   "alarms" : 0.0})  # phase 0: training
         phases.append({"start" : 1+training_length,       "length" : training_length/2, "alarms" : 0.0})  # phase 1: detection under safety
