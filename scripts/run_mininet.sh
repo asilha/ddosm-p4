@@ -15,5 +15,5 @@ SS_PARAMS="--log-level info --log-console"
 rm -rf logs/
 rm -rf pcaps/
 
-./scripts/lib/run_exercise.py -t $SCRIPT_DIR/topology.json -b $SS_PREFIX/simple_switch -j ./build/ddosd.json -q
+./scripts/lib/run_exercise.py -t $SCRIPT_DIR/run_mininet.json -b $SS_PREFIX/simple_switch -j ./build/ddosd.json -q
 
