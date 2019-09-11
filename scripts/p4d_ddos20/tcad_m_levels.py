@@ -14,7 +14,7 @@ training_packets_log2_n = 24
 
 paths = {}
 paths["tcad_bin"]= "/media/p4/ddosd-cpp/bin"
-paths["working_dir"] = "/media/p4/p4damp/datasets/ddos20/temp"
+paths["working_dir"] = "/media/p4/p4damp/datasets/ddos20/ddos20_results"
 
 summary_log = paths["working_dir"]+"/summary.log"   
 
