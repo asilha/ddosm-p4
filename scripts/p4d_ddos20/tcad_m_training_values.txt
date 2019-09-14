@@ -1,0 +1,66 @@
+Trace file: tcad_m_2_13_k_4.000.log
+Last training OW: 2048
+register_write ingress.log2_m 0 13
+register_write ingress.training_len 0 0
+register_write ingress.alpha 0 20
+register_write ingress.k 0 32
+register_write src_ewma 0 2478433
+register_write src_ewmmd 0 31760
+register_write dst_ewma 0 2427412
+register_write dst_ewmmd 0 32305
+register_write migration_t 0 10
+Trace file: tcad_m_2_14_k_4.125.log
+Last training OW: 1024
+register_write ingress.log2_m 0 14
+register_write ingress.training_len 0 0
+register_write ingress.alpha 0 20
+register_write ingress.k 0 33
+register_write src_ewma 0 2625051
+register_write src_ewmmd 0 20584
+register_write dst_ewma 0 2568813
+register_write dst_ewmmd 0 22849
+register_write migration_t 0 10
+Trace file: tcad_m_2_15_k_4.250.log
+Last training OW: 512
+register_write ingress.log2_m 0 15
+register_write ingress.training_len 0 0
+register_write ingress.alpha 0 20
+register_write ingress.k 0 34
+register_write src_ewma 0 2753897
+register_write src_ewmmd 0 12033
+register_write dst_ewma 0 2695343
+register_write dst_ewmmd 0 13053
+register_write migration_t 0 10
+Trace file: tcad_m_2_16_k_4.500.log
+Last training OW: 256
+register_write ingress.log2_m 0 16
+register_write ingress.training_len 0 0
+register_write ingress.alpha 0 20
+register_write ingress.k 0 36
+register_write src_ewma 0 2864313
+register_write src_ewmmd 0 12350
+register_write dst_ewma 0 2805575
+register_write dst_ewmmd 0 10789
+register_write migration_t 0 10
+Trace file: tcad_m_2_17_k_4.750.log
+Last training OW: 128
+register_write ingress.log2_m 0 17
+register_write ingress.training_len 0 0
+register_write ingress.alpha 0 20
+register_write ingress.k 0 38
+register_write src_ewma 0 2961826
+register_write src_ewmmd 0 10762
+register_write dst_ewma 0 2901458
+register_write dst_ewmmd 0 10233
+register_write migration_t 0 10
+Trace file: tcad_m_2_18_k_3.625.log
+Last training OW: 64
+register_write ingress.log2_m 0 18
+register_write ingress.training_len 0 0
+register_write ingress.alpha 0 20
+register_write ingress.k 0 29
+register_write src_ewma 0 3048509
+register_write src_ewmmd 0 8666
+register_write dst_ewma 0 2988414
+register_write dst_ewmmd 0 11127
+register_write migration_t 0 10
