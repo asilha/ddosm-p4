@@ -18,6 +18,9 @@ $(PROJECT): $(SOURCES)
 run_plain:	$(PROJECT)
 	./$(SCRIPT_DIR)/run_plain.sh
 
+run_without_config:	$(PROJECT)
+	./$(SCRIPT_DIR)/run_without_config.sh
+
 run_mininet: $(PROJECT)
 	./$(SCRIPT_DIR)/run_mininet.sh
 
@@ -26,16 +29,16 @@ clean:
 
 INTERFACE_PAIRS=8
 
-veth-setup:	
-	./$(SCRIPT_DIR)/setup_veth.sh setup $(INTERFACE_PAIRS)
+veth_start:	
+	./$(SCRIPT_DIR)/run_veth.sh setup $(INTERFACE_PAIRS)
 
-veth-delete:
-	./$(SCRIPT_DIR)/setup_veth.sh delete $(INTERFACE_PAIRS)
+veth_stop:
+	./$(SCRIPT_DIR)/run_veth.sh delete $(INTERFACE_PAIRS)
 
-sniff-start:
+sniff_start:
 	./$(SCRIPT_DIR)/run_wiresharks.sh start
 
-sniff-stop:
+sniff_stop:
 	./$(SCRIPT_DIR)/run_wiresharks.sh stop 
 
 
@@ -55,11 +58,29 @@ sniff-stop:
 # PACKET_RATE=3072 		
 
 # E02
-PACKET_LIMIT=565248 
-PACKET_RATE=3072 	 
+# PACKET_LIMIT=565248 
+# PACKET_RATE=3072 	 
 
-PCAP_FILE=/media/p4/ddos/datasets/zed/zed20percent-fast.pcap # e01, e02
+# PCAP_FILE=/media/p4/ddos/datasets/zed/zed20percent-fast.pcap # e01, e02
 
-traffic:
-	sudo tcpreplay --preload-pcap --quiet --limit=$(PACKET_LIMIT) --pps=$(PACKET_RATE) -i veth0 $(PCAP_FILE) 2>&1
+# traffic:
+	# sudo tcpreplay --preload-pcap --quiet --limit=$(PACKET_LIMIT) --pps=$(PACKET_RATE) -i veth0 $(PCAP_FILE) 2>&1
 
+################################################################################
+# New Environment! 
+
+SS_PREFIX="/home/p4/p4sec/aclapolli-bmv2/targets/simple_switch"
+SS_CLI=$(SS_PREFIX)/simple_switch_CLI
+TCPREPLAY=sudo tcpreplay --preload-pcap --quiet
+
+PACKET_LIMIT=565248
+PACKET_RATE=3072
+PCAP_FILE=/media/p4/p4damp/datasets/zed/zed20percent-fast.pcap
+
+exp_p4sb3:
+	$(SS_CLI) < /media/p4/ddosd-p4/scripts/p4d_ddos20/control_rules_base.txt
+	$(SS_CLI) < /media/p4/ddosd-p4/scripts/p4d_ddos20/control_rules_m_2_13.txt 
+	$(TCPREPLAY) --limit=$(PACKET_LIMIT) --pps=$(PACKET_RATE) -i veth0 $(PCAP_FILE) 2>&1
+
+# For the next experiment: 
+# PCAP_FILE=/media/p4/p4damp/datasets/ddos20/ddos20.pcap
