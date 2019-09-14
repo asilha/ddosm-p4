@@ -1,14 +1,22 @@
-PROJECT=ddosd
+PROJECT=ddosm
 ARCHITECTURE=bmv2
 
 BUILD_DIR=build
 LOG_DIR=logs
-PCAP_DIR=pcaps
+# PCAP_DIR=pcaps
+
 SOURCE_DIR=src
 SCRIPT_DIR=scripts
 
-P4C=/home/p4/p4sec/aclapolli-p4c/build/p4c
-P4C_FLAGS:=-b $(ARCHITECTURE) -I$(SOURCE_DIR)
+#P4C = /home/p4/p4sec/aclapolli-p4c/build/p4c
+P4C = /usr/local/bin/p4c
+P4C_FLAGS = -b $(ARCHITECTURE) -I$(SOURCE_DIR)
+
+# SS_PREFIX = /home/p4/p4sec/aclapolli-bmv2/targets/simple_switch
+# SS_PREFIX = /home/p4/p4org/behavioral-model/targets/simple_switch
+SS_PREFIX = /usr/local/bin
+SS_BIN = $(SS_PREFIX)/simple_switch --log-level warn
+SS_CLI = $(SS_PREFIX)/simple_switch_CLI
 
 SOURCES:=$(wildcard $(SOURCE_DIR)/*.p4)
 
@@ -18,48 +26,33 @@ $(PROJECT): $(SOURCES)
 run_plain:	$(PROJECT)
 	./$(SCRIPT_DIR)/run_plain.sh
 
+run_without_config:	$(PROJECT)
+	./$(SCRIPT_DIR)/run_without_config.sh
+
 run_mininet: $(PROJECT)
 	./$(SCRIPT_DIR)/run_mininet.sh
 
 clean:
-	rm -rf $(BUILD_DIR) $(LOG_DIR) $(PCAP_DIR)
+	rm -rf $(BUILD_DIR) $(LOG_DIR) 
+
+# $(PCAP_DIR)
 
 INTERFACE_PAIRS=8
 
-veth-setup:	
-	./$(SCRIPT_DIR)/setup_veth.sh setup $(INTERFACE_PAIRS)
+veth_setup:	
+	./$(SCRIPT_DIR)/run_veth.sh setup $(INTERFACE_PAIRS)
 
-veth-delete:
-	./$(SCRIPT_DIR)/setup_veth.sh delete $(INTERFACE_PAIRS)
+veth_delete:
+	./$(SCRIPT_DIR)/run_veth.sh delete $(INTERFACE_PAIRS)
 
-sniff-start:
-	./$(SCRIPT_DIR)/run_wiresharks.sh start
+sniff_start:
+	./$(SCRIPT_DIR)/run_wireshark.sh start
 
-sniff-stop:
-	./$(SCRIPT_DIR)/run_wiresharks.sh stop 
+sniff_stop:
+	./$(SCRIPT_DIR)/run_wireshark.sh stop 
 
 
-# Experiments X, Y, Z. 
 
-# PACKET_LIMIT=131072
-# PACKET_RATE=2048
 
-# PCAP_FILE=/media/p4/ddos/datasets/sample/ddos5y0.pcap			
-# PCAP_FILE=/media/p4/ddos/datasets/zed/zed20percent.pcap
-# PCAP_FILE=/media/p4/ddos/datasets/zed/zed20percent-notraining.pcap
 
-# Experiments P4SB3. 
-
-# E01
-# PACKET_LIMIT=172032 	
-# PACKET_RATE=3072 		
-
-# E02
-PACKET_LIMIT=565248 
-PACKET_RATE=3072 	 
-
-PCAP_FILE=/media/p4/ddos/datasets/zed/zed20percent-fast.pcap # e01, e02
-
-traffic:
-	sudo tcpreplay --preload-pcap --quiet --limit=$(PACKET_LIMIT) --pps=$(PACKET_RATE) -i veth0 $(PCAP_FILE) 2>&1
 

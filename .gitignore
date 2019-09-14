@@ -1,7 +1,13 @@
 build/*
+datasets/*
 logs/*
 pcaps/*
 .vscode/*
 *.pyc
 scripts/__pycache__
 scripts/lib/__pycache__
+*.pcap
+*.pcap.gz
+*.pcapng
+*.pcapng.gz
+desktop.ini
