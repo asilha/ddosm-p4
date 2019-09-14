@@ -6,3 +6,4 @@ register_write src_ewma 0 3048509
 register_write src_ewmmd 0 8666
 register_write dst_ewma 0 2988414
 register_write dst_ewmmd 0 11127
+register_write mitigation_t 0 10
