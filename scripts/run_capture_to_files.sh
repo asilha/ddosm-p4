@@ -6,26 +6,26 @@ then
     exit $?
 fi
 
-if [ $# -ne 1 ] || ([ "$1" != "start" ] && [ "$1" != "stop" ])
+if [ $# -ne 2 ] || ([ "$1" != "start" ] && [ "$1" != "stop" ])
 then
-    echo "Usage: $0 (start|stop)"
+    echo "Usage: $0 (start|stop) (dir)"
     exit -1
 fi
 
 if [ "$1" = "start" ]
 then
-    for i in {0..6..2} 
+    for i in {2..6..2} 
     do 
-        tcpdump -i veth$i -K -n -s 80 -w /media/p4/veth$i.pcap & 
+        tcpdump -i veth$i -K -n -s 80 -w $2/veth$i.pcap & 
     done
-    sleep 5
+    sleep 10
 elif [ "$1" = "stop" ]
 then
-    sleep 5
+    sleep 10
     killall -TERM tcpdump 
-    for i in {0..6..2} 
+    for i in {2..6..2} 
     do 
-        gzip /media/p4/veth$i.pcap  
+        gzip -f $2/veth$i.pcap  
     done
 
 fi
