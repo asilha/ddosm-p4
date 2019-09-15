@@ -29,17 +29,17 @@ clean:
 
 INTERFACE_PAIRS=8
 
-veth_start:	
+veth_setup:	
 	./$(SCRIPT_DIR)/run_veth.sh setup $(INTERFACE_PAIRS)
 
-veth_stop:
+veth_delete:
 	./$(SCRIPT_DIR)/run_veth.sh delete $(INTERFACE_PAIRS)
 
 sniff_start:
-	./$(SCRIPT_DIR)/run_wiresharks.sh start
+	./$(SCRIPT_DIR)/run_wireshark.sh start
 
 sniff_stop:
-	./$(SCRIPT_DIR)/run_wiresharks.sh stop 
+	./$(SCRIPT_DIR)/run_wireshark.sh stop 
 
 
 # Experiments X, Y, Z. 
@@ -51,20 +51,19 @@ sniff_stop:
 # PCAP_FILE=/media/p4/ddos/datasets/zed/zed20percent.pcap
 # PCAP_FILE=/media/p4/ddos/datasets/zed/zed20percent-notraining.pcap
 
-# Experiments P4SB3. 
+# Experiments P4DAMP. 
 
 # E01
 # PACKET_LIMIT=172032 	
 # PACKET_RATE=3072 		
+# PCAP_FILE=/media/p4/ddos/datasets/zed/zed20percent-fast.pcap 
+# sudo tcpreplay --preload-pcap --quiet --limit=$(PACKET_LIMIT) --pps=$(PACKET_RATE) -i veth0 $(PCAP_FILE) 2>&1
 
 # E02
 # PACKET_LIMIT=565248 
 # PACKET_RATE=3072 	 
-
-# PCAP_FILE=/media/p4/ddos/datasets/zed/zed20percent-fast.pcap # e01, e02
-
-# traffic:
-	# sudo tcpreplay --preload-pcap --quiet --limit=$(PACKET_LIMIT) --pps=$(PACKET_RATE) -i veth0 $(PCAP_FILE) 2>&1
+# PCAP_FILE=/media/p4/ddos/datasets/zed/zed20percent-fast.pcap 
+# sudo tcpreplay --preload-pcap --quiet --limit=$(PACKET_LIMIT) --pps=$(PACKET_RATE) -i veth0 $(PCAP_FILE) 2>&1
 
 ################################################################################
 # New Environment! 
@@ -77,10 +76,13 @@ PACKET_LIMIT=565248
 PACKET_RATE=3072
 PCAP_FILE=/media/p4/p4damp/datasets/zed/zed20percent-fast.pcap
 
-exp_p4sb3:
+exp_zed_10:
 	$(SS_CLI) < /media/p4/ddosd-p4/scripts/p4d_ddos20/control_rules_base.txt
-	$(SS_CLI) < /media/p4/ddosd-p4/scripts/p4d_ddos20/control_rules_m_2_13.txt 
+	$(SS_CLI) < /media/p4/ddosd-p4/scripts/p4d_ddos20/control_rules_zed.txt
+	echo "register_write mitigation_t 0 10" | $(SS_CLI) 
+	./$(SCRIPT_DIR)/run_capture_to_files.sh start
 	$(TCPREPLAY) --limit=$(PACKET_LIMIT) --pps=$(PACKET_RATE) -i veth0 $(PCAP_FILE) 2>&1
+	./$(SCRIPT_DIR)/run_capture_to_files.sh stop
 
 # For the next experiment: 
 # PCAP_FILE=/media/p4/p4damp/datasets/ddos20/ddos20.pcap
