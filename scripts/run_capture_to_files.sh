@@ -23,6 +23,7 @@ elif [ "$1" = "stop" ]
 then
     sleep 10
     killall -TERM tcpdump 
+    sleep 10
     for i in {2..6..2} 
     do 
         gzip -f $2/veth$i.pcap  
