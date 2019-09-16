@@ -1,0 +1,81 @@
+-------------------------------------------------------------------------------
+Synthetic Workload
+
+Libpcap File Format https://wiki.wireshark.org/Development/LibpcapFileFormat
+Global header: 24 bytes
+Record header: 16 bytes
+
+Analyzing a trafg-generated workload.
+
+    File: datasets/aclapolli/ddos5.pcap
+
+    Pcap record size:           68      bytes
+        Record header:          16      
+        Capture data:           52
+            Ethernet:               14
+            IPv4:                   20
+            Custom payload:         17
+                Timestamp               16 [Offset: 0x22-0x31]
+                Attack flag             01 [Offset: 0x32]
+            Ethernet:               01
+
+    Total size:     13.369.344.024 bytes
+    Global header:              24 bytes  
+    Record area:    13.369.344.000 bytes
+    # of records:      196.608.000 packets
+
+    Capture Start:	1459947780000000	Wednesday, 06-Apr-16 13:03:00.000000 UTC
+    Attack Start:	1459947871852575	Wednesday, 06-Apr-16 13:04:31.852575 UTC
+    Attack End:		1459947931138652	Wednesday, 06-Apr-16 13:05:31.138652 UTC
+    Capture End:	1459947962808079	Wednesday, 06-Apr-16 13:06:02.808079 UTC
+
+    First Packet:
+
+        "1",			"2016-04-06 13:03:00.000000","161.69.48.219","161.69.45.5","IPv4","52","Unknown (253)"
+
+    Last Packet
+
+        "196608000",	"2016-04-06 13:06:02.808079","5.255.217.159","66.56.90.148","IPv4","52","Unknown (253)"
+
+    Legitimate Traces: 
+        
+        File                                                Packets
+        equinix-chicago.dirA.20160406-130300.UTC.anon.pcap  32386894
+        equinix-chicago.dirA.20160406-130400.UTC.anon.pcap  30325344
+        equinix-chicago.dirA.20160406-130500.UTC.anon.pcap  32133986
+        equinix-chicago.dirA.20160406-130600.UTC.anon.pcap  29793140
+        equinix-chicago.dirA.20160406-130700.UTC.anon.pcap  28041980
+        equinix-chicago.dirA.20160406-130800.UTC.anon.pcap  31989418
+        equinix-chicago.dirA.20160406-130900.UTC.anon.pcap  30598765
+
+    Attack Traces:
+
+        File                                                Packets
+        ddostrace.20070804_141436.pcap                      ~25M
+
+    Trafg Parameters:
+
+        Since trafg outputs 1.5 * packet_count = 196.608.000 packets, 
+        we know that packet_count = 196.608.000 / 1.5 = 131.072.000 = 2**7 * 2**10 * 1000 .
+    
+Splitting the workload in 24 volumes with 8.192.000 packets each. 
+
+    Phase       Packet Count    Start           End                Volume  Offset
+    Total        196.608.000                                       24/24   00..23        
+    Training:     65.536.000    13:03:00.000000 13:04:00.087231     8/24   00..07
+    Detection 1:  32.768.000    13:04:00.087231 13:04:31.852544     4/24   08..11
+    Detection 2:  65.536.000    13:04:31.852545 13:05:31.138658     8/24   12..19
+    Detection 3:  32.768.000    13:05:31.138659 13:06:02.808079     4/24   20..23
+
+    Files: in datasets/aclapolli/ddos5_split/*.pcap
+
+Window counts using m=2^18 packets per window.
+
+    Phase       Window Count    Start           End                Volume  Offset
+    Total                750                                       24/24   00..23        
+    Training:            250    13:03:00.000000 13:04:00.087231     8/24   00..07
+    Detection 1:         125    13:04:00.087231 13:04:31.852544     4/24   08..11
+    Detection 2:         250    13:04:31.852545 13:05:31.138658     8/24   12..19
+    Detection 3:         125    13:05:31.138659 13:06:02.808079     4/24   20..23
+
+    
