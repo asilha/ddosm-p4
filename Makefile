@@ -2,8 +2,9 @@ PROJECT=ddosd
 ARCHITECTURE=bmv2
 
 BUILD_DIR=build
-LOG_DIR=logs
-PCAP_DIR=pcaps
+LOG_DIR=temp_logs
+PCAP_DIR=temp_pcaps
+
 SOURCE_DIR=src
 SCRIPT_DIR=scripts
 
