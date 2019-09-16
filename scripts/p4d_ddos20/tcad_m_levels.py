@@ -10,7 +10,7 @@ mvalues = []
 for i in range(13,19):  # This goes from 13 to 18.
     mvalues.append(i)
 
-training_packets_log2_n = 24
+training_packets_log2_n = 23
 
 paths = {}
 paths["tcad_bin"]= "/media/p4/ddosd-cpp/bin"
