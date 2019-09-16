@@ -2,8 +2,8 @@ register_write ingress.log2_m 0 13
 register_write ingress.training_len 0 0
 register_write ingress.alpha 0 20
 register_write ingress.k 0 32
-register_write src_ewma 0 2478433
-register_write src_ewmmd 0 31760
-register_write dst_ewma 0 2427412
-register_write dst_ewmmd 0 32305
-register_write mitigation_t 0 10
+register_write src_ewma 0 2483288
+register_write src_ewmmd 0 32385
+register_write dst_ewma 0 2428573
+register_write dst_ewmmd 0 37761
+register_write migration_t 0 10

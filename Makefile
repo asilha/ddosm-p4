@@ -87,9 +87,9 @@ exp_zed_10:
 
 
 TCPREPLAY=sudo tcpreplay --quiet
-#PACKET_LIMIT=33554432
+#PACKET_LIMIT=16777216
 PACKET_LIMIT=565248
-PACKET_RATE=4096
+PACKET_RATE=3072
 PCAP_FILE=/media/p4/p4damp/datasets/ddos20/ddos20-notraining.pcap
 OUTPUT_DIR=/media/p4/p4damp/pcaps/exp_p4damp_10
 
