@@ -1,4 +1,5 @@
 build/*
+datasets/*
 logs/*
 pcaps/*
 .vscode/*
@@ -6,3 +7,6 @@ pcaps/*
 scripts/__pycache__
 scripts/lib/__pycache__
 *.pcap
+*.pcap.gz
+*.pcapng
+*.pcapng.gz
