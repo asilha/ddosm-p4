@@ -36,10 +36,10 @@ do
             ip link add name $intf0 type veth peer name $intf1
             ip link set dev $intf0 up
             ip link set dev $intf1 up
-            tc qdisc replace dev $intf0 root pfifo
-            tc qdisc replace dev $intf1 root pfifo
-            ip link set txqueuelen 8192 dev $intf0
-            ip link set txqueuelen 8192 dev $intf1
+            # tc qdisc replace dev $intf0 root pfifo
+            # tc qdisc replace dev $intf1 root pfifo
+            # ip link set txqueuelen 8192 dev $intf0
+            # ip link set txqueuelen 8192 dev $intf1
             TOE_OPTIONS="rx tx sg tso ufo gso gro lro rxvlan txvlan rxhash"
             for TOE_OPTION in $TOE_OPTIONS; do
                /sbin/ethtool --offload $intf0 "$TOE_OPTION" off 2>&1 > /dev/null
