@@ -6,4 +6,4 @@ register_write src_ewma 0 2628797
 register_write src_ewmmd 0 18220
 register_write dst_ewma 0 2572820
 register_write dst_ewmmd 0 20993
-register_write migration_t 0 10
+register_write mitigation_t 0 10
