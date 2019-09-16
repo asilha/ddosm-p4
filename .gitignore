@@ -5,3 +5,4 @@ pcaps/*
 *.pyc
 scripts/__pycache__
 scripts/lib/__pycache__
+*.pcap
