@@ -1,6 +1,6 @@
 # About ddosm-p4
 
-This is a work in progress based in a fork of [ddosd-p4](https://github.com/aclapolli/ddosd-p4). 
+This is a work in progress based on a fork of [ddosd-p4](https://github.com/aclapolli/ddosd-p4). 
 The target is the `simple_switch` variation of the P4 behavioral model software reference implementation.
 
 ## Getting Started
