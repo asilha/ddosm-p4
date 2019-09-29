@@ -1,4 +1,4 @@
-PROJECT=ddosd
+PROJECT=ddosm
 ARCHITECTURE=bmv2
 
 BUILD_DIR=build
