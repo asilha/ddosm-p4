@@ -10,3 +10,4 @@ scripts/lib/__pycache__
 *.pcap.gz
 *.pcapng
 *.pcapng.gz
+desktop.ini
