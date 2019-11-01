@@ -30,7 +30,9 @@ run_mininet: $(PROJECT)
 	./$(SCRIPT_DIR)/run_mininet.sh
 
 clean:
-	rm -rf $(BUILD_DIR) $(LOG_DIR) $(PCAP_DIR)
+	rm -rf $(BUILD_DIR) $(LOG_DIR) 
+
+# $(PCAP_DIR)
 
 INTERFACE_PAIRS=8
 
