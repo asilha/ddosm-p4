@@ -5,9 +5,7 @@
 import sys
 import struct
 
-from scapy.all import bind_layers, hexdump, sniff
-from scapy.all import Packet, Ether, IP, TCP, UDP, Raw
-from scapy.all import ByteField, XShortField, IntField, LongField
+from scapy.all import * 
 
 class DDoSD(Packet):
     name = "DDoSD Header"
@@ -55,15 +53,12 @@ def handle_pkt(pkt):
     print(pkt_to_string_human_readable(ddosd))
 
 def main():
-    iface = 'veth7'
-    print("sniffing on %s" % iface)
-    sys.stdout.flush()
-
     bind_layers(Ether, DDoSD, type=0x6605)
     bind_layers(DDoSD, IP, ethertype=0x0800)
     bind_layers(IP, DDoSDPayload, proto=253)
-
-    sniff(filter='', iface = iface, prn = lambda x: handle_pkt(x))
-
+    packets = rdpcap('/media/p4/ddosm-p4/pcaps/exp/if4_stats_out.pcapng')
+    for packet in packets: 
+    	handle_pkt(packet)
+    	
 if __name__ == '__main__':
     main()

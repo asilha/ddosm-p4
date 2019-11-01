@@ -653,14 +653,26 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                 // This means that the address has had a significant increase in frequency. 
                 // Hence, we consider it more likely to be a source of attack.  
                 // For now, we're only using the source address. 
+                // if (src_count_tm_a > src_count_tm_b) {
+                //         src_delta = src_count_tm_a - src_count_tm_b;
+                //         if (src_delta > mitigation_t_aux) { // 1% of window size: 0.01 * 8192  =~ 81. 
+                //             detour = 1;
+                //         }
+                // } 
+
+                // Experiment: write the values in the packet. 
                 if (src_count_tm_a > src_count_tm_b) {
                         src_delta = src_count_tm_a - src_count_tm_b;
-                        if (src_delta > mitigation_t_aux) { // 1% of window size: 0.01 * 8192  =~ 81. 
+                        if (src_delta > mitigation_t_aux) { 
+                            hdr.ipv4.identification = (bit<16>) src_delta[15:0] ;
                             detour = 1;
                         }
                 } 
 
             } // End of DEFCON state processing. 
+
+            // Experiment: unconditional detour
+            
 
             // Detour is set to one for packets that must undergo further inspection.
             if (detour == 0) {
@@ -669,6 +681,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             else { 
                 ipv4_dpi_fib.apply();   // Use the "deep packet inspection" forwarding table. 
             }
+
 
             // End of conditional diversion. 
             // --------------------------------------------------------------------------------------------------------
