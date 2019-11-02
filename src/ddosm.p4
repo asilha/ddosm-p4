@@ -663,8 +663,10 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                 // Experiment: write the values in the packet. 
                 if (src_count_tm_a > src_count_tm_b) {
                         src_delta = src_count_tm_a - src_count_tm_b;
-                        hdr.ipv4.identification = (bit<16>) src_delta[15:0] ;
-                        detour = 1;
+                        if (src_delta > mitigation_t_aux) { 
+                            hdr.ipv4.identification = (bit<16>) src_delta[15:0] ;
+                            detour = 1;
+                        }
                 } 
 
             } // End of DEFCON state processing. 
@@ -711,7 +713,7 @@ control egress(inout headers hdr, inout metadata meta, inout standard_metadata_t
 
 control computeChecksum(inout headers  hdr, inout metadata meta) {
     apply {
-        // update_checksum(true, {hdr.ipv4.version, hdr.ipv4.ihl, hdr.ipv4.dscp, hdr.ipv4.ecn, hdr.ipv4.total_len, hdr.ipv4.identification, hdr.ipv4.flags, hdr.ipv4.frag_offset, hdr.ipv4.ttl, hdr.ipv4.protocol, hdr.ipv4.src_addr, hdr.ipv4.dst_addr}, hdr.ipv4.hdr_checksum, HashAlgorithm.csum16);
+        update_checksum(true, {hdr.ipv4.version, hdr.ipv4.ihl, hdr.ipv4.dscp, hdr.ipv4.ecn, hdr.ipv4.total_len, hdr.ipv4.identification, hdr.ipv4.flags, hdr.ipv4.frag_offset, hdr.ipv4.ttl, hdr.ipv4.protocol, hdr.ipv4.src_addr, hdr.ipv4.dst_addr}, hdr.ipv4.hdr_checksum, HashAlgorithm.csum16);
     }
 }
 
