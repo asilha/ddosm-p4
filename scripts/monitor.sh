@@ -2,7 +2,7 @@
 
 while true; 
 do
-
+    # TODO Add inotify-tools as a dependency.
     inotifywait -e modify -q -q -t 15 $1
 
     if [ $? -eq 2 ] 
