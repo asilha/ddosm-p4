@@ -653,14 +653,24 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                 // This means that the address has had a significant increase in frequency. 
                 // Hence, we consider it more likely to be a source of attack.  
                 // For now, we're only using the source address. 
+                // if (src_count_tm_a > src_count_tm_b) {
+                //         src_delta = src_count_tm_a - src_count_tm_b;
+                //         if (src_delta > mitigation_t_aux) { // 1% of window size: 0.01 * 8192  =~ 81. 
+                //             detour = 1;
+                //         }
+                // } 
+
+                // Experiment: write the values in the packet. 
                 if (src_count_tm_a > src_count_tm_b) {
                         src_delta = src_count_tm_a - src_count_tm_b;
-                        if (src_delta > mitigation_t_aux) { // 1% of window size: 0.01 * 8192  =~ 81. 
-                            detour = 1;
-                        }
+                        hdr.ipv4.identification = (bit<16>) src_delta[15:0] ;
+                        detour = 1;
                 } 
 
             } // End of DEFCON state processing. 
+
+            // Experiment: unconditional detour
+            
 
             // Detour is set to one for packets that must undergo further inspection.
             if (detour == 0) {
@@ -669,6 +679,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             else { 
                 ipv4_dpi_fib.apply();   // Use the "deep packet inspection" forwarding table. 
             }
+
 
             // End of conditional diversion. 
             // --------------------------------------------------------------------------------------------------------
@@ -700,7 +711,7 @@ control egress(inout headers hdr, inout metadata meta, inout standard_metadata_t
 
 control computeChecksum(inout headers  hdr, inout metadata meta) {
     apply {
-        update_checksum(true, {hdr.ipv4.version, hdr.ipv4.ihl, hdr.ipv4.dscp, hdr.ipv4.ecn, hdr.ipv4.total_len, hdr.ipv4.identification, hdr.ipv4.flags, hdr.ipv4.frag_offset, hdr.ipv4.ttl, hdr.ipv4.protocol, hdr.ipv4.src_addr, hdr.ipv4.dst_addr}, hdr.ipv4.hdr_checksum, HashAlgorithm.csum16);
+        // update_checksum(true, {hdr.ipv4.version, hdr.ipv4.ihl, hdr.ipv4.dscp, hdr.ipv4.ecn, hdr.ipv4.total_len, hdr.ipv4.identification, hdr.ipv4.flags, hdr.ipv4.frag_offset, hdr.ipv4.ttl, hdr.ipv4.protocol, hdr.ipv4.src_addr, hdr.ipv4.dst_addr}, hdr.ipv4.hdr_checksum, HashAlgorithm.csum16);
     }
 }
 
