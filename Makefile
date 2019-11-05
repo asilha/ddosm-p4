@@ -11,8 +11,9 @@ SCRIPT_DIR=scripts
 P4C = /home/p4/p4sec/aclapolli-p4c/build/p4c
 P4C_FLAGS = -b $(ARCHITECTURE) -I$(SOURCE_DIR)
 
-# SS_PREFIX = /home/p4/p4sec/aclapolli-bmv2/targets/simple_switch
-SS_PREFIX = /home/p4/p4org/behavioral-model/targets/simple_switch
+SS_PREFIX = /home/p4/p4sec/aclapolli-bmv2/targets/simple_switch
+# SS_PREFIX = /home/p4/p4org/behavioral-model/targets/simple_switch
+# SS_PREFIX = /usr/local/bin
 SS_BIN = $(SS_PREFIX)/simple_switch --log-level warn
 SS_CLI = $(SS_PREFIX)/simple_switch_CLI
 
