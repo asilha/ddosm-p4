@@ -16,7 +16,7 @@ if [ "$1" = "start" ]
 then
     for i in {2..6..2} 
     do 
-        tcpdump -i veth$i -K -n -s 80 -w $2/veth$i.pcap & 
+        nice -8 tcpdump -i veth$i -K -n -s 80 -w $2/veth$i.pcap & 
     done
     sleep 10
 elif [ "$1" = "stop" ]
