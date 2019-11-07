@@ -8,7 +8,7 @@ do
     if [ $? -eq 2 ] 
     then 
         echo "Timeout! Let's kill the switch."
-        sudo killall -w lt-simple_switch 
+        sudo killall -w lt-simple_switch simple_switch 
         break
     fi
 
