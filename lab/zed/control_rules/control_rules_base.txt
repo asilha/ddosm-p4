@@ -1,3 +1,4 @@
+reset_state
 mirroring_add 250 4
 table_clear ingress.ipv4_fib
 table_add ingress.ipv4_fib ingress.forward 0/0 => 2

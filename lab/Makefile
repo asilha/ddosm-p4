@@ -5,6 +5,7 @@ include ../Makefile
 BUILD_DIR = ../build
 SOURCE_DIR = ../src
 PCAP_DIR = ../pcaps
+SCRIPT_DIR = ../scripts
 LOAD = if1_workload
 GOOD = if2_legitimate 
 EVIL = if3_attack
@@ -55,12 +56,28 @@ exp-tmp:
 	editcap -T ether ../pcaps/$@/if3_attack_out.pcap ../pcaps/$@/if3_attack_out.pcapng
 	editcap -T ether ../pcaps/$@/if4_stats_out.pcap ../pcaps/$@/if4_stats_out.pcapng
 
+TCPREPLAY=sudo nice -19 tcpreplay --preload-pcap --quiet
+PACKET_LIMIT=565248
+PACKET_RATE=4096
+PCAP_FILE=/home/ilha/p4sec/ddosm-p4/pcaps/exp/if1_workload_in.pcap
+OUTPUT_DIR=/home/ilha/p4sec/ddosm-p4/pcaps/exp-tmp-2
+
+exp-tmp-2:
+	mkdir -p $(OUTPUT_DIR)
+	rm -f $(OUTPUT_DIR)/*.pcap
+	rm -f $(OUTPUT_DIR)/*.pcap.gz
+	$(SS_CLI) < zed/control_rules/control_rules_base.txt
+	$(SS_CLI) < zed/control_rules/control_rules_zed.txt
+	echo "register_write mitigation_t 0 10" | $(SS_CLI)
+	$(SCRIPT_DIR)/run_capture_to_files.sh start $(OUTPUT_DIR)
+	$(TCPREPLAY) --limit=$(PACKET_LIMIT) --pps=$(PACKET_RATE) -i veth0 $(PCAP_FILE) 2>&1
+	$(SCRIPT_DIR)/run_capture_to_files.sh stop $(OUTPUT_DIR)
+
+
 # /pcaps/zed/if1_workload_in is /datasets/zed/zed20percent-fast.pcap
 
 zed: 
 	rm -f $(PCAP_DIR)/$@/*_out.pcap
-	$(SS_BIN) --use-files 15 -i 1@$(PCAP_DIR)/$@/$(LOAD) -i 2@$(PCAP_DIR)/$@/$(GOOD) -i 3@$(PCAP_DIR)/$@/$(EVIL) -i 4@$(PCAP_DIR)/$@/$(STAT) $(BUILD_DIR)/ddosm.json &
-	sleep 5 
 	$(SS_CLI) < $@/control_rules/control_rules_base.txt
 	$(SS_CLI) < $@/control_rules/control_rules_zed.txt
 	echo "register_write mitigation_t 0 10" | $(SS_CLI) 
