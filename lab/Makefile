@@ -74,14 +74,14 @@ exp-tmp-2:
 	$(SCRIPT_DIR)/run_capture_to_files.sh stop $(OUTPUT_DIR)
 
 TCPREPLAY=sudo nice -19 tcpreplay --preload-pcap --quiet
-PACKET_RATE=4096
+PACKET_RATE=3500
 PCAP_FILE=/home/ilha/p4sec/ddosm-p4/pcaps/ddos20/if1_workload_in.pcap
 OUTPUT_DIR=/home/ilha/p4sec/ddosm-p4/pcaps/exp-tmp-3
 
 exp-tmp-3:
-	mkdir -p $(OUTPUT_DIR)
-	rm -f $(OUTPUT_DIR)/*.pcap
-	rm -f $(OUTPUT_DIR)/*.pcap.gz
+	#mkdir -p $(OUTPUT_DIR)
+	#rm -f $(OUTPUT_DIR)/*.pcap
+	#rm -f $(OUTPUT_DIR)/*.pcap.gz
 	$(SS_CLI) < ddos20/control_rules/control_rules_base.txt
 	$(SS_CLI) < ddos20/control_rules/control_rules_m_2_14.txt
 	echo "register_write mitigation_t 0 10" | $(SS_CLI)
