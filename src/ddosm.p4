@@ -661,38 +661,37 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                 // } 
 
                 // Experiment: write the values in the packet. 
-//                if (src_count_tm_a > src_count_tm_b) {
-//                        src_delta = src_count_tm_a - src_count_tm_b;
-//                        if (src_delta > mitigation_t_aux) { 
-//                            hdr.ipv4.identification = (bit<16>) src_delta[15:0] ;
-//                            detour = 1;
-//                        }
-//                } 
+                // if (src_count_tm_a > src_count_tm_b) {
+                //         src_delta = src_count_tm_a - src_count_tm_b;
+                //         if (src_delta > mitigation_t_aux) { 
+                //             hdr.ipv4.identification = (bit<16>) src_delta[15:0] ;
+                //             detour = 1;
+                //         }
+                // } 
 
-                 // Experiment: write the values in the packet. 
+                // Debug mode: write the values in the packet. 
                 if (src_count_tm_a > src_count_tm_b) {
-                        src_delta = src_count_tm_a - src_count_tm_b;
+                    src_delta = src_count_tm_a - src_count_tm_b;
                 } 
-		else {
-			src_delta = 0;
-		}
+                else {
+                    src_delta = 0;
+                }
 
+                // Note: the maximum count is 2^18. 
                 hdr.ipv4.identification = (bit<16>) src_delta[15:0] ;
-
 
             } // End of DEFCON state processing. 
 
             // Experiment: unconditional detour
-            
+            detour = 1;
 
             // Detour is set to one for packets that must undergo further inspection.
-            // if (detour == 0) {
-            //     ipv4_fib.apply();       // Use the regular forwarding table.
-            // }
-            // else { 
+            if (detour == 0) {
+                ipv4_fib.apply();       // Use the regular forwarding table.
+            }
+            else { 
                 ipv4_dpi_fib.apply();   // Use the "deep packet inspection" forwarding table. 
-            //}
-
+            }
 
             // End of conditional diversion. 
             // --------------------------------------------------------------------------------------------------------
