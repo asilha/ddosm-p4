@@ -16,8 +16,8 @@ def get_output_name(base_path_name, ow, packet_first, packet_last):
     return base_path_name + "-" + str(ow) + "-" + str(packet_first) + "-" + str(packet_last)
 
 def run_editcap(input_name, output_name, packet_first, packet_last):
-    assert os.path.isfile(input_name + ".pcap")
-    command = "editcap -r " + input_name + ".pcap " + output_name + ".pcap " + str(packet_first) + "-" + str(packet_last)
+    assert os.path.isfile(input_name + ".pcapng")
+    command = "editcap -r " + input_name + ".pcapng " + output_name + ".pcap " + str(packet_first) + "-" + str(packet_last)
     print(command)
     os.system(command)
 
@@ -36,7 +36,7 @@ def main():
     sample.ow_last = 32
     sample.ow_size = 16384
     sample.base_path = "~/p4sec/ddosm-p4/pcaps/ddos20m14"
-    sample.base_name = "ddos20m14"
+    sample.base_name = "if3_attack_out"
 
     assert sample.ow_first > 0
     assert sample.ow_last > 0
