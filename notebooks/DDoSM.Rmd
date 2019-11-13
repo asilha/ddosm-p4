@@ -43,9 +43,13 @@ Convert the ip.id field from hexadecimal to decimal.
 packets = packets %>% mutate(id=strtoi(id))
 ```
 
+
+Note: check the DDoS Mitigation notebook, where I calculate the indices. 
+
 Get stats for the first OW: histogram of addresses for each delta value. 
 
 ```{r}
-packets %>% filter(index >= 715100) 
+packets %>% filter(index >= 4194300) 
 ```
 
+As we can see, the attack begins with the fifth packet of OW 256. 
