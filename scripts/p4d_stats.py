@@ -19,8 +19,8 @@ def run_tshark(base_path_name):
     os.system(command)
     command = "tshark -r " + base_path_name + ".pcapng -T fields -e ip.src -e ip.dst -e ip.id -e data.data | " + \
               "awk 'BEGIN {OFS=\",\"} {print $1,$2,$3,substr($4,50,1) }' >> " + base_path_name + ".csv"
-    #print(command)
-    os.system(command)
+    print(command)
+    #os.system(command)
 
 def main():
     sample = PCAPSample()
