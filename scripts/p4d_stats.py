@@ -16,7 +16,8 @@ class PCAPSample:
 def run_tshark(base_path_name):
     assert os.path.isfile(base_path_name + ".pcapng")
     command = "echo src,dst,id,attack > " + base_path_name + ".csv"
-    os.system(command)
+    print(command)
+    #os.system(command)
     command = "tshark -r " + base_path_name + ".pcapng -T fields -e ip.src -e ip.dst -e ip.id -e data.data | " + \
               "awk 'BEGIN {OFS=\",\"} {print $1,$2,$3,substr($4,50,1) }' >> " + base_path_name + ".csv"
     print(command)
