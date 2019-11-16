@@ -18,7 +18,12 @@ library(readr)
 Load the dataset.
 
 ```{r}
-packets <- read_csv("~/p4sec/ddosm-p4/pcaps/ddos20m14/if3_attack_out.csv")
+packets <- read_csv("~/p4sec/ddosm-p4/pcaps/ddos20m14/if3_attack_out.csv", col_types = cols(
+  src = col_character(),
+  dst = col_character(),
+  id = col_character(),
+  attack = col_logical()
+))
 ```
 
 Add a column with the index of the packet.
@@ -33,14 +38,15 @@ Add a column with the number of the observation window.
 log2m = 14
 m = 2^log2m
 get_ow = function(index, m) ((index - 1) %/% m + 1)
-packets = packets %>% mutate(ow = get_ow(index,m))
+packets = packets %>% mutate(ow = get_ow(index,m)) 
+packets = packets %>% rename(delta = id)
 ```
 
 Convert the ip.id field from hexadecimal to decimal. 
 
 ```{r}
 #packets %>% slice((767 * 2^14 + 1):(769 * 2^14)) %>% mutate(id=strtoi(id))
-packets = packets %>% mutate(id=strtoi(id))
+packets = packets %>% mutate(delta=strtoi(delta))
 ```
 
 
@@ -52,11 +58,49 @@ packets %>% filter(index >= 4194300)
 
 As we can see, the attack begins with the fifth packet of OW 257. 
 
-Get stats for the first OW: histogram of addresses for each delta value. 
+Get stats for the second OW under attack: histogram of addresses for each delta value. 
 
 ```{r}
-packets %>% filter(ow == 258) %>% group_by(id) %>% summarize(sources=n_distinct(src))
+query = packets %>% filter(ow >= 257, ow <= 512) %>% group_by(ow, attack, delta) %>% summarize(sources=n_distinct(src)) 
+query %>% ggplot(mapping=aes(x=delta, y=sources, color=attack)) + geom_line() # + coord_cartesian(xlim=c(0,1500),ylim=c(0,4000))
 ```
 
 
+
+```{r}
+query %>% filter(attack==FALSE) %>% ggplot(mapping=aes(x=delta, y=sources, color=attack)) + geom_point() + coord_cartesian(xlim=c(0,1500),ylim=c(0,4000))
+```
+
+```{r}
+query %>% filter(attack==TRUE) %>% ggplot(mapping=aes(x=delta, y=sources, color=attack)) + geom_point() + coord_cartesian(xlim=c(0,1500),ylim=c(0,4000))
+```
+
+To analyze the behavior of our classifier, it would be interesting to plot a histogram using 16 (2^log2(m-10)) as a bin size.
+
+Let's set an arbitrary threshold.
+
+```{r}
+threshold = 16
+first = 257
+last = 288
+
+query = packets %>% filter(ow>=first, ow<=last)
+
+true_evil = query %>% filter(attack==TRUE) %>% tally()
+true_good = query %>% filter(attack==FALSE) %>% tally()
+message("True evil: ", true_evil, " True good: ", true_good, " Total: ", true_evil + true_good)
+
+class_evil = query %>% filter(delta>=threshold) %>% tally() 
+class_good = query %>% filter(delta< threshold) %>% tally() 
+message("Class evil: ", class_evil, " Class good: ", class_good, " Total: ", class_evil + class_good)
+
+error_evil = query %>% filter(delta< threshold, attack==TRUE)  %>% tally() 
+error_good = query %>% filter(delta>=threshold, attack==FALSE) %>% tally() 
+message("Error evil: ", error_evil, " Error good: ", error_good, " Total: ", error_evil + error_good)
+message("Error evil: ", error_evil/true_evil, " Error good: ", error_good/true_good)
+
+
+```
+
+With a threshold equal to 16, we divert ~83% of the attack, while keeping >90% of the good traffic in the original path. 
 
