@@ -50,8 +50,8 @@ Convert the ip.id field from hexadecimal to decimal.
 packets = packets %>% mutate(delta=strtoi(delta))
 ```
 
-
-Note: check the DDoS Mitigation notebook, where I calculate the indices. 
+At this point we need to check whether we can observe the fist attack packet. 
+We calculated the index based on the DDoS Mitigation notebook.
 
 ```{r}
 packets %>% filter(index >= 4194300) 
@@ -157,6 +157,6 @@ query %>% filter(diverted==TRUE)  %>% summarize(n=n()) %>% ggplot(mapping=aes(x=
 query %>% filter(delta< threshold, attack==TRUE)  %>% summarize(n=n()/101662) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("False Negatives")
 query %>% filter(delta>=threshold, attack==FALSE) %>% summarize(n=n()/406242) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("False Positives")
 
-query %>% group_by(ow, attack, diverted) %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n,color=attack,shape=diverted)) + geom_point() 
+query %>% group_by(ow, attack, diverted) %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow-258,y=n,color=attack,shape=diverted)) + geom_point(position="jitter") + theme_classic() + coord_cartesian(ylim=c(0,12500)) + scale_x_continuous(expand=expand_scale(add=0)) + scale_y_continuous(expand=expand_scale(add=0))
 
 ```
