@@ -1,19 +1,19 @@
 ---
 title: "DDoS Attack Mitigation"
 output:
-  pdf_document: default
-  html_notebook: default
   html_document:
     df_print: paged
+  html_notebook: default
+  pdf_document: default
 ---
-
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*. When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file). The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
-
 ```{r}
 library(dplyr)
 library(ggplot2)
 library(readr)
+knitr::opts_chunk$set(tidy=TRUE, tidy.opts=list(width.cutoff=60))
 ```
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*. When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file). The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
 
 Load the dataset.
 
@@ -38,35 +38,34 @@ Add a column with the number of the observation window.
 ```{r}
 log2m = 14
 m = 2^log2m
-get_ow = function(index, m) ((index - 1) %/% m + 1)
+get_ow = function(index, m) ((index - 1) %/% m + 513) # Because we ommitted the training portion. 
 packets = packets %>% mutate(ow = get_ow(index,m)) 
 packets = packets %>% rename(delta = id)
 ```
 
-Convert the ip.id field from hexadecimal to decimal. 
+Convert the delta value from hexadecimal to decimal. 
 
 ```{r}
-#packets %>% slice((767 * 2^14 + 1):(769 * 2^14)) %>% mutate(id=strtoi(id))
 packets = packets %>% mutate(delta=strtoi(delta))
 ```
 
-
-Note: check the DDoS Mitigation notebook, where I calculate the indices. 
+At this point we need to check whether we can observe the fist attack packet. 
+We calculated the index based on the DDoS Mitigation notebook.
 
 ```{r}
 packets %>% filter(index >= 4194300) 
 ```
 
-The attack begins with the fifth packet of OW 257 and it lasts for a total of 512 OWs (i.e., OWs 257-768). 
+The attack begins with the fifth packet of OW 769 and it lasts for a total of 512 OWs (i.e., OWs 769-1280). 
 
 Since we're preinitializing training coefficients, the length of the workload is equal to the length of the detection phase, i.e., 2^24 packets. For m=2^14, the detection phase has n=2^(24-14)=2^10 windows, divided as follows: 256 (2^8) windows before the attack, 512 (2^9) windows during the attack, 256 (2^8) windows after the attack. In general, pre-attack has n=2^(24-log2m-2) OWs, attack has n=2^(24-log2m-1) OWs, post-attack has n=2^(24-log2m-2) OWs. Therefore, for m=2^16, we have n=2^(24-16-2)=2^6=64 OWs pre-attack and n=2^(24-16-1)=2^7=128 OWs under attack; for m=2^18, we have n=2^(24-18-2)=16 OWs pre-attack and n=2^(24-18-1)=32 OWs under attack. 
 
-In OW 257 there is no packet diversion, since we have not set DEFCON yet. In OW 258 DEFCON is already set; the switch begins calculating deltas, using OWs 257 and 256 as a reference (**here I can see a problem - when we begin moving away from the beginning of the attack, we will have no information about addresses which are yet to appear! This means that I'll have to keep updating counters during all of our story**).
+In OW 769 there is no packet diversion, since we have not set DEFCON yet. In OW 258 DEFCON is already set; the switch begins calculating deltas, using OWs 769 and 768 as a reference (**here I can see a problem - when we begin moving away from the beginning of the attack, we will have no information about addresses which are yet to appear! This means that I'll have to keep updating counters during all of our story**).
 
-Get the stats for the all but the first two OWs under attack: histogram of addresses for each delta value. 
+Get the stats for all but the first two OWs under attack: histogram of addresses for each delta value. 
 
 ```{r}
-query = packets %>% filter(ow >= 258, ow <= 768) %>% group_by(ow, attack, delta) %>% summarize(sources=n_distinct(src)) 
+query = packets %>% filter(ow >= 770, ow <= 1280) %>% group_by(ow, attack, delta) %>% summarize(sources=n_distinct(src)) 
 query %>% ggplot(mapping=aes(x=delta, y=sources, color=attack)) + geom_line() # + coord_cartesian(xlim=c(0,1500),ylim=c(0,4000))
 ```
 
@@ -85,9 +84,77 @@ To analyze the behavior of our classifier, it would be interesting to plot a his
 Let's set an arbitrary threshold and analyze **only the first 30 OWs under attack**.
 
 ```{r}
+
 threshold = 16
-first = 258
-last = 288
+
+first = 770 
+last  = 800 
+
+query = packets %>% filter(ow>=first, ow<=last)
+
+true_evil = query %>% filter(attack==TRUE) %>% tally()
+true_good = query %>% filter(attack==FALSE) %>% tally()
+message("True evil: ", true_evil, " True good: ", true_good, " Total: ", true_evil + true_good)
+
+class_evil = query %>% filter(delta>=threshold) %>% tally() 
+class_good = query %>% filter(delta< threshold) %>% tally() 
+message("Class evil: ", class_evil, " Class good: ", class_good, " Total: ", class_evil + class_good)
+
+error_evil = query %>% filter(delta< threshold, attack==TRUE)  %>% tally() 
+error_good = query %>% filter(delta>=threshold, attack==FALSE) %>% tally() 
+
+message("Error evil: ", error_evil, " Error good: ", error_good, " Total: ", error_evil + error_good)
+message("Error evil: ", round(error_evil/true_evil,4), " Error good: ", round(error_good/true_good,4))
+
+
+```
+
+With a threshold equal to 16, we divert ~86% of the attack, while keeping ~90% of the good traffic in the original path. 
+
+It would be interesting to observe what happens **over time**, when we move from OW 770 toward the end of the attack. 
+
+```{r}
+
+first = 770 
+last  = 800
+
+query = packets %>% filter(ow>=first, ow<=last) %>% mutate(diverted=(delta>=threshold)) %>% group_by(ow)
+
+# True good and true evil
+query %>% filter(attack==FALSE) %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("True Good")
+query %>% filter(attack==TRUE)  %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("True Evil")
+
+# Classified good and evil.
+query %>% filter(diverted==FALSE) %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("Forwarded")
+query %>% filter(diverted==TRUE)  %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("Diverted")
+
+# Errors in classification. 
+query %>% filter(delta< threshold, attack==TRUE)  %>% summarize(n=n()) %>% 
+  ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("False Negatives")
+
+query %>% filter(delta>=threshold, attack==FALSE) %>% summarize(n=n()) %>% 
+  ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("False Positives")
+
+query %>% group_by(ow, attack, diverted) %>% summarize(n=n()) %>% 
+  ggplot(mapping=aes(x=ow, y=n, color=attack, shape=diverted)) + 
+  geom_point(position="jitter", size=2.0) + 
+  coord_cartesian(xlim=c(770,810),ylim=c(0,16384)) + 
+  labs(x="Observation Window", y="Packet Count", title ="Classification Results") +
+  scale_x_continuous(expand=expand_scale(add=0)) + 
+  scale_y_continuous(expand=expand_scale(add=0)) +
+  scale_color_manual(values=c("seagreen4", "orangered1")) + 
+  theme_classic()
+
+```
+
+**I finally have a graph that lets me see what's going on over time!!!**
+
+Let's see what happens when we move further toward the end:
+
+```{r}
+
+first = 770 
+last = 1280 
 
 query = packets %>% filter(ow>=first, ow<=last)
 
@@ -102,46 +169,11 @@ message("Class evil: ", class_evil, " Class good: ", class_good, " Total: ", cla
 error_evil = query %>% filter(delta< threshold, attack==TRUE)  %>% tally() 
 error_good = query %>% filter(delta>=threshold, attack==FALSE) %>% tally() 
 message("Error evil: ", error_evil, " Error good: ", error_good, " Total: ", error_evil + error_good)
-message("Error evil: ", error_evil/true_evil, " Error good: ", error_good/true_good)
-
-
+message("Error evil: ", round(error_evil/true_evil,4), " Error good: ", round(error_good/true_good,4))
 ```
 
-With a threshold equal to 16, we divert ~86% of the attack, while keeping ~90% of the good traffic in the original path. 
-
-It would be interesting to observe what happens **over time**, when we move from OW 258 toward the end of the attack. 
 
 ```{r}
-threshold = 16
-first = 258
-last = 288
-
-query = packets %>% filter(ow>=first, ow<=last) %>% mutate(diverted=(delta>=threshold)) %>% group_by(ow)
-
-# True good and true evil
-query %>% filter(attack==FALSE) %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point()
-query %>% filter(attack==TRUE)  %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point()
-
-# Classified good and evil.
-query %>% filter(diverted==FALSE) %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point()
-query %>% filter(diverted==TRUE)  %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point()
-
-# Errors in classification. 
-query %>% filter(delta< threshold, attack==TRUE)  %>% summarize(n=n()/101662) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("False Negatives")
-query %>% filter(delta>=threshold, attack==FALSE) %>% summarize(n=n()/406242) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("False Positives")
-
-query %>% group_by(ow, attack, diverted) %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n,color=attack,shape=diverted)) + geom_point() 
-
-```
-
-**I finally have a graph that lets me see what's going on over time!!!**
-
-Let's see what happens when we move further toward the end:
-
-```{r}
-threshold = 16
-first = 258
-last = 768
 
 query = packets %>% filter(ow>=first, ow<=last) %>% mutate(diverted=(delta>=threshold)) %>% group_by(ow)
 
@@ -154,9 +186,136 @@ query %>% filter(diverted==FALSE) %>% summarize(n=n()) %>% ggplot(mapping=aes(x=
 query %>% filter(diverted==TRUE)  %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("Forwarded")
 
 # Errors in classification. 
-query %>% filter(delta< threshold, attack==TRUE)  %>% summarize(n=n()/101662) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("False Negatives")
-query %>% filter(delta>=threshold, attack==FALSE) %>% summarize(n=n()/406242) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("False Positives")
+query %>% filter(delta< threshold, attack==TRUE)  %>% summarize(n=n()/101662) %>% 
+  ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("False Negatives")
 
-query %>% group_by(ow, attack, diverted) %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n,color=attack,shape=diverted)) + geom_point() 
+query %>% filter(delta>=threshold, attack==FALSE) %>% summarize(n=n()/406242) %>% 
+  ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("False Positives")
+
+query %>% group_by(ow, attack, diverted) %>% summarize(n=n()) %>% 
+  ggplot(mapping=aes(x=ow, y=n, color=attack, shape=diverted)) + 
+  geom_point(position="jitter", size=2.0) + 
+  coord_cartesian(xlim=c(770,1300),ylim=c(0,16384)) + 
+  labs(x="Observation Window", y="Packet Count", title ="Classification Results") +
+  scale_x_continuous(expand=expand_scale(add=0)) + 
+  scale_y_continuous(expand=expand_scale(add=0)) +
+  scale_color_manual(values=c("seagreen4", "orangered1")) + 
+  theme_classic()
 
 ```
+
+Now it's a good time to try to correlate these findings with TCAD measurements. 
+
+What are our chosen k coefficients? 
+
+Our experiments with **tcad_m_levels.py** show us candidate values for k, as follows: 
+
+Log2(m) | k     | FPR
+--------|-------|-----
+13      | 4.000 | 1.8%
+14      | 4.125 | 1.7%
+15      | 4.250 | 1.8%
+16      | 4.500 | 1.6%
+17      | 4.750 | 1.6%
+18      | 3.625 | 0.0%
+
+
+TCAD measurements can be found in the following files: 
+
+tcad_m_2_14_k_4.125.log
+tcad_m_2_16_k_4.500.log
+tcad_m_2_18_k_3.625.log
+
+[Source: DDoS Mitigation.ipynb, section Finding TCAD Values]
+
+```{r}
+
+col_names = c("ts",
+              "src_ent",
+              "src_ewma",
+              "src_ewmmd",
+              "dst_ent",
+              "dst_ewma",
+              "dst_ewmmd",
+              "alarm")
+
+col_types = "ciddiddl"
+
+tcad_m14 = read_table2("~/p4sec/ddosm-p4/lab/ddos20/tcad_logs/tcad_m_2_14_k_4.125.log",
+                       col_names = col_names,
+                       col_types = col_types)
+
+tcad_m14 = tcad_m14 %>% tibble::rowid_to_column("ow")
+
+tcad_m14 = tcad_m14 %>% mutate(src_ent   = src_ent/16,
+                               dst_ent   = dst_ent/16,
+                               src_ewma  = src_ewma/262144,
+                               dst_ewma  = dst_ewma/262144,
+                               src_ewmmd = src_ewmmd/262144,
+                               dst_ewmmd = dst_ewmmd/262144)
+
+k = 4.125
+
+base_plot = tcad_m14 %>% ggplot(mapping=aes(x=ow))
+
+base_plot + 
+  labs(x="OW number", y="Entropy", title="Entropy for each Observation Window") +
+  geom_point(mapping=aes(y=src_ent), size=0.25, color="seagreen4") + 
+  geom_point(mapping=aes(y=dst_ent), size=0.25, color="steelblue4") +
+  geom_line(mapping=aes(y=src_ewma+k*src_ewmmd), color="seagreen4") +
+  geom_line(mapping=aes(y=dst_ewma-k*dst_ewmmd), color="steelblue4") +
+  theme_classic()
+```
+
+Alright, we have the graph. Now we need to focus in the attack (OWs 768-1280).
+
+```{r}
+base_plot = tcad_m14 %>% filter(ow>=768, ow<=1280) %>% ggplot(mapping=aes(x=ow))
+
+base_plot + 
+  labs(x="OW number", y="Entropy", title="Entropy for each Observation Window - Attack Phase") +
+  geom_point(mapping=aes(y=src_ent), size=0.25, color="seagreen4") + 
+  geom_point(mapping=aes(y=dst_ent), size=0.25, color="steelblue4") +
+  geom_line(mapping=aes(y=src_ewma+k*src_ewmmd), color="seagreen4") +
+  geom_line(mapping=aes(y=dst_ewma-k*dst_ewmmd), color="steelblue4") +
+  theme_classic()
+
+```
+
+Let's copy these data to specific tibbles. 
+
+```{r}
+
+first = 769 
+last = 1280
+
+attack_entropy = tcad_m14 %>% filter(ow>=first, ow<=last) %>% mutate(ow=ow-512)
+
+attack_entropy
+
+mitigation_out = packets %>% 
+  filter(ow>=first, ow<=last) %>% 
+  mutate(diverted=(delta>=threshold)) %>% 
+  group_by(ow, attack, diverted) %>% 
+  summarize(n=n())
+
+mitigation_out
+
+
+
+```
+
+Question: for each OW, what are the typical deltas for attack packets? 
+
+```{r}
+packets %>% 
+  filter(ow>=first, ow<=last) %>% 
+  group_by(ow, attack) %>% 
+  summarize(n=n(),q1=quantile(delta,0.25),q2=median(delta),q3=quantile(delta,0.75),iqr=IQR(delta))
+```
+
+
+How are these deltas related to entropy?
+
+
+
