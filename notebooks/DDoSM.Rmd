@@ -18,12 +18,13 @@ library(readr)
 Load the dataset.
 
 ```{r}
-packets <- read_csv("~/p4sec/ddosm-p4/pcaps/ddos20m14/if3_attack_out.csv", col_types = cols(
+col_types = cols(
   src = col_character(),
   dst = col_character(),
   id = col_character(),
-  attack = col_logical()
-))
+  attack = col_logical())
+
+packets <- read_csv("~/p4sec/ddosm-p4/pcaps/ddos20m14/if3_attack_out.csv", col_types = col_types)
 ```
 
 Add a column with the index of the packet.
@@ -56,12 +57,16 @@ Note: check the DDoS Mitigation notebook, where I calculate the indices.
 packets %>% filter(index >= 4194300) 
 ```
 
-As we can see, the attack begins with the fifth packet of OW 257. 
+The attack begins with the fifth packet of OW 257 and it lasts for a total of 512 OWs (i.e., OWs 257-768). 
 
-Get stats for the second OW under attack: histogram of addresses for each delta value. 
+Since we're preinitializing training coefficients, the length of the workload is equal to the length of the detection phase, i.e., 2^24 packets. For m=2^14, the detection phase has n=2^(24-14)=2^10 windows, divided as follows: 256 (2^8) windows before the attack, 512 (2^9) windows during the attack, 256 (2^8) windows after the attack. In general, pre-attack has n=2^(24-log2m-2) OWs, attack has n=2^(24-log2m-1) OWs, post-attack has n=2^(24-log2m-2) OWs. Therefore, for m=2^16, we have n=2^(24-16-2)=2^6=64 OWs pre-attack and n=2^(24-16-1)=2^7=128 OWs under attack; for m=2^18, we have n=2^(24-18-2)=16 OWs pre-attack and n=2^(24-18-1)=32 OWs under attack. 
+
+In OW 257 there is no packet diversion, since we have not set DEFCON yet. In OW 258 DEFCON is already set; the switch begins calculating deltas, using OWs 257 and 256 as a reference (**here I can see a problem - when we begin moving away from the beginning of the attack, we will have no information about addresses which are yet to appear! This means that I'll have to keep updating counters during all of our story**).
+
+Get the stats for the all but the first two OWs under attack: histogram of addresses for each delta value. 
 
 ```{r}
-query = packets %>% filter(ow >= 257, ow <= 512) %>% group_by(ow, attack, delta) %>% summarize(sources=n_distinct(src)) 
+query = packets %>% filter(ow >= 258, ow <= 768) %>% group_by(ow, attack, delta) %>% summarize(sources=n_distinct(src)) 
 query %>% ggplot(mapping=aes(x=delta, y=sources, color=attack)) + geom_line() # + coord_cartesian(xlim=c(0,1500),ylim=c(0,4000))
 ```
 
@@ -77,11 +82,11 @@ query %>% filter(attack==TRUE) %>% ggplot(mapping=aes(x=delta, y=sources, color=
 
 To analyze the behavior of our classifier, it would be interesting to plot a histogram using 16 (2^log2(m-10)) as a bin size.
 
-Let's set an arbitrary threshold.
+Let's set an arbitrary threshold and analyze **only the first 30 OWs under attack**.
 
 ```{r}
 threshold = 16
-first = 257
+first = 258
 last = 288
 
 query = packets %>% filter(ow>=first, ow<=last)
@@ -102,5 +107,56 @@ message("Error evil: ", error_evil/true_evil, " Error good: ", error_good/true_g
 
 ```
 
-With a threshold equal to 16, we divert ~83% of the attack, while keeping >90% of the good traffic in the original path. 
+With a threshold equal to 16, we divert ~86% of the attack, while keeping ~90% of the good traffic in the original path. 
 
+It would be interesting to observe what happens **over time**, when we move from OW 258 toward the end of the attack. 
+
+```{r}
+threshold = 16
+first = 258
+last = 288
+
+query = packets %>% filter(ow>=first, ow<=last) %>% mutate(diverted=(delta>=threshold)) %>% group_by(ow)
+
+# True good and true evil
+query %>% filter(attack==FALSE) %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point()
+query %>% filter(attack==TRUE)  %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point()
+
+# Classified good and evil.
+query %>% filter(diverted==FALSE) %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point()
+query %>% filter(diverted==TRUE)  %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point()
+
+# Errors in classification. 
+query %>% filter(delta< threshold, attack==TRUE)  %>% summarize(n=n()/101662) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("False Negatives")
+query %>% filter(delta>=threshold, attack==FALSE) %>% summarize(n=n()/406242) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("False Positives")
+
+query %>% group_by(ow, attack, diverted) %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n,color=attack,shape=diverted)) + geom_point() 
+
+```
+
+**I finally have a graph that lets me see what's going on over time!!!**
+
+Let's see what happens when we move further toward the end:
+
+```{r}
+threshold = 16
+first = 258
+last = 768
+
+query = packets %>% filter(ow>=first, ow<=last) %>% mutate(diverted=(delta>=threshold)) %>% group_by(ow)
+
+# True good and true evil
+query %>% filter(attack==FALSE) %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("True Good")
+query %>% filter(attack==TRUE)  %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("True Evil")
+
+# Classified good and evil.
+query %>% filter(diverted==FALSE) %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("Diverted")
+query %>% filter(diverted==TRUE)  %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("Forwarded")
+
+# Errors in classification. 
+query %>% filter(delta< threshold, attack==TRUE)  %>% summarize(n=n()/101662) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("False Negatives")
+query %>% filter(delta>=threshold, attack==FALSE) %>% summarize(n=n()/406242) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("False Positives")
+
+query %>% group_by(ow, attack, diverted) %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n,color=attack,shape=diverted)) + geom_point() 
+
+```
