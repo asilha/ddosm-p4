@@ -39,6 +39,7 @@ Add a column with the number of the observation window.
 log2m = 14
 m = 2^log2m
 get_ow = function(index, m) ((index - 1) %/% m + 1)
+#get_ow = function(index, m) ((index - 1) %/% m + 513) # Because we ommitted the training portion. 
 packets = packets %>% mutate(ow = get_ow(index,m)) 
 packets = packets %>% rename(delta = id)
 ```
@@ -46,12 +47,11 @@ packets = packets %>% rename(delta = id)
 Convert the ip.id field from hexadecimal to decimal. 
 
 ```{r}
-#packets %>% slice((767 * 2^14 + 1):(769 * 2^14)) %>% mutate(id=strtoi(id))
 packets = packets %>% mutate(delta=strtoi(delta))
 ```
 
-
-Note: check the DDoS Mitigation notebook, where I calculate the indices. 
+At this point we need to check whether we can observe the fist attack packet. 
+We calculated the index based on the DDoS Mitigation notebook.
 
 ```{r}
 packets %>% filter(index >= 4194300) 
@@ -157,6 +157,90 @@ query %>% filter(diverted==TRUE)  %>% summarize(n=n()) %>% ggplot(mapping=aes(x=
 query %>% filter(delta< threshold, attack==TRUE)  %>% summarize(n=n()/101662) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("False Negatives")
 query %>% filter(delta>=threshold, attack==FALSE) %>% summarize(n=n()/406242) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("False Positives")
 
-query %>% group_by(ow, attack, diverted) %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n,color=attack,shape=diverted)) + geom_point() 
+query %>% group_by(ow, attack, diverted) %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow-258,y=n,color=attack,shape=diverted)) + geom_point(position="jitter") + theme_classic() + coord_cartesian(ylim=c(0,12500)) + scale_x_continuous(expand=expand_scale(add=0)) + scale_y_continuous(expand=expand_scale(add=0))
 
 ```
+
+**Note: make sure you add 512 to the OW numbers above, because that's the length of the training.** 
+
+Now it's a good time to try to correlate these findings with TCAD measurements. 
+
+What are our chosen k coefficients? 
+
+Our experiments with **tcad_m_levels.py** show us candidate values for k, as follows: 
+
+Log2(m) | k     | FPR
+--------|-------|-----
+13      | 4.000 | 1.8%
+14      | 4.125 | 1.7%
+15      | 4.250 | 1.8%
+16      | 4.500 | 1.6%
+17      | 4.750 | 1.6%
+18      | 3.625 | 0.0%
+
+
+TCAD measurements can be found in the following files: 
+
+tcad_m_2_14_k_4.125.log
+tcad_m_2_16_k_4.500.log
+tcad_m_2_18_k_3.625.log
+
+[Source: DDoS Mitigation.ipynb, section Finding TCAD Values]
+
+```{r}
+
+col_names = c("ts",
+              "src_ent",
+              "src_ewma",
+              "src_ewmmd",
+              "dst_ent",
+              "dst_ewma",
+              "dst_ewmmd",
+              "alarm")
+
+col_types = "ciddiddl"
+
+tcad_m14 = read_table2("~/p4sec/ddosm-p4/lab/ddos20/tcad_logs/tcad_m_2_14_k_4.125.log",
+                       col_names = col_names,
+                       col_types = col_types)
+
+tcad_m14 = tcad_m14 %>% tibble::rowid_to_column("ow")
+
+tcad_m14 = tcad_m14 %>% mutate(src_ent   = src_ent/16,
+                               dst_ent   = dst_ent/16,
+                               src_ewma  = src_ewma/262144,
+                               dst_ewma  = dst_ewma/262144,
+                               src_ewmmd = src_ewmmd/262144,
+                               dst_ewmmd = dst_ewmmd/262144)
+
+k = 4.125
+
+base_plot = tcad_m14 %>% ggplot(mapping=aes(x=ow))
+
+base_plot + 
+  labs(x="OW number", y="Entropy") +
+  geom_point(mapping=aes(y=src_ent), size=0.25, color="seagreen4") + 
+  geom_point(mapping=aes(y=dst_ent), size=0.25, color="steelblue4") +
+  geom_line(mapping=aes(y=src_ewma+k*src_ewmmd), color="seagreen4") +
+  geom_line(mapping=aes(y=dst_ewma-k*dst_ewmmd), color="steelblue4")
+```
+
+Alright, we have the graph. Now we need to focus in the attack (OWs 768-1280).
+
+```{r}
+base_plot = tcad_m14 %>% filter(ow>=768, ow<=1280) %>% ggplot(mapping=aes(x=ow))
+
+base_plot + 
+  labs(x="OW number", y="Entropy") +
+  geom_point(mapping=aes(y=src_ent), size=0.25, color="seagreen4") + 
+  geom_point(mapping=aes(y=dst_ent), size=0.25, color="steelblue4") +
+  geom_line(mapping=aes(y=src_ewma+k*src_ewmmd), color="seagreen4") +
+  geom_line(mapping=aes(y=dst_ewma-k*dst_ewmmd), color="steelblue4")
+
+
+```
+```
+
+
+
+
