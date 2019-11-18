@@ -237,9 +237,31 @@ base_plot +
   geom_line(mapping=aes(y=src_ewma+k*src_ewmmd), color="seagreen4") +
   geom_line(mapping=aes(y=dst_ewma-k*dst_ewmmd), color="steelblue4")
 
+```
+
+Let's copy these data to specific tibbles.
+
+```{r}
+attack_entropy = tcad_m14 %>% filter(ow>=769, ow<=1280) %>% mutate(ow=ow-512)
+
+attack_entropy
+
+threshold = 16
+first = 257
+last = 768
+
+mitigation_out = packets %>% 
+  filter(ow>=first, ow<=last) %>% 
+  mutate(diverted=(delta>=threshold)) %>% 
+  group_by(ow, attack, diverted) %>% 
+  summarize(n=n())
+
+mitigation_out
+
+
 
 ```
-```
+
 
 
 
