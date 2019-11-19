@@ -85,7 +85,9 @@ To analyze the behavior of our classifier, it would be interesting to plot a his
 Let's set an arbitrary threshold and analyze **only the first 30 OWs under attack**.
 
 ```{r}
-threshold = 16
+
+threshold = 5
+
 first = 258
 last = 288
 
@@ -101,6 +103,7 @@ message("Class evil: ", class_evil, " Class good: ", class_good, " Total: ", cla
 
 error_evil = query %>% filter(delta< threshold, attack==TRUE)  %>% tally() 
 error_good = query %>% filter(delta>=threshold, attack==FALSE) %>% tally() 
+
 message("Error evil: ", error_evil, " Error good: ", error_good, " Total: ", error_evil + error_good)
 message("Error evil: ", error_evil/true_evil, " Error good: ", error_good/true_good)
 
@@ -112,36 +115,6 @@ With a threshold equal to 16, we divert ~86% of the attack, while keeping ~90% o
 It would be interesting to observe what happens **over time**, when we move from OW 258 toward the end of the attack. 
 
 ```{r}
-threshold = 16
-first = 258
-last = 288
-
-query = packets %>% filter(ow>=first, ow<=last) %>% mutate(diverted=(delta>=threshold)) %>% group_by(ow)
-
-# True good and true evil
-query %>% filter(attack==FALSE) %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point()
-query %>% filter(attack==TRUE)  %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point()
-
-# Classified good and evil.
-query %>% filter(diverted==FALSE) %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point()
-query %>% filter(diverted==TRUE)  %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point()
-
-# Errors in classification. 
-query %>% filter(delta< threshold, attack==TRUE)  %>% summarize(n=n()/101662) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("False Negatives")
-query %>% filter(delta>=threshold, attack==FALSE) %>% summarize(n=n()/406242) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("False Positives")
-
-query %>% group_by(ow, attack, diverted) %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n,color=attack,shape=diverted)) + geom_point() 
-
-```
-
-**I finally have a graph that lets me see what's going on over time!!!**
-
-Let's see what happens when we move further toward the end:
-
-```{r}
-threshold = 16
-first = 258
-last = 768
 
 query = packets %>% filter(ow>=first, ow<=last) %>% mutate(diverted=(delta>=threshold)) %>% group_by(ow)
 
@@ -154,10 +127,74 @@ query %>% filter(diverted==FALSE) %>% summarize(n=n()) %>% ggplot(mapping=aes(x=
 query %>% filter(diverted==TRUE)  %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("Forwarded")
 
 # Errors in classification. 
-query %>% filter(delta< threshold, attack==TRUE)  %>% summarize(n=n()/101662) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("False Negatives")
-query %>% filter(delta>=threshold, attack==FALSE) %>% summarize(n=n()/406242) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("False Positives")
+query %>% filter(delta< threshold, attack==TRUE)  %>% summarize(n=n()/101662) %>% 
+  ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("False Negatives")
 
-query %>% group_by(ow, attack, diverted) %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow-258,y=n,color=attack,shape=diverted)) + geom_point(position="jitter") + theme_classic() + coord_cartesian(ylim=c(0,12500)) + scale_x_continuous(expand=expand_scale(add=0)) + scale_y_continuous(expand=expand_scale(add=0))
+query %>% filter(delta>=threshold, attack==FALSE) %>% summarize(n=n()/406242) %>% 
+  ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("False Positives")
+
+query %>% group_by(ow, attack, diverted) %>% summarize(n=n()) %>% 
+  ggplot(mapping=aes(x=ow-258, y=n, color=attack, shape=diverted)) + 
+  geom_point(position="jitter", size=2.0) + 
+  coord_cartesian(xlim=c(0,32),ylim=c(0,12500)) + 
+  scale_x_continuous(expand=expand_scale(add=0)) + 
+  scale_y_continuous(expand=expand_scale(add=0)) +
+  scale_color_manual(values=c("seagreen4", "orangered1"))
+
+```
+
+**I finally have a graph that lets me see what's going on over time!!!**
+
+Let's see what happens when we move further toward the end:
+
+```{r}
+
+first = 258
+last = 768
+
+query = packets %>% filter(ow>=first, ow<=last)
+
+true_evil = query %>% filter(attack==TRUE) %>% tally()
+true_good = query %>% filter(attack==FALSE) %>% tally()
+message("True evil: ", true_evil, " True good: ", true_good, " Total: ", true_evil + true_good)
+
+class_evil = query %>% filter(delta>=threshold) %>% tally() 
+class_good = query %>% filter(delta< threshold) %>% tally() 
+message("Class evil: ", class_evil, " Class good: ", class_good, " Total: ", class_evil + class_good)
+
+error_evil = query %>% filter(delta< threshold, attack==TRUE)  %>% tally() 
+error_good = query %>% filter(delta>=threshold, attack==FALSE) %>% tally() 
+message("Error evil: ", error_evil, " Error good: ", error_good, " Total: ", error_evil + error_good)
+message("Error evil: ", error_evil/true_evil, " Error good: ", error_good/true_good)
+```
+
+
+```{r}
+
+query = packets %>% filter(ow>=first, ow<=last) %>% mutate(diverted=(delta>=threshold)) %>% group_by(ow)
+
+# True good and true evil
+query %>% filter(attack==FALSE) %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("True Good")
+query %>% filter(attack==TRUE)  %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("True Evil")
+
+# Classified good and evil.
+query %>% filter(diverted==FALSE) %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("Diverted")
+query %>% filter(diverted==TRUE)  %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("Forwarded")
+
+# Errors in classification. 
+query %>% filter(delta< threshold, attack==TRUE)  %>% summarize(n=n()/101662) %>% 
+  ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("False Negatives")
+
+query %>% filter(delta>=threshold, attack==FALSE) %>% summarize(n=n()/406242) %>% 
+  ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("False Positives")
+
+query %>% group_by(ow, attack, diverted) %>% summarize(n=n()) %>% 
+  ggplot(mapping=aes(x=ow-258, y=n, color=attack, shape=diverted)) + 
+  geom_point(position="jitter", size=2.0) + 
+  coord_cartesian(xlim=c(0,512),ylim=c(0,12500)) + 
+  scale_x_continuous(expand=expand_scale(add=0)) + 
+  scale_y_continuous(expand=expand_scale(add=0)) +
+  scale_color_manual(values=c("seagreen4", "orangered1"))
 
 ```
 
@@ -242,11 +279,11 @@ base_plot +
 Let's copy these data to specific tibbles.
 
 ```{r}
+
 attack_entropy = tcad_m14 %>% filter(ow>=769, ow<=1280) %>% mutate(ow=ow-512)
 
 attack_entropy
 
-threshold = 16
 first = 257
 last = 768
 
@@ -262,7 +299,17 @@ mitigation_out
 
 ```
 
+Question: for each OW, what are the typical deltas for attack packets? 
 
+```{r}
+packets %>% 
+  filter(ow>=first, ow<=last) %>% 
+  group_by(ow, attack) %>% 
+  summarize(n=n(),q1=quantile(delta,0.25),q2=median(delta),q3=quantile(delta,0.75),iqr=IQR(delta))
+```
+
+
+How are these deltas related to entropy?
 
 
 
