@@ -1,21 +1,21 @@
 ---
 title: "DDoS Attack Mitigation"
 output:
+  pdf_document: default
+  html_notebook: default
   html_document:
     df_print: paged
-  html_notebook: default
-  pdf_document: default
 ---
-```{r}
+```{r setup, echo=FALSE}
 library(dplyr)
 library(ggplot2)
 library(readr)
 knitr::opts_chunk$set(tidy=TRUE, tidy.opts=list(width.cutoff=60))
 ```
 
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*. When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file). The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file). The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
 
-Load the dataset.
+# Load the dataset
 
 ```{r}
 col_types = cols(
@@ -27,27 +27,30 @@ col_types = cols(
 packets <- read_csv("~/p4sec/ddosm-p4/pcaps/ddos20m14/if3_attack_out.csv", col_types = col_types)
 ```
 
-Add a column with the index of the packet.
+## Index Column
 
 ```{r}
 packets = packets %>% tibble::rowid_to_column("index")
 ```
 
-Add a column with the number of the observation window.
+## OW Number Column
 
 ```{r}
 log2m = 14
 m = 2^log2m
 get_ow = function(index, m) ((index - 1) %/% m + 513) # Because we ommitted the training portion. 
 packets = packets %>% mutate(ow = get_ow(index,m)) 
-packets = packets %>% rename(delta = id)
+
 ```
 
-Convert the delta value from hexadecimal to decimal. 
+## Delta Value
 
 ```{r}
-packets = packets %>% mutate(delta=strtoi(delta))
+packets = packets %>% rename(delta = id)
+packets = packets %>% mutate(delta=strtoi(delta)) # Convert from hexadecimal to decimal
 ```
+
+# Attack Overview
 
 At this point we need to check whether we can observe the fist attack packet. 
 We calculated the index based on the DDoS Mitigation notebook.
@@ -60,9 +63,11 @@ The attack begins with the fifth packet of OW 769 and it lasts for a total of 51
 
 Since we're preinitializing training coefficients, the length of the workload is equal to the length of the detection phase, i.e., 2^24 packets. For m=2^14, the detection phase has n=2^(24-14)=2^10 windows, divided as follows: 256 (2^8) windows before the attack, 512 (2^9) windows during the attack, 256 (2^8) windows after the attack. In general, pre-attack has n=2^(24-log2m-2) OWs, attack has n=2^(24-log2m-1) OWs, post-attack has n=2^(24-log2m-2) OWs. Therefore, for m=2^16, we have n=2^(24-16-2)=2^6=64 OWs pre-attack and n=2^(24-16-1)=2^7=128 OWs under attack; for m=2^18, we have n=2^(24-18-2)=16 OWs pre-attack and n=2^(24-18-1)=32 OWs under attack. 
 
-In OW 769 there is no packet diversion, since we have not set DEFCON yet. In OW 258 DEFCON is already set; the switch begins calculating deltas, using OWs 769 and 768 as a reference (**here I can see a problem - when we begin moving away from the beginning of the attack, we will have no information about addresses which are yet to appear! This means that I'll have to keep updating counters during all of our story**).
+In OW 769 there is no packet diversion, since we have not set DEFCON yet. In OW 258 DEFCON is already set; the switch begins calculating deltas, using OWs 769 and 768 as a reference (**here I can see a problem - when we begin moving away from the beginning of the attack, we will have no information about addresses which are yet to appear! This means that I'll have to keep updating counters during all of our story**). 
 
-Get the stats for all but the first two OWs under attack: histogram of addresses for each delta value. 
+# A First Look
+
+Get the stats for all but the first two OWs under attack: address frequencies for each delta value. 
 
 ```{r}
 query = packets %>% filter(ow >= 770, ow <= 1280) %>% group_by(ow, attack, delta) %>% summarize(sources=n_distinct(src)) 
@@ -81,13 +86,15 @@ query %>% filter(attack==TRUE) %>% ggplot(mapping=aes(x=delta, y=sources, color=
 
 To analyze the behavior of our classifier, it would be interesting to plot a histogram using 16 (2^log2(m-10)) as a bin size.
 
+# First Attack OWs
+
 Let's set an arbitrary threshold and analyze **only the first 30 OWs under attack**.
 
 ```{r}
 
 threshold = 16
 
-first = 770 
+first = 770 # Attack begins @769, mitigation begins @770.  OW = 2^14 = 16.384 packets. Proportion = 20%. => ~3200 "evil", rest "good". 
 last  = 800 
 
 query = packets %>% filter(ow>=first, ow<=last)
@@ -111,7 +118,7 @@ message("Error evil: ", round(error_evil/true_evil,4), " Error good: ", round(er
 
 With a threshold equal to 16, we divert ~86% of the attack, while keeping ~90% of the good traffic in the original path. 
 
-It would be interesting to observe what happens **over time**, when we move from OW 770 toward the end of the attack. 
+It would be interesting to observe what happens **over time**, OW after OW. 
 
 ```{r}
 
@@ -149,9 +156,13 @@ query %>% group_by(ow, attack, diverted) %>% summarize(n=n()) %>%
 
 **I finally have a graph that lets me see what's going on over time!!!**
 
+# All Attack OWs
+
 Let's see what happens when we move further toward the end:
 
 ```{r}
+
+threshold = 1
 
 first = 770 
 last = 1280 
@@ -168,8 +179,8 @@ message("Class evil: ", class_evil, " Class good: ", class_good, " Total: ", cla
 
 error_evil = query %>% filter(delta< threshold, attack==TRUE)  %>% tally() 
 error_good = query %>% filter(delta>=threshold, attack==FALSE) %>% tally() 
-message("Error evil: ", error_evil, " Error good: ", error_good, " Total: ", error_evil + error_good)
-message("Error evil: ", round(error_evil/true_evil,4), " Error good: ", round(error_good/true_good,4))
+message("FNcount: ", error_evil, " FPcount: ", error_good, " Total: ", error_evil + error_good)
+message("FNR: ", round(error_evil/true_evil,4), " FPR: ", round(error_good/true_good,4))
 ```
 
 
@@ -203,6 +214,8 @@ query %>% group_by(ow, attack, diverted) %>% summarize(n=n()) %>%
   theme_classic()
 
 ```
+
+# Attack vs TCAD
 
 Now it's a good time to try to correlate these findings with TCAD measurements. 
 
@@ -255,6 +268,11 @@ tcad_m14 = tcad_m14 %>% mutate(src_ent   = src_ent/16,
                                dst_ewmmd = dst_ewmmd/262144)
 
 k = 4.125
+```
+
+## Entropy Overview
+
+```{r}
 
 base_plot = tcad_m14 %>% ggplot(mapping=aes(x=ow))
 
@@ -266,6 +284,8 @@ base_plot +
   geom_line(mapping=aes(y=dst_ewma-k*dst_ewmmd), color="steelblue4") +
   theme_classic()
 ```
+
+## Entropy Under Attack
 
 Alright, we have the graph. Now we need to focus in the attack (OWs 768-1280).
 
@@ -286,7 +306,7 @@ Let's copy these data to specific tibbles.
 
 ```{r}
 
-first = 769 
+first = 770 
 last = 1280
 
 attack_entropy = tcad_m14 %>% filter(ow>=first, ow<=last) %>% mutate(ow=ow-512)
@@ -304,18 +324,53 @@ mitigation_out
 
 
 ```
+## Typical Frequency Deltas
 
-Question: for each OW, what are the typical deltas for attack packets? 
+
+Question: for each OW, what are the typical frequency deltas (current OW - OW#768) for attack packets? 
 
 ```{r}
-packets %>% 
+#query = packets %>% 
+#  filter(ow>=first, ow<=last, attack==TRUE) %>% 
+#  group_by(ow) %>% 
+#  summarize(n=n(),q1=quantile(delta,0.25),q2=median(delta),q3=quantile(delta,0.75),iqr=IQR(delta))
+#
+query = packets %>% 
   filter(ow>=first, ow<=last) %>% 
   group_by(ow, attack) %>% 
   summarize(n=n(),q1=quantile(delta,0.25),q2=median(delta),q3=quantile(delta,0.75),iqr=IQR(delta))
+
+query
 ```
 
+Can we graph it? 
+
+```{r}
+query %>% 
+  filter(ow<800, q1>0) %>% 
+  ggplot(mapping = aes(x=ow, shape=attack)) +
+  geom_point(mapping = aes(y=q1), color="blue4", position="jitter", size=0.25) +
+  geom_point(mapping = aes(y=q2), color="yellow4", position="jitter", size=0.25) +
+  geom_point(mapping = aes(y=q3), color="orangered4", position="jitter", size=0.25) +
+  coord_trans(y="log10")
+  
+query %>% 
+  filter(ow>800, q1>0) %>% 
+  ggplot(mapping = aes(x=ow, shape=attack)) +
+  geom_point(mapping = aes(y=q1), color="blue4", position="jitter", size=0.25) +
+  geom_point(mapping = aes(y=q2), color="yellow4", position="jitter", size=0.25) +
+  geom_point(mapping = aes(y=q3), color="orangered4", position="jitter", size=0.25) #+
+  #coord_trans(y="log10")
+```
+
+(Why does only true packets show up in the graph?)
+
+## Points to Ponder
+
+Question: for each OW, how many different attack sources are there? 
 
 How are these deltas related to entropy?
 
+What else can we do?
 
 

@@ -11,3 +11,6 @@ scripts/lib/__pycache__
 *.pcapng
 *.pcapng.gz
 desktop.ini
+.RData
+.Rhistory
+.Rproj.user
