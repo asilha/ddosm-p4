@@ -286,7 +286,7 @@ Let's copy these data to specific tibbles.
 
 ```{r}
 
-first = 769 
+first = 770 
 last = 1280
 
 attack_entropy = tcad_m14 %>% filter(ow>=first, ow<=last) %>% mutate(ow=ow-512)
@@ -308,11 +308,37 @@ mitigation_out
 Question: for each OW, what are the typical deltas for attack packets? 
 
 ```{r}
-packets %>% 
-  filter(ow>=first, ow<=last) %>% 
-  group_by(ow, attack) %>% 
+query = packets %>% 
+  filter(ow>=first, ow<=last, attack==TRUE) %>% 
+  group_by(ow) %>% 
   summarize(n=n(),q1=quantile(delta,0.25),q2=median(delta),q3=quantile(delta,0.75),iqr=IQR(delta))
+
+query
 ```
+
+Can we graph it? 
+
+```{r}
+query %>% 
+  filter(ow<800) %>% 
+  ggplot(mapping = aes(x=ow)) +
+  geom_point(mapping = aes(y=q1), color="blue4", position="jitter", size=0.25) +
+  geom_point(mapping = aes(y=q2), color="yellow4", position="jitter", size=0.25) +
+  geom_point(mapping = aes(y=q3), color="orangered4", position="jitter", size=0.25) +
+  coord_trans(y="log10")
+  
+query %>% 
+  filter(ow>800) %>% 
+  ggplot(mapping = aes(x=ow)) +
+  geom_point(mapping = aes(y=q1), color="blue4", position="jitter", size=0.25) +
+  geom_point(mapping = aes(y=q2), color="yellow4", position="jitter", size=0.25) +
+  geom_point(mapping = aes(y=q3), color="orangered4", position="jitter", size=0.25) #+
+  #coord_trans(y="log10")
+```
+
+Question: for each OW, how many different attack sources are there? 
+
+
 
 
 How are these deltas related to entropy?
