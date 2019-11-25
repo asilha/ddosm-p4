@@ -686,7 +686,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
 
                 // Note: the maximum count is 2^18. 
                 hdr.ipv4.identification = (bit<16>) src_delta[15:0] ;
-                hdr.ipv4.checksum       = (bit<16>) dst_delta[15:0] ;
+                hdr.ipv4.hdr_checksum   = (bit<16>) dst_delta[15:0] ;
 
             } // End of DEFCON state processing. 
 
