@@ -21,10 +21,11 @@ This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you save th
 col_types = cols(
   src = col_character(),
   dst = col_character(),
-  id = col_character(),
+  src_delta = col_character(),
+  dst_delta = col_character(),
   attack = col_logical())
 
-packets <- read_csv("~/p4sec/ddosm-p4/pcaps/ddos20m14/if3_attack_out.csv", col_types = col_types)
+packets <- read_csv("~/p4sec/ddosm-p4/pcaps/ddos20m14b/if3_attack_out.csv", col_types = col_types)
 ```
 
 ## Index Column
@@ -46,7 +47,7 @@ packets = packets %>% mutate(ow = get_ow(index,m))
 ## Delta Value
 
 ```{r}
-packets = packets %>% rename(delta = id)
+packets = packets %>% rename(delta = src_delta)
 packets = packets %>% mutate(delta=strtoi(delta)) # Convert from hexadecimal to decimal
 ```
 
