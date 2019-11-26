@@ -6,18 +6,65 @@ output:
   html_document:
     df_print: paged
 ---
-```{r setup, echo=FALSE}
+```{r setup, echo=FALSE, include=FALSE}
+
 library(dplyr)
 library(ggplot2)
 library(readr)
+library(threadr)
 knitr::opts_chunk$set(tidy=TRUE, tidy.opts=list(width.cutoff=60))
+
 ```
 
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file). The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
 
-# Load the dataset
+```{r parameters, include=FALSE}
 
-```{r}
+log2m = 14
+m = 2^log2m
+
+log2n = 24       # Where n is the total number of packets in the detection phase.  
+n = 2^log2n
+
+training_length  = 2^(log2n-log2m-1)   # We need to add this to the OW number when we skip training. 
+detection_length = 2^(log2n-log2m)
+
+```
+
+When we preinitialize training coefficients, the length of the workload is equal to the length of the detection phase.
+
+For a detection phase of 2^24 packets we have: 
+
+  2^(24-log2m-2) OWs before the attack,
+  2^(24-log2m-1) OWs under attack, 
+  2^(24-log2m-2) OWs after the attack.
+  
+For m=2^14, the detection phase has 2^(24-14)=2^10 windows: 
+  
+  2^8 OWs before the attack, 
+  2^9 OWs under attack, 
+  2^8 OWs after the attack. 
+
+For m=2^16: 
+
+  2^6 OWs pre-attack and post-attack,
+  2^7 OWs under attack.
+  
+For m=2^18: 
+  
+  2^4 OWs pre-attack and post-attack,
+  2^5 OWs under attack.
+
+  
+```{r functions, include=FALSE}
+
+get_ow = function(index, m) ((index - 1) %/% m + training_length + 1) 
+
+```
+
+# Load the Dataset
+
+```{r dataset, include=FALSE}
+
 col_types = cols(
   src = col_character(),
   dst = col_character(),
@@ -28,72 +75,101 @@ col_types = cols(
 packets <- read_csv("~/p4sec/ddosm-p4/pcaps/ddos20m14b/if3_attack_out.csv", col_types = col_types)
 ```
 
-## Index Column
+## Add Index Column
 
 ```{r}
 packets = packets %>% tibble::rowid_to_column("index")
 ```
 
-## OW Number Column
+## Add OW Number Column
 
 ```{r}
-log2m = 14
-m = 2^log2m
-get_ow = function(index, m) ((index - 1) %/% m + 513) # Because we ommitted the training portion. 
 packets = packets %>% mutate(ow = get_ow(index,m)) 
-
 ```
 
-## Delta Value
+## Convert Delta Values (Source and Destination)
 
 ```{r}
-packets = packets %>% rename(delta = src_delta)
-packets = packets %>% mutate(delta=strtoi(delta)) # Convert from hexadecimal to decimal
+
+# Convert from hexadecimal to decimal
+packets = packets %>% mutate(src_delta=strtoi(src_delta), 
+                             dst_delta=strtoi(dst_delta)) 
+
+# Convert from two's complement
+packets = packets %>% mutate(src_delta=twos_complement(src_delta), 
+                             dst_delta=twos_complement(dst_delta)) 
 ```
 
-# Attack Overview
+# Attack 
 
-At this point we need to check whether we can observe the fist attack packet. 
-We calculated the index based on the DDoS Mitigation notebook.
+At this point we need to check whether we can observe the first attack packet. 
+
+The attack occurs between windows (training_length + detection_length / 4 + 1) and (training_length + detection_length / 2). 
 
 ```{r}
-packets %>% filter(index >= 4194300) 
+
+attack_start = m * (detection_length / 4 + 1) + 1
+attack_start
+
 ```
 
-The attack begins with the fifth packet of OW 769 and it lasts for a total of 512 OWs (i.e., OWs 769-1280). 
+Querying the dataset at the given points.
 
-Since we're preinitializing training coefficients, the length of the workload is equal to the length of the detection phase, i.e., 2^24 packets. For m=2^14, the detection phase has n=2^(24-14)=2^10 windows, divided as follows: 256 (2^8) windows before the attack, 512 (2^9) windows during the attack, 256 (2^8) windows after the attack. In general, pre-attack has n=2^(24-log2m-2) OWs, attack has n=2^(24-log2m-1) OWs, post-attack has n=2^(24-log2m-2) OWs. Therefore, for m=2^16, we have n=2^(24-16-2)=2^6=64 OWs pre-attack and n=2^(24-16-1)=2^7=128 OWs under attack; for m=2^18, we have n=2^(24-18-2)=16 OWs pre-attack and n=2^(24-18-1)=32 OWs under attack. 
+```{r}
 
-In OW 769 there is no packet diversion, since we have not set DEFCON yet. In OW 258 DEFCON is already set; the switch begins calculating deltas, using OWs 769 and 768 as a reference (**here I can see a problem - when we begin moving away from the beginning of the attack, we will have no information about addresses which are yet to appear! This means that I'll have to keep updating counters during all of our story**). 
+packets %>% filter(index >= attack_start - m)
 
-# A First Look
+```
+
+For log2m=14, the attack begins at the fifth packet of OW 769 and lasts for a total of 512 OWs (i.e., OWs 769-1280). 
+
+In OW 769 there is no packet diversion, since we have not set DEFCON yet. In OW 770 DEFCON is already set; the switch begins calculating deltas, using OWs 769 and 768 as a reference. (**Here I can see a potential problem - when we begin moving away from the beginning of the attack, we will have no information about addresses which are yet to appear! This means that I'll have to keep updating counters during all of our story**). 
+
+## Overview
 
 Get the stats for all but the first two OWs under attack: address frequencies for each delta value. 
 
 ```{r}
-query = packets %>% filter(ow >= 770, ow <= 1280) %>% group_by(ow, attack, delta) %>% summarize(sources=n_distinct(src)) 
-query %>% ggplot(mapping=aes(x=delta, y=sources, color=attack)) + geom_line() # + coord_cartesian(xlim=c(0,1500),ylim=c(0,4000))
+
+query = packets %>% filter(ow >= 770, ow <= 1280) %>% group_by(ow, attack, src_delta) %>% summarize(sources=n_distinct(src))
+
+query
+
+query %>% ggplot(mapping=aes(x=src_delta, y=sources, color=attack)) + geom_line() 
+# + coord_cartesian(xlim=c(0,1500),ylim=c(0,4000))
+
 ```
 
 
 
 ```{r}
-query %>% filter(attack==FALSE) %>% ggplot(mapping=aes(x=delta, y=sources, color=attack)) + geom_point() + coord_cartesian(xlim=c(0,1500),ylim=c(0,4000))
+
+query %>% filter(attack==FALSE) %>% ggplot(mapping=aes(x=src_delta, y=sources)) + geom_line() 
+# + coord_cartesian(xlim=c(0,1500),ylim=c(0,4000))
+
 ```
 
 ```{r}
-query %>% filter(attack==TRUE) %>% ggplot(mapping=aes(x=delta, y=sources, color=attack)) + geom_point() + coord_cartesian(xlim=c(0,1500),ylim=c(0,4000))
+query %>% filter(attack==TRUE) %>% ggplot(mapping=aes(x=src_delta, y=sources)) + geom_line() 
+# + coord_cartesian(xlim=c(0,1500),ylim=c(0,4000))
+
 ```
 
 To analyze the behavior of our classifier, it would be interesting to plot a histogram using 16 (2^log2(m-10)) as a bin size.
 
-# First Attack OWs
+## First Attack OWs
 
-Let's set an arbitrary threshold and analyze **only the first 30 OWs under attack**.
+Let's set an arbitrary threshold.
 
-```{r}
+```{r threshold_first_ows}
 
 threshold = 16
+
+```
+
+Let's analyze **only the first 30 OWs under attack**.
+
+```{r}
 
 first = 770 # Attack begins @769, mitigation begins @770.  OW = 2^14 = 16.384 packets. Proportion = 20%. => ~3200 "evil", rest "good". 
 last  = 800 
@@ -104,15 +180,15 @@ true_evil = query %>% filter(attack==TRUE) %>% tally()
 true_good = query %>% filter(attack==FALSE) %>% tally()
 message("True evil: ", true_evil, " True good: ", true_good, " Total: ", true_evil + true_good)
 
-class_evil = query %>% filter(delta>=threshold) %>% tally() 
-class_good = query %>% filter(delta< threshold) %>% tally() 
+class_evil = query %>% filter(src_delta>=threshold) %>% tally() 
+class_good = query %>% filter(src_delta< threshold) %>% tally() 
 message("Class evil: ", class_evil, " Class good: ", class_good, " Total: ", class_evil + class_good)
 
-error_evil = query %>% filter(delta< threshold, attack==TRUE)  %>% tally() 
-error_good = query %>% filter(delta>=threshold, attack==FALSE) %>% tally() 
+error_evil = query %>% filter(src_delta< threshold, attack==TRUE)  %>% tally() 
+error_good = query %>% filter(src_delta>=threshold, attack==FALSE) %>% tally() 
 
-message("Error evil: ", error_evil, " Error good: ", error_good, " Total: ", error_evil + error_good)
-message("Error evil: ", round(error_evil/true_evil,4), " Error good: ", round(error_good/true_good,4))
+message("FNcount: ", error_evil, " FPcount: ", error_good, " Total: ", error_evil + error_good)
+message("FNR: ", round(error_evil/true_evil,4), " FPR: ", round(error_good/true_good,4))
 
 
 ```
@@ -126,7 +202,7 @@ It would be interesting to observe what happens **over time**, OW after OW.
 first = 770 
 last  = 800
 
-query = packets %>% filter(ow>=first, ow<=last) %>% mutate(diverted=(delta>=threshold)) %>% group_by(ow)
+query = packets %>% filter(ow>=first, ow<=last) %>% mutate(diverted=(src_delta>=threshold)) %>% group_by(ow)
 
 # True good and true evil
 query %>% filter(attack==FALSE) %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("True Good")
@@ -137,10 +213,10 @@ query %>% filter(diverted==FALSE) %>% summarize(n=n()) %>% ggplot(mapping=aes(x=
 query %>% filter(diverted==TRUE)  %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("Diverted")
 
 # Errors in classification. 
-query %>% filter(delta< threshold, attack==TRUE)  %>% summarize(n=n()) %>% 
+query %>% filter(src_delta< threshold, attack==TRUE)  %>% summarize(n=n()) %>% 
   ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("False Negatives")
 
-query %>% filter(delta>=threshold, attack==FALSE) %>% summarize(n=n()) %>% 
+query %>% filter(src_delta>=threshold, attack==FALSE) %>% summarize(n=n()) %>% 
   ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("False Positives")
 
 query %>% group_by(ow, attack, diverted) %>% summarize(n=n()) %>% 
@@ -157,13 +233,17 @@ query %>% group_by(ow, attack, diverted) %>% summarize(n=n()) %>%
 
 **I finally have a graph that lets me see what's going on over time!!!**
 
-# All Attack OWs
+## All Attack OWs
+
+```{r threshold_all_ows}
+
+threshold = 1
+
+```
 
 Let's see what happens when we move further toward the end:
 
 ```{r}
-
-threshold = 1
 
 first = 770 
 last = 1280 
@@ -174,12 +254,12 @@ true_evil = query %>% filter(attack==TRUE) %>% tally()
 true_good = query %>% filter(attack==FALSE) %>% tally()
 message("True evil: ", true_evil, " True good: ", true_good, " Total: ", true_evil + true_good)
 
-class_evil = query %>% filter(delta>=threshold) %>% tally() 
-class_good = query %>% filter(delta< threshold) %>% tally() 
+class_evil = query %>% filter(src_delta>=threshold) %>% tally() 
+class_good = query %>% filter(src_delta< threshold) %>% tally() 
 message("Class evil: ", class_evil, " Class good: ", class_good, " Total: ", class_evil + class_good)
 
-error_evil = query %>% filter(delta< threshold, attack==TRUE)  %>% tally() 
-error_good = query %>% filter(delta>=threshold, attack==FALSE) %>% tally() 
+error_evil = query %>% filter(src_delta< threshold, attack==TRUE)  %>% tally() 
+error_good = query %>% filter(src_delta>=threshold, attack==FALSE) %>% tally() 
 message("FNcount: ", error_evil, " FPcount: ", error_good, " Total: ", error_evil + error_good)
 message("FNR: ", round(error_evil/true_evil,4), " FPR: ", round(error_good/true_good,4))
 ```
@@ -187,7 +267,7 @@ message("FNR: ", round(error_evil/true_evil,4), " FPR: ", round(error_good/true_
 
 ```{r}
 
-query = packets %>% filter(ow>=first, ow<=last) %>% mutate(diverted=(delta>=threshold)) %>% group_by(ow)
+query = packets %>% filter(ow>=first, ow<=last) %>% mutate(diverted=(src_delta>=threshold)) %>% group_by(ow)
 
 # True good and true evil
 query %>% filter(attack==FALSE) %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("True Good")
@@ -198,10 +278,10 @@ query %>% filter(diverted==FALSE) %>% summarize(n=n()) %>% ggplot(mapping=aes(x=
 query %>% filter(diverted==TRUE)  %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("Forwarded")
 
 # Errors in classification. 
-query %>% filter(delta< threshold, attack==TRUE)  %>% summarize(n=n()/101662) %>% 
+query %>% filter(src_delta< threshold, attack==TRUE)  %>% summarize(n=n()/101662) %>% 
   ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("False Negatives")
 
-query %>% filter(delta>=threshold, attack==FALSE) %>% summarize(n=n()/406242) %>% 
+query %>% filter(src_delta>=threshold, attack==FALSE) %>% summarize(n=n()/406242) %>% 
   ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("False Positives")
 
 query %>% group_by(ow, attack, diverted) %>% summarize(n=n()) %>% 
@@ -284,6 +364,7 @@ base_plot +
   geom_line(mapping=aes(y=src_ewma+k*src_ewmmd), color="seagreen4") +
   geom_line(mapping=aes(y=dst_ewma-k*dst_ewmmd), color="steelblue4") +
   theme_classic()
+
 ```
 
 ## Entropy Under Attack
@@ -291,6 +372,7 @@ base_plot +
 Alright, we have the graph. Now we need to focus in the attack (OWs 768-1280).
 
 ```{r}
+
 base_plot = tcad_m14 %>% filter(ow>=768, ow<=1280) %>% ggplot(mapping=aes(x=ow))
 
 base_plot + 
@@ -316,7 +398,7 @@ attack_entropy
 
 mitigation_out = packets %>% 
   filter(ow>=first, ow<=last) %>% 
-  mutate(diverted=(delta>=threshold)) %>% 
+  mutate(diverted=(src_delta>=threshold)) %>% 
   group_by(ow, attack, diverted) %>% 
   summarize(n=n())
 
@@ -327,21 +409,23 @@ mitigation_out
 ```
 ## Typical Frequency Deltas
 
-
 Question: for each OW, what are the typical frequency deltas (current OW - OW#768) for attack packets? 
 
 ```{r}
+
 #query = packets %>% 
 #  filter(ow>=first, ow<=last, attack==TRUE) %>% 
 #  group_by(ow) %>% 
-#  summarize(n=n(),q1=quantile(delta,0.25),q2=median(delta),q3=quantile(delta,0.75),iqr=IQR(delta))
+#  summarize(n=n(),q1=quantile(src_delta,0.25),q2=median(src_delta),q3=quantile(src_delta,0.75),iqr=IQR(src_delta))
 #
+
 query = packets %>% 
   filter(ow>=first, ow<=last) %>% 
   group_by(ow, attack) %>% 
-  summarize(n=n(),q1=quantile(delta,0.25),q2=median(delta),q3=quantile(delta,0.75),iqr=IQR(delta))
+  summarize(n=n(),q1=quantile(src_delta,0.25),q2=median(src_delta),q3=quantile(src_delta,0.75),iqr=IQR(src_delta))
 
 query
+
 ```
 
 Can we graph it? 
@@ -374,4 +458,7 @@ How are these deltas related to entropy?
 
 What else can we do?
 
+```{r}
+rm(query)
+```
 
