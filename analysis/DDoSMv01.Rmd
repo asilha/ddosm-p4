@@ -11,9 +11,22 @@ library(dplyr)
 library(ggplot2)
 library(readr)
 knitr::opts_chunk$set(tidy=TRUE, tidy.opts=list(width.cutoff=60))
+
 ```
 
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file). The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+```{r functions, echo=FALSE}
+
+# Based on https://github.com/skgrange/threadr/blob/master/R/twos_complement.R
+
+#twos_complement <- function(x) 
+#  purrr::map_dbl(x, twos_complement_worker)
+
+#twos_complement_worker <- function(x) {
+#  if (bitwAnd(x, bitwShiftL(1, 16 - 1)) != 0) x <- x - (bitwShiftL(1, 16))
+#  return(x)
+#}
+
+```
 
 # Load the dataset
 
@@ -44,11 +57,12 @@ packets = packets %>% mutate(ow = get_ow(index,m))
 
 ```
 
-## Delta Value
+## Delta Values (Source and Destination)
 
 ```{r}
 packets = packets %>% rename(delta = src_delta)
-packets = packets %>% mutate(delta=strtoi(delta)) # Convert from hexadecimal to decimal
+packets = packets %>% mutate(delta=strtoi(delta), dst_delta=strtoi(dst_delta)) # Convert from hexadecimal to decimal
+packets = packets %>% mutate(delta=twos_complement(delta), dst_delta=twos_complement(dst_delta)) # Convert from two's complement
 ```
 
 # Attack Overview
@@ -57,7 +71,8 @@ At this point we need to check whether we can observe the fist attack packet.
 We calculated the index based on the DDoS Mitigation notebook.
 
 ```{r}
-packets %>% filter(index >= 4194300) 
+#packets %>% filter(index >= 4194300)
+packets %>% filter(index >= 4210684) 
 ```
 
 The attack begins with the fifth packet of OW 769 and it lasts for a total of 512 OWs (i.e., OWs 769-1280). 
