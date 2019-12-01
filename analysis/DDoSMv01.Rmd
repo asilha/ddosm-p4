@@ -149,11 +149,38 @@ To analyze the behavior of our classifier, it would be interesting to plot a his
 
 ## First Attack OWs
 
-Let's set an arbitrary threshold.
+Let's set an arbitrary threshold and a function which indicates whether or not to divert a given packet. 
 
-```{r threshold_first_ows}
-
+```{r param_threshold_first_ows}
 threshold = 16
+
+```
+
+```{r fn_divert}
+divert = function(src_delta, dst_delta) (src_delta >= threshold)
+#divert = function(src_delta, dst_delta) (src_delta >= threshold || dst_delta <= - threshold)
+
+```
+
+```{r fn_stats}
+
+stats = function() {
+  
+  true_evil = query %>% filter(attack==TRUE) %>% tally()
+  true_good = query %>% filter(attack==FALSE) %>% tally()
+  message("True evil: ", true_evil, " True good: ", true_good, " Total: ", true_evil + true_good)
+  
+  class_evil = query %>% filter(divert(src_delta,dst_delta)) %>% tally() 
+  class_good = query %>% filter(!divert(src_delta,dst_delta)) %>% tally() 
+  message("Class evil: ", class_evil, " Class good: ", class_good, " Total: ", class_evil + class_good)
+  
+  error_evil = query %>% filter(!divert(src_delta,dst_delta), attack==TRUE)  %>% tally() 
+  error_good = query %>% filter(divert(src_delta,dst_delta), attack==FALSE) %>% tally() 
+  
+  message("FNcount: ", error_evil, " FPcount: ", error_good, " Total: ", error_evil + error_good)
+  message("FNR: ", round(error_evil/true_evil,4), " FPR: ", round(error_good/true_good,4))  
+  
+}
 
 ```
 
@@ -166,20 +193,7 @@ last  = 800
 
 query = packets %>% filter(ow>=first, ow<=last)
 
-true_evil = query %>% filter(attack==TRUE) %>% tally()
-true_good = query %>% filter(attack==FALSE) %>% tally()
-message("True evil: ", true_evil, " True good: ", true_good, " Total: ", true_evil + true_good)
-
-class_evil = query %>% filter(src_delta>=threshold) %>% tally() 
-class_good = query %>% filter(src_delta< threshold) %>% tally() 
-message("Class evil: ", class_evil, " Class good: ", class_good, " Total: ", class_evil + class_good)
-
-error_evil = query %>% filter(src_delta< threshold, attack==TRUE)  %>% tally() 
-error_good = query %>% filter(src_delta>=threshold, attack==FALSE) %>% tally() 
-
-message("FNcount: ", error_evil, " FPcount: ", error_good, " Total: ", error_evil + error_good)
-message("FNR: ", round(error_evil/true_evil,4), " FPR: ", round(error_good/true_good,4))
-
+stats()
 
 ```
 
@@ -187,37 +201,46 @@ With a threshold equal to 16, we divert ~86% of the attack, while keeping ~90% o
 
 It would be interesting to observe what happens **over time**, OW after OW. 
 
+```{r fn_graphs}
+
+graph_true_good = function() query %>% filter(attack==FALSE) %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("True Good")
+graph_true_evil = function() query %>% filter(attack==TRUE)  %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("True Evil")
+  
+graph_class_good = function() query %>% filter(diverted==FALSE) %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("Forwarded")
+graph_class_evil = function() query %>% filter(diverted==TRUE)  %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("Diverted")
+  
+graph_false_neg = function() query %>% filter(!divert(src_delta,dst_delta), attack==TRUE)  %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("False Negatives")
+graph_false_pos = function()  query %>% filter(divert(src_delta,dst_delta), attack==FALSE) %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("False Positives")
+
+graph_results = function() 
+  
+  query %>% group_by(ow, attack, diverted) %>% summarize(n=n()) %>% 
+    ggplot(mapping=aes(x=ow, y=n, color=attack, shape=diverted)) + 
+    geom_point(position="jitter", size=2.0) + 
+    #coord_cartesian(xlim=c(770,810),ylim=c(0,16384)) + 
+    labs(x="Observation Window", y="Packet Count", title ="Classification Results") +
+    scale_x_continuous(expand=expand_scale(add=0)) + 
+    scale_y_continuous(expand=expand_scale(add=0)) +
+    scale_color_manual(values=c("seagreen4", "orangered1")) + 
+    theme_classic()  
+
+```
+
+
 ```{r}
 
 first = 770 
 last  = 800
 
-query = packets %>% filter(ow>=first, ow<=last) %>% mutate(diverted=(src_delta>=threshold)) %>% group_by(ow)
+query = packets %>% filter(ow>=first, ow<=last) %>% mutate(diverted=divert(src_delta,dst_delta)) %>% group_by(ow)
 
-# True good and true evil
-query %>% filter(attack==FALSE) %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("True Good")
-query %>% filter(attack==TRUE)  %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("True Evil")
-
-# Classified good and evil.
-query %>% filter(diverted==FALSE) %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("Forwarded")
-query %>% filter(diverted==TRUE)  %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("Diverted")
-
-# Errors in classification. 
-query %>% filter(src_delta< threshold, attack==TRUE)  %>% summarize(n=n()) %>% 
-  ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("False Negatives")
-
-query %>% filter(src_delta>=threshold, attack==FALSE) %>% summarize(n=n()) %>% 
-  ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("False Positives")
-
-query %>% group_by(ow, attack, diverted) %>% summarize(n=n()) %>% 
-  ggplot(mapping=aes(x=ow, y=n, color=attack, shape=diverted)) + 
-  geom_point(position="jitter", size=2.0) + 
-  coord_cartesian(xlim=c(770,810),ylim=c(0,16384)) + 
-  labs(x="Observation Window", y="Packet Count", title ="Classification Results") +
-  scale_x_continuous(expand=expand_scale(add=0)) + 
-  scale_y_continuous(expand=expand_scale(add=0)) +
-  scale_color_manual(values=c("seagreen4", "orangered1")) + 
-  theme_classic()
+graph_true_good()
+graph_true_evil()
+graph_class_good()
+graph_class_evil()
+graph_false_neg()
+graph_false_pos()
+graph_results()
 
 ```
 
@@ -240,18 +263,8 @@ last = 1280
 
 query = packets %>% filter(ow>=first, ow<=last)
 
-true_evil = query %>% filter(attack==TRUE) %>% tally()
-true_good = query %>% filter(attack==FALSE) %>% tally()
-message("True evil: ", true_evil, " True good: ", true_good, " Total: ", true_evil + true_good)
+stats()
 
-class_evil = query %>% filter(src_delta>=threshold) %>% tally() 
-class_good = query %>% filter(src_delta< threshold) %>% tally() 
-message("Class evil: ", class_evil, " Class good: ", class_good, " Total: ", class_evil + class_good)
-
-error_evil = query %>% filter(src_delta< threshold, attack==TRUE)  %>% tally() 
-error_good = query %>% filter(src_delta>=threshold, attack==FALSE) %>% tally() 
-message("FNcount: ", error_evil, " FPcount: ", error_good, " Total: ", error_evil + error_good)
-message("FNR: ", round(error_evil/true_evil,4), " FPR: ", round(error_good/true_good,4))
 ```
 
 
@@ -259,30 +272,13 @@ message("FNR: ", round(error_evil/true_evil,4), " FPR: ", round(error_good/true_
 
 query = packets %>% filter(ow>=first, ow<=last) %>% mutate(diverted=(src_delta>=threshold)) %>% group_by(ow)
 
-# True good and true evil
-query %>% filter(attack==FALSE) %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("True Good")
-query %>% filter(attack==TRUE)  %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("True Evil")
-
-# Classified good and evil.
-query %>% filter(diverted==FALSE) %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("Diverted")
-query %>% filter(diverted==TRUE)  %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("Forwarded")
-
-# Errors in classification. 
-query %>% filter(src_delta< threshold, attack==TRUE)  %>% summarize(n=n()/101662) %>% 
-  ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("False Negatives")
-
-query %>% filter(src_delta>=threshold, attack==FALSE) %>% summarize(n=n()/406242) %>% 
-  ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("False Positives")
-
-query %>% group_by(ow, attack, diverted) %>% summarize(n=n()) %>% 
-  ggplot(mapping=aes(x=ow, y=n, color=attack, shape=diverted)) + 
-  geom_point(position="jitter", size=2.0) + 
-  coord_cartesian(xlim=c(770,1300),ylim=c(0,16384)) + 
-  labs(x="Observation Window", y="Packet Count", title ="Classification Results") +
-  scale_x_continuous(expand=expand_scale(add=0)) + 
-  scale_y_continuous(expand=expand_scale(add=0)) +
-  scale_color_manual(values=c("seagreen4", "orangered1")) + 
-  theme_classic()
+graph_true_good()
+graph_true_evil()
+graph_class_good()
+graph_class_evil()
+graph_false_neg()
+graph_false_pos()
+graph_results()
 
 ```
 
@@ -421,20 +417,23 @@ query
 Can we graph it? 
 
 ```{r}
+
+dot_size = 2.0
+
 query %>% 
-  filter(ow<800, q1>0) %>% 
+  filter(ow<800) %>% 
   ggplot(mapping = aes(x=ow, shape=attack)) +
-  geom_point(mapping = aes(y=q1), color="blue4", position="jitter", size=0.25) +
-  geom_point(mapping = aes(y=q2), color="yellow4", position="jitter", size=0.25) +
-  geom_point(mapping = aes(y=q3), color="orangered4", position="jitter", size=0.25) +
-  coord_trans(y="log10")
+  geom_point(mapping = aes(y=q1), color="blue4", position="jitter", size=dot_size) +
+  geom_point(mapping = aes(y=q2), color="yellow4", position="jitter", size=dot_size) +
+  geom_point(mapping = aes(y=q3), color="orangered4", position="jitter", size=dot_size) 
+  #coord_trans(y="log10")
   
 query %>% 
-  filter(ow>800, q1>0) %>% 
+  filter(ow>800) %>% 
   ggplot(mapping = aes(x=ow, shape=attack)) +
-  geom_point(mapping = aes(y=q1), color="blue4", position="jitter", size=0.25) +
-  geom_point(mapping = aes(y=q2), color="yellow4", position="jitter", size=0.25) +
-  geom_point(mapping = aes(y=q3), color="orangered4", position="jitter", size=0.25) #+
+  geom_point(mapping = aes(y=q1), color="blue4", position="jitter", size=dot_size) +
+  geom_point(mapping = aes(y=q2), color="yellow4", position="jitter", size=dot_size) +
+  geom_point(mapping = aes(y=q3), color="orangered4", position="jitter", size=dot_size) #+
   #coord_trans(y="log10")
 ```
 
