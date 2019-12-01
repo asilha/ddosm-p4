@@ -180,7 +180,7 @@ stats = function() {
   
   message("FNcount: ", error_evil, " FPcount: ", error_good, " Total: ", error_evil + error_good)
   message("FNR: ", round(error_evil/true_evil,4), " FPR: ", round(error_good/true_good,4))  
-  
+
 }
 
 ```
@@ -246,6 +246,8 @@ graph_false_neg()
 graph_false_pos()
 graph_results()
 
+
+
 ```
 
 **I finally have a graph that lets me see what's going on over time!!!**
@@ -286,6 +288,18 @@ graph_class_evil()
 graph_false_neg()
 graph_false_pos()
 graph_results()
+
+packets %>% 
+  filter(ow>=first, ow<=last, attack==TRUE, divert(src_delta, dst_delta)==TRUE) %>% 
+  group_by(ow) %>%
+  summarize(n = n()) %>%
+  summarize(meann = mean(n) / (0.2 * 16384), margin = qnorm(0.975) * sd(n)/sqrt(1280-770+1) / (0.2 * 16384))
+
+packets %>% 
+  filter(ow>=first, ow<=last, attack==FALSE, divert(src_delta, dst_delta)==TRUE) %>% 
+  group_by(ow) %>%
+  summarize(n = n()) %>%
+  summarize(meann = mean(n) / (0.8 * 16384), margin = qnorm(0.975) * sd(n)/sqrt(1280-770+1) / (0.8 * 16384))
 
 ```
 
