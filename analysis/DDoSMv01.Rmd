@@ -11,7 +11,6 @@ output:
 library(dplyr)
 library(ggplot2)
 library(readr)
-library(threadr)
 knitr::opts_chunk$set(tidy=TRUE, tidy.opts=list(width.cutoff=60))
 
 ```
@@ -19,14 +18,14 @@ knitr::opts_chunk$set(tidy=TRUE, tidy.opts=list(width.cutoff=60))
 
 ```{r parameters, include=FALSE}
 
-log2m = 14
-m = 2^log2m
+log2m = as.integer(14)
+m = as.integer(2^log2m)
 
-log2n = 24       # Where n is the total number of packets in the detection phase.  
-n = 2^log2n
+log2n = as.integer(24)       # Where n is the total number of packets in the detection phase.  
+n = as.integer(2^log2n)
 
-training_length  = 2^(log2n-log2m-1)   # We need to add this to the OW number when we skip training. 
-detection_length = 2^(log2n-log2m)
+training_length  = as.integer(2^(log2n - log2m - 1))   # We need to add this to the OW number when we skip training. 
+detection_length = as.integer(2^(log2n - log2m))
 
 ```
 
@@ -40,16 +39,15 @@ For a detection phase of 2^24 packets we have:
   
 For m=2^14, the detection phase has 2^(24-14)=2^10 windows: 
   
-  2^8 OWs before the attack, 
+  2^8 OWs pre-attack and post attack,  
   2^9 OWs under attack, 
-  2^8 OWs after the attack. 
 
-For m=2^16: 
+For m=2^16, 2^8 windows: 
 
   2^6 OWs pre-attack and post-attack,
   2^7 OWs under attack.
   
-For m=2^18: 
+For m=2^18, 2^6 windows: 
   
   2^4 OWs pre-attack and post-attack,
   2^5 OWs under attack.
@@ -57,7 +55,9 @@ For m=2^18:
   
 ```{r functions, include=FALSE}
 
-get_ow = function(index, m) ((index - 1) %/% m + training_length + 1) 
+get_ow = function(index, m) as.integer((index - 1) %/% m + training_length + 1) 
+
+twos_complement = function(x) as.integer(ifelse(x > 32767, x - 65536, x))
 
 ```
 
@@ -79,12 +79,14 @@ packets <- read_csv("~/p4sec/ddosm-p4/pcaps/ddos20m14b/if3_attack_out.csv", col_
 
 ```{r}
 packets = packets %>% tibble::rowid_to_column("index")
+packets
 ```
 
 ## Add OW Number Column
 
 ```{r}
 packets = packets %>% mutate(ow = get_ow(index,m)) 
+packets
 ```
 
 ## Convert Delta Values (Source and Destination)
@@ -92,12 +94,12 @@ packets = packets %>% mutate(ow = get_ow(index,m))
 ```{r}
 
 # Convert from hexadecimal to decimal
-packets = packets %>% mutate(src_delta=strtoi(src_delta), 
-                             dst_delta=strtoi(dst_delta)) 
+packets = packets %>% mutate_at(vars(src_delta, dst_delta), funs(strtoi)) 
 
-# Convert from two's complement
-packets = packets %>% mutate(src_delta=twos_complement(src_delta), 
-                             dst_delta=twos_complement(dst_delta)) 
+# Convert from 16-bit two's complement notation to integer. 
+packets = packets %>% mutate_at(vars(src_delta, dst_delta), funs(twos_complement)) 
+
+packets %>% filter(ow>770)
 ```
 
 # Attack 
@@ -135,22 +137,10 @@ query = packets %>% filter(ow >= 770, ow <= 1280) %>% group_by(ow, attack, src_d
 
 query
 
-query %>% ggplot(mapping=aes(x=src_delta, y=sources, color=attack)) + geom_line() 
-# + coord_cartesian(xlim=c(0,1500),ylim=c(0,4000))
-
-```
-
-
-
-```{r}
-
-query %>% filter(attack==FALSE) %>% ggplot(mapping=aes(x=src_delta, y=sources)) + geom_line() 
-# + coord_cartesian(xlim=c(0,1500),ylim=c(0,4000))
-
-```
-
-```{r}
-query %>% filter(attack==TRUE) %>% ggplot(mapping=aes(x=src_delta, y=sources)) + geom_line() 
+query %>% 
+  ggplot(mapping=aes(x=src_delta, y=sources, color=attack)) +
+  geom_line() +
+  scale_color_manual(values=c("seagreen4", "orangered1"))
 # + coord_cartesian(xlim=c(0,1500),ylim=c(0,4000))
 
 ```
