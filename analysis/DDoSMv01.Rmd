@@ -157,8 +157,9 @@ threshold = 16
 ```
 
 ```{r fn_divert}
-divert = function(src_delta, dst_delta) (src_delta >= threshold)
-#divert = function(src_delta, dst_delta) (src_delta >= threshold || dst_delta <= - threshold)
+#divert = function(src_delta, dst_delta) (src_delta >= threshold)
+divert = function(src_delta, dst_delta) (dst_delta >= threshold)
+#divert = function(src_delta, dst_delta) (src_delta >= threshold && dst_delta >= threshold)
 
 ```
 
@@ -232,7 +233,10 @@ graph_results = function()
 first = 770 
 last  = 800
 
-query = packets %>% filter(ow>=first, ow<=last) %>% mutate(diverted=divert(src_delta,dst_delta)) %>% group_by(ow)
+query = packets %>% 
+  filter(ow>=first, ow<=last) %>% 
+  mutate(diverted=divert(src_delta,dst_delta)) %>% 
+  group_by(ow)
 
 graph_true_good()
 graph_true_evil()
@@ -250,7 +254,7 @@ graph_results()
 
 ```{r threshold_all_ows}
 
-threshold = 1
+threshold = 16
 
 ```
 
@@ -270,7 +274,10 @@ stats()
 
 ```{r}
 
-query = packets %>% filter(ow>=first, ow<=last) %>% mutate(diverted=(src_delta>=threshold)) %>% group_by(ow)
+query = packets %>% 
+  filter(ow>=first, ow<=last) %>% 
+  mutate(diverted=divert(src_delta,dst_delta)) %>% 
+  group_by(ow)
 
 graph_true_good()
 graph_true_evil()
@@ -408,7 +415,14 @@ Question: for each OW, what are the typical frequency deltas (current OW - OW#76
 query = packets %>% 
   filter(ow>=first, ow<=last) %>% 
   group_by(ow, attack) %>% 
-  summarize(n=n(),q1=quantile(src_delta,0.25),q2=median(src_delta),q3=quantile(src_delta,0.75),iqr=IQR(src_delta))
+  summarize(q1=quantile(src_delta,0.25),
+            q2=median(src_delta),
+            q3=quantile(src_delta,0.75),
+            iqr=IQR(src_delta),
+            dq1=quantile(dst_delta,0.25),
+            dq2=median(dst_delta),
+            dq3=quantile(dst_delta,0.75),
+            diqr=IQR(dst_delta))
 
 query
 
@@ -434,6 +448,22 @@ query %>%
   geom_point(mapping = aes(y=q1), color="blue4", position="jitter", size=dot_size) +
   geom_point(mapping = aes(y=q2), color="yellow4", position="jitter", size=dot_size) +
   geom_point(mapping = aes(y=q3), color="orangered4", position="jitter", size=dot_size) #+
+  #coord_trans(y="log10")
+
+query %>% 
+  filter(ow<800) %>% 
+  ggplot(mapping = aes(x=ow, shape=attack)) +
+  geom_point(mapping = aes(y=dq1), color="blue4", position="jitter", size=dot_size) +
+  geom_point(mapping = aes(y=dq2), color="yellow4", position="jitter", size=dot_size) +
+  geom_point(mapping = aes(y=dq3), color="orangered4", position="jitter", size=dot_size) 
+  #coord_trans(y="log10")
+  
+query %>% 
+  filter(ow>800) %>% 
+  ggplot(mapping = aes(x=ow, shape=attack)) +
+  geom_point(mapping = aes(y=dq1), color="blue4", position="jitter", size=dot_size) +
+  geom_point(mapping = aes(y=dq2), color="yellow4", position="jitter", size=dot_size) +
+  geom_point(mapping = aes(y=dq3), color="orangered4", position="jitter", size=dot_size) #+
   #coord_trans(y="log10")
 ```
 
