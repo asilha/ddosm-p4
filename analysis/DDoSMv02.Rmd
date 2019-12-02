@@ -1,10 +1,10 @@
 ---
 title: "DDoS Attack Mitigation"
 output:
-  pdf_document: default
-  html_notebook: default
   html_document:
     df_print: paged
+  html_notebook: default
+  pdf_document: default
 ---
 ```{r setup, echo=FALSE, include=FALSE}
 
@@ -152,85 +152,6 @@ attack_entropy = tcad_m14 %>% filter(ow>=first, ow<=last) %>% mutate(ow=ow-512)
 attack_entropy
 ```
 
-## Typical Deltas
-
-Question: for each OW, what are the typical frequency deltas (current OW - OW#768) for attack packets? 
-
-```{r}
-
-query = packets %>% 
-  filter(ow>=first, ow<=last) %>% 
-  group_by(ow, attack) %>% 
-  summarize(q1=quantile(src_delta,0.25),
-            q2=median(src_delta),
-            q3=quantile(src_delta,0.75),
-            iqr=IQR(src_delta),
-            dq1=quantile(dst_delta,0.25),
-            dq2=median(dst_delta),
-            dq3=quantile(dst_delta,0.75),
-            diqr=IQR(dst_delta))
-
-query
-
-```
-
-Can we graph it? 
-
-```{r}
-
-dot_size = 2.0
-
-query %>% 
-  filter(ow<800) %>% 
-  ggplot(mapping = aes(x=ow, shape=attack)) +
-  geom_point(mapping = aes(y=q1), color="blue4", position="jitter", size=dot_size) +
-  geom_point(mapping = aes(y=q2), color="yellow4", position="jitter", size=dot_size) +
-  geom_point(mapping = aes(y=q3), color="orangered4", position="jitter", size=dot_size) 
-  #coord_trans(y="log10")
-  
-query %>% 
-  filter(ow>800) %>% 
-  ggplot(mapping = aes(x=ow, shape=attack)) +
-  geom_point(mapping = aes(y=q1), color="blue4", position="jitter", size=dot_size) +
-  geom_point(mapping = aes(y=q2), color="yellow4", position="jitter", size=dot_size) +
-  geom_point(mapping = aes(y=q3), color="orangered4", position="jitter", size=dot_size) #+
-  #coord_trans(y="log10")
-
-query %>% 
-  filter(ow<800) %>% 
-  ggplot(mapping = aes(x=ow, shape=attack)) +
-  geom_point(mapping = aes(y=dq1), color="blue4", position="jitter", size=dot_size) +
-  geom_point(mapping = aes(y=dq2), color="yellow4", position="jitter", size=dot_size) +
-  geom_point(mapping = aes(y=dq3), color="orangered4", position="jitter", size=dot_size) 
-  #coord_trans(y="log10")
-  
-query %>% 
-  filter(ow>800) %>% 
-  ggplot(mapping = aes(x=ow, shape=attack)) +
-  geom_point(mapping = aes(y=dq1), color="blue4", position="jitter", size=dot_size) +
-  geom_point(mapping = aes(y=dq2), color="yellow4", position="jitter", size=dot_size) +
-  geom_point(mapping = aes(y=dq3), color="orangered4", position="jitter", size=dot_size) #+
-  #coord_trans(y="log10")
-```
-
-## Defining a threshold 
-
-Let's set an arbitrary threshold and a function which indicates whether or not to divert a given packet. 
-
-```{r threshold}
-
-threshold = 16
-
-```
-
-```{r fn_divert}
-
-#divert = function(src_delta, dst_delta) (src_delta >= threshold)
-divert = function(src_delta, dst_delta) (dst_delta >= threshold)
-#divert = function(src_delta, dst_delta) (src_delta >= threshold && dst_delta >= threshold)
-
-
-```
 
 
 # Mitigation Studies 
@@ -314,6 +235,87 @@ packets %>% filter(index >= attack_start - m)
 ```
 
 For log2m=14, the attack begins at the fifth packet of OW 769 and lasts for a total of 512 OWs (i.e., OWs 769-1280). In OW 769 there is no packet diversion, since we have not set DEFCON yet. In OW 770 DEFCON is already set; the switch begins calculating deltas, using OWs 769 and 768 as a reference. 
+
+## Typical Deltas
+
+Question: for each OW, what are the typical frequency deltas (current OW - OW#768) for attack packets? 
+
+```{r}
+
+query = packets %>% 
+  filter(ow>=first, ow<=last) %>% 
+  group_by(ow, attack) %>% 
+  summarize(q1=quantile(src_delta,0.25),
+            q2=median(src_delta),
+            q3=quantile(src_delta,0.75),
+            iqr=IQR(src_delta),
+            dq1=quantile(dst_delta,0.25),
+            dq2=median(dst_delta),
+            dq3=quantile(dst_delta,0.75),
+            diqr=IQR(dst_delta))
+
+query
+
+```
+
+Can we graph it? 
+
+```{r}
+
+dot_size = 2.0
+
+query %>% 
+  filter(ow<800) %>% 
+  ggplot(mapping = aes(x=ow, shape=attack)) +
+  geom_point(mapping = aes(y=q1), color="blue4", position="jitter", size=dot_size) +
+  geom_point(mapping = aes(y=q2), color="yellow4", position="jitter", size=dot_size) +
+  geom_point(mapping = aes(y=q3), color="orangered4", position="jitter", size=dot_size) 
+  #coord_trans(y="log10")
+  
+query %>% 
+  filter(ow>800) %>% 
+  ggplot(mapping = aes(x=ow, shape=attack)) +
+  geom_point(mapping = aes(y=q1), color="blue4", position="jitter", size=dot_size) +
+  geom_point(mapping = aes(y=q2), color="yellow4", position="jitter", size=dot_size) +
+  geom_point(mapping = aes(y=q3), color="orangered4", position="jitter", size=dot_size) #+
+  #coord_trans(y="log10")
+
+query %>% 
+  filter(ow<800) %>% 
+  ggplot(mapping = aes(x=ow, shape=attack)) +
+  geom_point(mapping = aes(y=dq1), color="blue4", position="jitter", size=dot_size) +
+  geom_point(mapping = aes(y=dq2), color="yellow4", position="jitter", size=dot_size) +
+  geom_point(mapping = aes(y=dq3), color="orangered4", position="jitter", size=dot_size) 
+  #coord_trans(y="log10")
+  
+query %>% 
+  filter(ow>800) %>% 
+  ggplot(mapping = aes(x=ow, shape=attack)) +
+  geom_point(mapping = aes(y=dq1), color="blue4", position="jitter", size=dot_size) +
+  geom_point(mapping = aes(y=dq2), color="yellow4", position="jitter", size=dot_size) +
+  geom_point(mapping = aes(y=dq3), color="orangered4", position="jitter", size=dot_size) #+
+  #coord_trans(y="log10")
+```
+
+## Defining a threshold 
+
+Let's set an arbitrary threshold and a function which indicates whether or not to divert a given packet. 
+
+```{r threshold}
+
+threshold = 16
+
+```
+
+```{r fn_divert}
+
+#divert = function(src_delta, dst_delta) (src_delta >= threshold)
+divert = function(src_delta, dst_delta) (dst_delta >= threshold)
+#divert = function(src_delta, dst_delta) (src_delta >= threshold && dst_delta >= threshold)
+
+
+```
+
 
 ## Address Counts
 
