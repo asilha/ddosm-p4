@@ -289,19 +289,29 @@ graph_false_neg()
 graph_false_pos()
 graph_results()
 
+
+
+
+```
+
+```{r}
 packets %>% 
   filter(ow>=first, ow<=last, attack==TRUE, divert(src_delta, dst_delta)==TRUE) %>% 
   group_by(ow) %>%
   summarize(n = n()) %>%
-  summarize(meann = mean(n) / (0.2 * 16384), margin = qnorm(0.975) * sd(n)/sqrt(1280-770+1) / (0.2 * 16384))
+  summarize(mean = mean(n) / (0.2 * 16384), margin = qnorm(0.975) * sd(n)/sqrt(1280-770+1) / (0.2 * 16384))
 
+```
+
+
+```{r}
 packets %>% 
   filter(ow>=first, ow<=last, attack==FALSE, divert(src_delta, dst_delta)==TRUE) %>% 
   group_by(ow) %>%
   summarize(n = n()) %>%
-  summarize(meann = mean(n) / (0.8 * 16384), margin = qnorm(0.975) * sd(n)/sqrt(1280-770+1) / (0.8 * 16384))
-
+  summarize(mean = mean(n) / (0.8 * 16384), margin = qnorm(0.975) * sd(n)/sqrt(1280-770+1) / (0.8 * 16384))
 ```
+
 
 # Attack vs TCAD
 
@@ -481,11 +491,9 @@ query %>%
   #coord_trans(y="log10")
 ```
 
-(Why does only true packets show up in the graph?)
-
 ## Points to Ponder
 
-Question: for each OW, how many different attack sources are there? 
+For each OW, how many different attack sources are there? 
 
 How are these deltas related to entropy?
 
