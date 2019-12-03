@@ -135,23 +135,23 @@ For m=2^18, 2^6 windows:
 
 
 # Function inputs are expressed in numbers of packets.
-#   Log2d: Length of the detection phase, passed to trafg (as '-t 1048576', for instance).
-#   Log2m: Length of the observation window, passed to tcad (as '-m 14', for instance)
+#   Log2n: Length of the detection phase, passed to trafg (as '-n 1048576', for instance).
+#   Log2m: Length of the observation window, passed to tcad JSON file (as '"window_size": 262144', for instance)
 # Function outputs are expressed in numbers of observation windows. 
 
-detection = function(log2d, log2m) (2^(log2d - log2m))     
-training  = function(log2d, log2m) (2^(log2d - log2m - 1)) # Training length = detection / 2 
-attack    = function(log2d, log2m) (2^(log2d - log2m - 1)) # Attack length   = detection / 2
-safety    = function(log2d, log2m) (2^(log2d - log2m - 2)) # Pre-attack and post-attack = attack / 4 (each)
+detection = function(log2n, log2m) (2^(log2n - log2m))     
+training  = function(log2n, log2m) (2^(log2n - log2m - 1)) # Training length = detection / 2 
+attack    = function(log2n, log2m) (2^(log2n - log2m - 1)) # Attack length   = detection / 2
+safety    = function(log2n, log2m) (2^(log2n - log2m - 2)) # Pre-attack and post-attack = attack / 4 (each)
 
-attack_first = function(log2d, log2m) (training(log2d, log2m) + safety(log2d, log2m) + 1)
-attack_last  = function(log2d, log2m) (training(log2d, log2m) + safety(log2d, log2m) + attack(log2d, log2m))
+attack_first = function(log2n, log2m) (training(log2n, log2m) + safety(log2n, log2m) + 1)
+attack_last  = function(log2n, log2m) (training(log2n, log2m) + safety(log2n, log2m) + attack(log2n, log2m))
 
-log2d = 24  
+log2n = 24  
 log2m = 14  
   
-first = attack_first(log2d, log2m) + 1
-last  = attack_last(log2d, log2m)
+first = attack_first(log2n, log2m) + 1
+last  = attack_last(log2n, log2m)
 
 get_plot_tcad(tcad_m14 %>% filter(ow>=first, ow<=last), tcad_m14_k) + labs(title="Entropy for each Observation Window - Attack Phase")
 
@@ -169,11 +169,11 @@ get_plot_tcad(tcad_m14 %>% filter(ow>=first, ow<=last), tcad_m14_k) + labs(title
 log2m = as.integer(14)
 m = as.integer(2^log2m)
 
-log2d = as.integer(24)       # Where d is the total number of packets in the detection phase.  
-d = as.integer(2^log2d)
+log2n = as.integer(24)       # Where n is the total number of packets in the detection phase.  
+d = as.integer(2^log2n)
 
-training_length  = as.integer(2^(log2d - log2m - 1))   # We need to add this to the OW number when we skip training. 
-detection_length = as.integer(2^(log2d - log2m))
+training_length  = as.integer(2^(log2n - log2m - 1))   # We need to add this to the OW number when we skip training. 
+detection_length = as.integer(2^(log2n - log2m))
 
 get_ow = function(index, m) as.integer((index - 1) %/% m + training_length + 1) 
 
