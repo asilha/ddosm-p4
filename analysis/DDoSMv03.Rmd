@@ -11,46 +11,33 @@ output:
 library(dplyr)
 library(ggplot2)
 library(readr)
+library(stringr)
 knitr::opts_chunk$set(tidy=TRUE, tidy.opts=list(width.cutoff=60))
 
 ```
 
 # Overview
 
-# Characterizing the Attack
+## Parameters
 
-```{r fn_tcad, include=FALSE}
+### Dataset
 
-read_tcad_trace = function(trace_file) {
-  
-  col_names = c("ts",
-                "src_ent",
-                "src_ewma",
-                "src_ewmmd",
-                "dst_ent",
-                "dst_ewma",
-                "dst_ewmmd",
-                "alarm")
-  
-  col_types = "ciddiddl"
+We used a dataset with 2^24 packets in the detection phase.
 
-  tcad_trace = readr::read_table2(trace_file,
-                       col_names = col_names,
-                       col_types = col_types)
+```{r tcad_dataset}
 
-  tcad_trace = tcad_trace %>% tibble::rowid_to_column("ow")
+log2n = as.integer(24)  # n is passed to trafg. 
+n = as.integer(2^log2n)
 
-  tcad_trace = tcad_trace %>% dplyr::mutate(src_ent   = src_ent/16,
-                                 dst_ent   = dst_ent/16,
-                                 src_ewma  = src_ewma/262144,
-                                 dst_ewma  = dst_ewma/262144,
-                                 src_ewmmd = src_ewmmd/262144,
-                                 dst_ewmmd = dst_ewmmd/262144)  
-  return(tcad_trace)
-  
-}
+pcap_dir = "~/p4sec/ddosm-p4/pcaps"
+
+pcap_csv_m14 = str_c(pcap_dir,"/ddos20m14b/if3_attack_out.csv")
+pcap_csv_m16 = str_c(pcap_dir,"/ddos20m16b/if3_attack_out.csv")
+pcap_csv_m18 = str_c(pcap_dir,"/ddos20m18b/if3_attack_out.csv")
 
 ```
+
+### Sensitivity Coefficients
 
 What are our chosen k coefficients? 
 
@@ -58,59 +45,42 @@ Our experiments with tcad_m_levels.py show us candidate values for k, as follows
 
 Log2(m) | k     | FPR
 --------|-------|-----
-13      | 4.000 | 1.8%
 14      | 4.125 | 1.7%
-15      | 4.250 | 1.8%
 16      | 4.500 | 1.6%
-17      | 4.750 | 1.6%
 18      | 3.625 | 0.0%
 
-TCAD measurements can be found in the following files: 
-
-tcad_m_2_14_k_4.125.log
-tcad_m_2_16_k_4.500.log
-tcad_m_2_18_k_3.625.log
-
-[Source: DDoS Mitigation.ipynb, section Finding TCAD Values]
-
-## Entropy Overview
-
-```{r tcad_overview}
-
-tcad_m14 = read_tcad_trace("~/p4sec/ddosm-p4/lab/ddos20/tcad_logs/tcad_m_2_14_k_4.125.log")
-tcad_m16 = read_tcad_trace("~/p4sec/ddosm-p4/lab/ddos20/tcad_logs/tcad_m_2_16_k_4.500.log")
-tcad_m18 = read_tcad_trace("~/p4sec/ddosm-p4/lab/ddos20/tcad_logs/tcad_m_2_18_k_3.625.log")
+```{r tcad_k}
 
 tcad_m14_k = 4.125
 tcad_m16_k = 4.500
 tcad_m18_k = 3.625
 
-get_plot_tcad = function(tcad, k) {
-  
-  plot_options = list(  
-    labs(x="OW number", y="Entropy"),
-    geom_point(mapping=aes(y=src_ent), size=0.25, color="seagreen4"), 
-    geom_point(mapping=aes(y=dst_ent), size=0.25, color="steelblue4"),
-    geom_line(mapping=aes(y=src_ewma+k*src_ewmmd), color="seagreen4"),
-    geom_line(mapping=aes(y=dst_ewma-k*dst_ewmmd), color="steelblue4"),
-    theme_classic())
+```
 
-  plot = tcad %>% ggplot(mapping=aes(x=ow)) + plot_options
-    
-  return(plot)
-}
+### TCAD Traces
 
-get_plot_tcad(tcad_m14, tcad_m14_k) + labs(title="Entropy for each Observation Window (m = 2^14)")
-get_plot_tcad(tcad_m16, tcad_m16_k) + labs(title="Entropy for each Observation Window (m = 2^16)")
-get_plot_tcad(tcad_m18, tcad_m18_k) + labs(title="Entropy for each Observation Window (m = 2^18)")
+TCAD measurements can be found in the following files: 
+
+  tcad_m_2_14_k_4.125.log
+  tcad_m_2_16_k_4.500.log
+  tcad_m_2_18_k_3.625.log
+
+  [Source: DDoS Mitigation.ipynb, section Finding TCAD Values]
+
+
+```{r tcad_traces}
+
+trace_dir = "~/p4sec/ddosm-p4/lab/ddos20/tcad_logs"
+
+tcad_m14_trace = str_c(trace_dir,"/tcad_m_2_14_k_4.125.log")
+tcad_m16_trace = str_c(trace_dir,"/tcad_m_2_16_k_4.500.log")
+tcad_m18_trace = str_c(trace_dir,"/tcad_m_2_18_k_3.625.log")
 
 ```
 
-## Entropy Under Attack
+## Observation Window Numbers
 
-Alright, we have the graph. Now we need to focus in the attack (OWs 768-1280).
-
-When we preinitialize training coefficients, the length of the workload is equal to the length of the detection phase.
+**Note: When we preinitialize training coefficients, the length of the workload is equal to the length of the detection phase.**
 
 For a detection phase of 2^24 packets we have: 
 
@@ -132,22 +102,110 @@ For m=2^18, 2^6 windows:
   
   2^4 OWs pre-attack and post-attack,
   2^5 OWs under attack.
+  
+Generally: 
 
-```{r tcad_under_attack}
-
+```{r fn_ows}
 
 # Function inputs are expressed in numbers of packets.
 #   Log2n: Length of the detection phase, passed to trafg (as '-n 1048576', for instance).
 #   Log2m: Length of the observation window, passed to tcad JSON file (as '"window_size": 262144', for instance)
 # Function outputs are expressed in numbers of observation windows. 
 
-detection = function(log2n, log2m) (2^(log2n - log2m))     
-training  = function(log2n, log2m) (2^(log2n - log2m - 1)) # Training length = detection / 2 
-attack    = function(log2n, log2m) (2^(log2n - log2m - 1)) # Attack length   = detection / 2
-safety    = function(log2n, log2m) (2^(log2n - log2m - 2)) # Pre-attack and post-attack = attack / 4 (each)
+detection = function(log2n, log2m) as.integer(2^(log2n - log2m))     
+training  = function(log2n, log2m) as.integer(2^(log2n - log2m - 1)) # Training length = detection / 2 
+attack    = function(log2n, log2m) as.integer(2^(log2n - log2m - 1)) # Attack length   = detection / 2
+safety    = function(log2n, log2m) as.integer(2^(log2n - log2m - 2)) # Pre-attack and post-attack = attack / 4 (each)
 
-attack_first = function(log2n, log2m) (training(log2n, log2m) + safety(log2n, log2m) + 1)
-attack_last  = function(log2n, log2m) (training(log2n, log2m) + safety(log2n, log2m) + attack(log2n, log2m))
+attack_first = function(log2n, log2m) as.integer(training(log2n, log2m) + safety(log2n, log2m) + 1)
+attack_last  = function(log2n, log2m) as.integer(training(log2n, log2m) + safety(log2n, log2m) + attack(log2n, log2m))
+
+# We also define a helper function to get the OW number from a packet index.
+
+get_ow = function(index, m) as.integer((index - 1) %/% m + 1) 
+
+```
+
+# Characterizing the Attack
+
+## Reading TCAD Trace Files
+
+```{r fn_read_tcad_trace, include=FALSE}
+
+read_tcad_trace = function(trace_file) {
+  
+  col_names = c("ts",
+                "src_ent",
+                "src_ewma",
+                "src_ewmmd",
+                "dst_ent",
+                "dst_ewma",
+                "dst_ewmmd",
+                "alarm")
+  
+  col_types = "ciddiddl"
+
+  tcad_trace = readr::read_table2(trace_file,
+                       col_names = col_names,
+                       col_types = col_types)
+
+  tcad_trace = tcad_trace %>% tibble::rowid_to_column("ow")
+
+  # Entropy values: 4 fractional bits.
+  # EWMA/EWMMD: 18 fractional bits.
+  
+  tcad_trace = tcad_trace %>% dplyr::mutate(
+                                 src_ent   = src_ent/16,
+                                 dst_ent   = dst_ent/16,
+                                 src_ewma  = src_ewma/262144,
+                                 dst_ewma  = dst_ewma/262144,
+                                 src_ewmmd = src_ewmmd/262144,
+                                 dst_ewmmd = dst_ewmmd/262144)  
+  return(tcad_trace)
+  
+}
+```
+
+```{r read_tcad_traces}
+
+tcad_m14 = read_tcad_trace(tcad_m14_trace)
+tcad_m16 = read_tcad_trace(tcad_m16_trace)
+tcad_m18 = read_tcad_trace(tcad_m18_trace)
+
+```
+
+## Entropy Overview
+
+```{r tcad_overview}
+
+get_plot_tcad = function(tcad, k) {
+  
+  plot_options = list(  
+    labs(x="OW number", y="Entropy"),
+    geom_point(mapping=aes(y=src_ent), size=0.25, color="seagreen4"), 
+    geom_point(mapping=aes(y=dst_ent), size=0.25, color="steelblue4"),
+    geom_line(mapping=aes(y=src_ewma+k*src_ewmmd), color="seagreen4"),
+    geom_line(mapping=aes(y=dst_ewma-k*dst_ewmmd), color="steelblue4"),
+    theme_classic())
+
+  plot = tcad %>% ggplot(mapping=aes(x=ow)) + plot_options
+    
+  return(plot)
+}
+
+title = "Entropy for each Observation Window "
+
+get_plot_tcad(tcad_m14, tcad_m14_k) + labs(title=str_c(title,"(m = 2^14)"))
+get_plot_tcad(tcad_m16, tcad_m16_k) + labs(title=str_c(title,"(m = 2^16)"))
+get_plot_tcad(tcad_m18, tcad_m18_k) + labs(title=str_c(title,"(m = 2^18)"))
+
+```
+
+## Entropy Under Attack
+
+Alright, we have the graph for the entire experiments. Now we need to focus in the attack.
+
+```{r tcad_under_attack}
 
 get_plot_tcad_attack = function(tcad, tcad_k, log2n, log2m) {
 
@@ -160,25 +218,22 @@ get_plot_tcad_attack = function(tcad, tcad_k, log2n, log2m) {
 
 }
 
-log2n = 24  
+title = "Entropy for each Observation Window - Attack Phase "
 
-get_plot_tcad_attack(tcad_m14, tcad_m14_k, log2n, 14) + labs(title="Entropy for each Observation Window - Attack Phase (m=2^14)") 
-get_plot_tcad_attack(tcad_m16, tcad_m16_k, log2n, 16) + labs(title="Entropy for each Observation Window - Attack Phase (m=2^16)") 
-get_plot_tcad_attack(tcad_m18, tcad_m18_k, log2n, 18) + labs(title="Entropy for each Observation Window - Attack Phase (m=2^18)") 
+get_plot_tcad_attack(tcad_m14, tcad_m14_k, log2n, 14) + labs(title=str_c(title,"(m = 2^14)"))
+get_plot_tcad_attack(tcad_m16, tcad_m16_k, log2n, 16) + labs(title=str_c(title,"(m = 2^16)"))
+get_plot_tcad_attack(tcad_m18, tcad_m18_k, log2n, 18) + labs(title=str_c(title,"(m = 2^18)"))
 
 ```
 
 # Mitigation Studies 
 
-## Log2m = 14
+We begin with Log2m = 14:
 
-### Parameters
+```{r }
 
-```{r fn_mitigation}
-
-get_ow = function(index, m) as.integer((index - 1) %/% m + 1) 
-
-twos_complement = function(x) as.integer(ifelse(x > 32767, x - 65536, x))
+log2m = as.integer(14)
+m = as.integer(2^log2m)
 
 ```
 
@@ -194,40 +249,43 @@ col_types = cols(
   dst_delta = col_character(),
   attack = col_logical())
 
-packets <- read_csv("~/p4sec/ddosm-p4/pcaps/ddos20m14b/if3_attack_out.csv", col_types = col_types)
+packets <- read_csv(pcap_csv_m14, col_types = col_types)
+
 ```
 
 ### Preparing
 
-#### Index
+#### Adding Index
 
 ```{r dataset_index}
+
 packets = packets %>% tibble::rowid_to_column("index")
+
+# Adding an offset to compensate the pre-initializing of training coefficients.
+
+offset = training(log2n, log2m) * m 
+packets = packets %>% mutate(index = index + offset)
+
 ```
 
 #### OW Number
 
 ```{r dataset_ow}
 
-log2m = as.integer(14)
-m = as.integer(2^log2m)
+packets = packets %>% mutate(ow = get_ow(index,m)) 
 
-log2n = as.integer(24)       # Where n is the total number of packets in the detection phase.  
-d = as.integer(2^log2n)
-
-training_length = training(log2n,log2m)
-detection_length = detection(log2n,log2m)
-
-packets = packets %>% mutate(ow = get_ow(index,m) + training_length) # We add training_length because we have pre-initialized the training coefficients.
 ```
 
 #### Deltas
 
 ```{r dataset_deltas}
+
+twos_complement = function(x) as.integer(ifelse(x > 32767, x - 65536, x))
+
 # Convert from hexadecimal to decimal
 packets = packets %>% mutate_at(vars(src_delta, dst_delta), funs(strtoi)) 
 
-# Convert from 16-bit two's complement notation to integer. 
+# Convert from 16-bit two's complement representation to integer representation. 
 packets = packets %>% mutate_at(vars(src_delta, dst_delta), funs(twos_complement)) 
 
 ```
@@ -240,20 +298,16 @@ The attack occurs between windows (training_length + detection_length / 4 + 1) a
 
 ```{r dataset_checking}
 
-attack_first = function(log2n, log2m) (training(log2n, log2m) + safety(log2n, log2m) + 1) 
-attack_last  = function(log2n, log2m) (training(log2n, log2m) + safety(log2n, log2m) + attack(log2n, log2m))
+attack_first_ow = attack_first(log2n, log2m)
+attack_last_ow = attack_last(log2n, log2m)
 
-first = attack_first(log2n, log2m) + 1 
-last = attack_last(log2n, log2m) 
+attack_first_packet = (attack_first_ow - 1) * m + 1
+attack_last_packet  = (attack_last_ow) * m
 
-attack_first_packet = first * m + 1
-attack_last_packet = last * m 
-
-first
-last
+attack_first_ow
+attack_last_ow
 attack_first_packet
-
-### HERE
+attack_last_packet
 
 ```
 
@@ -261,20 +315,25 @@ Querying the dataset at the given points.
 
 ```{r dataset_checking_2}
 
-packets %>% filter(index >= attack_first_packet - 4)
+packets %>% filter(index >= attack_first_packet)
 
 ```
 
-For log2m=14, the attack begins at the fifth packet of OW 769 and lasts for a total of 512 OWs (i.e., OWs 769-1280). In OW 769 there is no packet diversion, since we have not set DEFCON yet. In OW 770 DEFCON is already set; the switch begins calculating deltas, using OWs 769 and 768 as a reference. 
+For log2m=14, the attack begins at the fifth packet of OW 769 and lasts for a total of 512 OWs (i.e., OWs 769-1280). 
 
 ## Typical Deltas
 
-Question: for each OW, what are the typical frequency deltas (current OW - OW#768) for attack packets? 
+Question: for each OW, what are the typical frequency deltas for attack packets? 
+
+**Note: for log2m=14, packet diversion begins at OW 770. DEFCON uses OWs 769 and 768 as a reference.**
 
 ```{r typical_deltas}
 
+attack_first_ow = attack_first(log2n, log2m) + 1
+attack_last_ow = attack_last(log2n, log2m)
+
 query = packets %>% 
-  filter(ow>=first, ow<=last) %>% 
+  filter(ow>=attack_first_ow, ow<=attack_last_ow) %>% 
   group_by(ow, attack) %>% 
   summarize(q1=quantile(src_delta,0.25),
             q2=median(src_delta),
@@ -404,10 +463,7 @@ stats = function() {
 
 ```{r stats}
 
-first = 770 
-last = 1280 
-
-query = packets %>% filter(ow>=first, ow<=last)
+query = packets %>% filter(ow>=attack_first_ow, ow<=attack_last_ow)
 
 stats()
 
@@ -417,7 +473,7 @@ Confidence Intervals
 
 ```{r stats_ci_tpr}
 packets %>% 
-  filter(ow>=first, ow<=last, attack==TRUE, divert(src_delta, dst_delta)==TRUE) %>% 
+  filter(ow>=attack_first_ow, ow<=attack_last_ow, attack==TRUE, divert(src_delta, dst_delta)==TRUE) %>% 
   group_by(ow) %>%
   summarize(n = n()) %>%
   summarize(mean = mean(n) / (0.2 * 16384), margin = qnorm(0.975) * sd(n)/sqrt(1280-770+1) / (0.2 * 16384))
@@ -426,7 +482,7 @@ packets %>%
 
 ```{r stats_ci_fpr}
 packets %>% 
-  filter(ow>=first, ow<=last, attack==FALSE, divert(src_delta, dst_delta)==TRUE) %>% 
+  filter(ow>=attack_first_ow, ow<=attack_last_ow, attack==FALSE, divert(src_delta, dst_delta)==TRUE) %>% 
   group_by(ow) %>%
   summarize(n = n()) %>%
   summarize(mean = mean(n) / (0.8 * 16384), margin = qnorm(0.975) * sd(n)/sqrt(1280-770+1) / (0.8 * 16384))
@@ -465,7 +521,7 @@ graph_results = function()
 ```{r classification_graphs}
 
 query = packets %>% 
-  filter(ow>=first, ow<=last) %>% 
+  filter(ow>=attack_first_ow, ow<=attack_last_ow) %>% 
   mutate(diverted=divert(src_delta,dst_delta)) %>% 
   group_by(ow)
 
@@ -484,7 +540,7 @@ graph_results()
 
 ```{r mitigation_overview}
 mitigation_out = packets %>% 
-  filter(ow>=first, ow<=last) %>% 
+  filter(ow>=attack_first_ow, ow<=attack_last_ow) %>% 
   mutate(diverted=(src_delta>=threshold)) %>% 
   group_by(ow, attack, diverted) %>% 
   summarize(n=n())
@@ -502,11 +558,10 @@ If we analyze **only the first 30 OWs under attack**, with a threshold equal to 
 
 For each OW, how many different attack sources are there? 
 
-How are these deltas related to entropy?
+How do our findings correlate with TCAD measurements? 
 
 What else can we do?
 
-How do our findings correlate with TCAD measurements? 
 
 ```{r}
 rm(query)
