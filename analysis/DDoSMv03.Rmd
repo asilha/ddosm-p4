@@ -18,13 +18,15 @@ knitr::opts_chunk$set(tidy=TRUE, tidy.opts=list(width.cutoff=60))
 
 # Overview
 
+TODO: Revise Jain's principles and common mistakes. 
+
 ## Parameters
 
 ### Dataset
 
 We used a dataset with 2^24 packets in the detection phase.
 
-```{r tcad_dataset}
+```{r tcad_dataset, include=TRUE}
 
 log2n = as.integer(24)  # n is passed to trafg. 
 n = as.integer(2^log2n)
@@ -68,7 +70,7 @@ TCAD measurements can be found in the following files:
   [Source: DDoS Mitigation.ipynb, section Finding TCAD Values]
 
 
-```{r tcad_traces}
+```{r tcad_traces, include=TRUE}
 
 trace_dir = "~/p4sec/ddosm-p4/lab/ddos20/tcad_logs"
 
@@ -105,7 +107,7 @@ For m=2^18, 2^6 windows:
   
 Generally: 
 
-```{r fn_ows}
+```{r fn_ows, include=TRUE}
 
 # Function inputs are expressed in numbers of packets.
 #   Log2n: Length of the detection phase, passed to trafg (as '-n 1048576', for instance).
@@ -130,7 +132,7 @@ get_ow = function(index, m) as.integer((index - 1) %/% m + 1)
 
 ## Reading TCAD Trace Files
 
-```{r fn_read_tcad_trace, include=FALSE}
+```{r fn_read_tcad_trace, include=TRUE}
 
 read_tcad_trace = function(trace_file) {
   
@@ -166,7 +168,7 @@ read_tcad_trace = function(trace_file) {
 }
 ```
 
-```{r read_tcad_traces}
+```{r read_tcad_traces, include=TRUE}
 
 tcad_m14 = read_tcad_trace(tcad_m14_trace)
 tcad_m16 = read_tcad_trace(tcad_m16_trace)
@@ -176,7 +178,7 @@ tcad_m18 = read_tcad_trace(tcad_m18_trace)
 
 ## Entropy Overview
 
-```{r tcad_overview}
+```{r tcad_overview, include=TRUE}
 
 get_plot_tcad = function(tcad, k) {
   
@@ -205,7 +207,7 @@ get_plot_tcad(tcad_m18, tcad_m18_k) + labs(title=str_c(title,"(m = 2^18)"))
 
 Alright, we have the graph for the entire experiments. Now we need to focus in the attack.
 
-```{r tcad_under_attack}
+```{r tcad_under_attack, include=TRUE}
 
 get_plot_tcad_attack = function(tcad, tcad_k, log2n, log2m) {
 
@@ -228,75 +230,63 @@ get_plot_tcad_attack(tcad_m18, tcad_m18_k, log2n, 18) + labs(title=str_c(title,"
 
 # Mitigation Studies 
 
-We begin with Log2m = 14:
+We begin with log2m = 14.
 
-```{r }
+```{r fn_read_pcap_csv, include=TRUE}
 
-log2m = as.integer(14)
-m = as.integer(2^log2m)
+read_pcap_csv = function(log2n, log2m, pcap_csv) {
+  
+  m = as.integer(2^log2m)
 
-```
+  # This is the format of the CSV files we import.
+  col_types = cols(
+    src = col_character(),
+    dst = col_character(),
+    src_delta = col_character(),
+    dst_delta = col_character(),
+    attack = col_logical())
+  
+  packets = read_csv(pcap_csv, col_types = col_types)  
+  
+  # Add index column.
+  packets = packets %>% tibble::rowid_to_column("index")
+  
+  # Add an offset to compensate the pre-initializing of training coefficients.
+  offset = training(log2n, log2m) * m 
+  packets = packets %>% mutate(index = index + offset)
+  
+  # Add OW numbers.
+  packets = packets %>% mutate(ow = get_ow(index,m)) 
+  
+  # Adjust numeric representations of src_delta and dst_delta. 
+  
+  # Convert from hexadecimal to decimal
+  packets = packets %>% mutate_at(vars(src_delta, dst_delta), funs(strtoi)) 
 
-### Loading
+  # Convert from 16-bit two's complement representation to integer representation. 
+  twos_complement = function(x) as.integer(ifelse(x > 32767, x - 65536, x))
+  packets = packets %>% mutate_at(vars(src_delta, dst_delta), funs(twos_complement)) 
+  
+  return(packets)
 
-```{r dataset, include=FALSE}
+}
 
-# This is the format of the CSV files we import.
-col_types = cols(
-  src = col_character(),
-  dst = col_character(),
-  src_delta = col_character(),
-  dst_delta = col_character(),
-  attack = col_logical())
 
-packets <- read_csv(pcap_csv_m14, col_types = col_types)
 
-```
-
-### Preparing
-
-#### Adding Index
-
-```{r dataset_index}
-
-packets = packets %>% tibble::rowid_to_column("index")
-
-# Adding an offset to compensate the pre-initializing of training coefficients.
-
-offset = training(log2n, log2m) * m 
-packets = packets %>% mutate(index = index + offset)
-
-```
-
-#### OW Number
-
-```{r dataset_ow}
-
-packets = packets %>% mutate(ow = get_ow(index,m)) 
-
-```
-
-#### Deltas
-
-```{r dataset_deltas}
-
-twos_complement = function(x) as.integer(ifelse(x > 32767, x - 65536, x))
-
-# Convert from hexadecimal to decimal
-packets = packets %>% mutate_at(vars(src_delta, dst_delta), funs(strtoi)) 
-
-# Convert from 16-bit two's complement representation to integer representation. 
-packets = packets %>% mutate_at(vars(src_delta, dst_delta), funs(twos_complement)) 
+packets = read_pcap_csv(log2n=24, log2m=14, pcap_csv=pcap_csv_m14)
 
 ```
+
 
 ### Checking 
 
-At this point we need to check whether we can observe the first attack packet. 
+At this point we need to check whether we can observe the first attack packet. We query the dataset at a specific points. 
+For log2m=14, the attack begins at the fifth packet of OW 769 and lasts for a total of 512 OWs (i.e., OWs 769-1280). 
 
-The attack occurs between windows (training_length + detection_length / 4 + 1) and (training_length + detection_length / 2). 
+```{r dataset_checking, include=TRUE}
 
-```{r dataset_checking}
+log2m = as.integer(14)
+m = as.integer(2^log2m)
 
 attack_first_ow = attack_first(log2n, log2m)
 attack_last_ow = attack_last(log2n, log2m)
@@ -309,96 +299,88 @@ attack_last_ow
 attack_first_packet
 attack_last_packet
 
-```
-
-Querying the dataset at the given points.
-
-```{r dataset_checking_2}
-
 packets %>% filter(index >= attack_first_packet)
 
 ```
-
-For log2m=14, the attack begins at the fifth packet of OW 769 and lasts for a total of 512 OWs (i.e., OWs 769-1280). 
 
 ## Typical Deltas
 
 Question: for each OW, what are the typical frequency deltas for attack packets? 
 
-**Note: for log2m=14, packet diversion begins at OW 770. DEFCON uses OWs 769 and 768 as a reference.**
+For log2m=14, packet diversion begins at OW 770. DEFCON uses OWs 769 and 768 as a reference.
 
-```{r typical_deltas}
+```{r typical_deltas, include=TRUE}
 
-attack_first_ow = attack_first(log2n, log2m) + 1
-attack_last_ow = attack_last(log2n, log2m)
+summarize_deltas = function (log2n, log2m, packets) {
+  
+  attack_first_ow = attack_first(log2n, log2m) + 1
+  attack_last_ow = attack_last(log2n, log2m)  
+  
+  result = packets %>%
+    filter(ow >= attack_first_ow, ow<=attack_last_ow) %>%
+    group_by(ow, attack) %>% 
+    summarize(srcq1=quantile(src_delta, 0.25),
+              srcq2=median(src_delta),
+              srcq3=quantile(src_delta, 0.75),
+              srciqr=IQR(src_delta),
+              dstq1=quantile(dst_delta, 0.25),
+              dstq2=median(dst_delta),
+              dstq3=quantile(dst_delta, 0.75),
+              dstiqr=IQR(dst_delta))
+  
+  return(result)  
+  
+}
 
-query = packets %>% 
-  filter(ow>=attack_first_ow, ow<=attack_last_ow) %>% 
-  group_by(ow, attack) %>% 
-  summarize(q1=quantile(src_delta,0.25),
-            q2=median(src_delta),
-            q3=quantile(src_delta,0.75),
-            iqr=IQR(src_delta),
-            dq1=quantile(dst_delta,0.25),
-            dq2=median(dst_delta),
-            dq3=quantile(dst_delta,0.75),
-            diqr=IQR(dst_delta))
+deltas = summarize_deltas(log2n, log2m, packets)
 
-query
+deltas
 
 ```
 
 Can we graph it? 
 
-```{r delta_graphs}
+```{r delta_graphs, include=TRUE}
 
 dot_size = 2.0
 
-query %>% 
-  filter(ow<800) %>% 
-  ggplot(mapping = aes(x=ow, shape=attack)) +
-  geom_point(mapping = aes(y=q1), color="blue4", position="jitter", size=dot_size) +
-  geom_point(mapping = aes(y=q2), color="yellow4", position="jitter", size=dot_size) +
-  geom_point(mapping = aes(y=q3), color="orangered4", position="jitter", size=dot_size) 
-  #coord_trans(y="log10")
-  
-query %>% 
-  filter(ow>800) %>% 
-  ggplot(mapping = aes(x=ow, shape=attack)) +
-  geom_point(mapping = aes(y=q1), color="blue4", position="jitter", size=dot_size) +
-  geom_point(mapping = aes(y=q2), color="yellow4", position="jitter", size=dot_size) +
-  geom_point(mapping = aes(y=q3), color="orangered4", position="jitter", size=dot_size) #+
-  #coord_trans(y="log10")
+delta_plot_options = list(
+  geom_point(mapping = aes(y=srcq1), color="blue4", position="jitter", size=dot_size),
+  geom_point(mapping = aes(y=srcq2), color="yellow4", position="jitter", size=dot_size),
+  geom_point(mapping = aes(y=srcq3), color="orangered4", position="jitter", size=dot_size))
 
-query %>% 
-  filter(ow<800) %>% 
-  ggplot(mapping = aes(x=ow, shape=attack)) +
-  geom_point(mapping = aes(y=dq1), color="blue4", position="jitter", size=dot_size) +
-  geom_point(mapping = aes(y=dq2), color="yellow4", position="jitter", size=dot_size) +
-  geom_point(mapping = aes(y=dq3), color="orangered4", position="jitter", size=dot_size) 
-  #coord_trans(y="log10")
-  
-query %>% 
-  filter(ow>800) %>% 
-  ggplot(mapping = aes(x=ow, shape=attack)) +
-  geom_point(mapping = aes(y=dq1), color="blue4", position="jitter", size=dot_size) +
-  geom_point(mapping = aes(y=dq2), color="yellow4", position="jitter", size=dot_size) +
-  geom_point(mapping = aes(y=dq3), color="orangered4", position="jitter", size=dot_size) #+
-  #coord_trans(y="log10")
+deltas %>% filter(ow<800) %>%
+  ggplot(mapping = aes(x=ow, shape=attack)) + delta_plot_options
+
+deltas %>% filter(ow>=800) %>% 
+  ggplot(mapping = aes(x=ow, shape=attack)) + delta_plot_options
+
+delta_plot_options = list(
+  geom_point(mapping = aes(y=dstq1), color="blue4", position="jitter", size=dot_size),
+  geom_point(mapping = aes(y=dstq2), color="yellow4", position="jitter", size=dot_size),
+  geom_point(mapping = aes(y=dstq3), color="orangered4", position="jitter", size=dot_size))
+
+deltas %>% filter(ow<800) %>%
+  ggplot(mapping = aes(x=ow, shape=attack)) + delta_plot_options
+
+deltas %>% filter(ow>800) %>% 
+  ggplot(mapping = aes(x=ow, shape=attack)) + delta_plot_options
+
 ```
 
 ## Defining a threshold 
 
 Let's set an arbitrary threshold and a function which indicates whether or not to divert a given packet. 
 
-```{r fn_divert}
+```{r fn_divert, include=TRUE}
 
 threshold = 16
 
 #divert = function(src_delta, dst_delta) (src_delta >= threshold)
-divert = function(src_delta, dst_delta) (dst_delta >= threshold)
+#divert = function(src_delta, dst_delta) (dst_delta >= threshold)
 #divert = function(src_delta, dst_delta) (src_delta >= threshold && dst_delta >= threshold)
 
+divert = function(src_delta, dst_delta) (dst_delta >= threshold)
 
 ```
 
@@ -407,7 +389,7 @@ divert = function(src_delta, dst_delta) (dst_delta >= threshold)
 
 Get the stats for all but the first two OWs under attack: address counts for each delta value. 
 
-```{r src_counts}
+```{r src_counts, include=TRUE}
 
 src_distinct = packets %>% filter(ow >= 770, ow <= 1280) %>% group_by(ow, attack, src_delta) %>% summarize(srcs=n_distinct(src))
 
@@ -417,11 +399,10 @@ src_distinct %>%
   ggplot(mapping=aes(x=src_delta, y=srcs, color=attack)) +
   geom_line() +
   scale_color_manual(values=c("seagreen4", "orangered1"))
-# + coord_cartesian(xlim=c(0,1500),ylim=c(0,4000))
 
 ```
 
-```{r dst_counts}
+```{r dst_counts, include=TRUE}
 
 dst_distinct = packets %>% filter(ow >= 770, ow <= 1280) %>% group_by(ow, attack, dst_delta) %>% summarize(dsts=n_distinct(dst))
 
@@ -431,7 +412,6 @@ dst_distinct %>%
   ggplot(mapping=aes(x=dst_delta, y=dsts, color=attack)) +
   geom_line() +
   scale_color_manual(values=c("seagreen4", "orangered1"))
-# + coord_cartesian(xlim=c(0,1500),ylim=c(0,4000))
 
 ```
 
@@ -439,9 +419,11 @@ dst_distinct %>%
 
 Base Stats
 
-```{r fn_stats}
+```{r fn_stats, include=TRUE}
 
-stats = function() {
+stats = function(packets, attack_first_ow, attack_last_ow) {
+  
+  query = packets %>% filter(ow>=attack_first_ow, ow<=attack_last_ow)
   
   true_evil = query %>% filter(attack==TRUE) %>% tally()
   true_good = query %>% filter(attack==FALSE) %>% tally()
@@ -459,33 +441,36 @@ stats = function() {
 
 }
 
-```
-
-```{r stats}
-
-query = packets %>% filter(ow>=attack_first_ow, ow<=attack_last_ow)
-
-stats()
+stats(packets, attack_first_ow, attack_last_ow)
 
 ```
 
 Confidence Intervals
 
-```{r stats_ci_tpr}
-packets %>% 
-  filter(ow>=attack_first_ow, ow<=attack_last_ow, attack==TRUE, divert(src_delta, dst_delta)==TRUE) %>% 
-  group_by(ow) %>%
-  summarize(n = n()) %>%
-  summarize(mean = mean(n) / (0.2 * 16384), margin = qnorm(0.975) * sd(n)/sqrt(1280-770+1) / (0.2 * 16384))
+```{r stats_ci_tpr, include=TRUE}
 
-```
+stats_ci = function(packets, attack_first_ow, attack_last_ow) {
 
-```{r stats_ci_fpr}
-packets %>% 
-  filter(ow>=attack_first_ow, ow<=attack_last_ow, attack==FALSE, divert(src_delta, dst_delta)==TRUE) %>% 
-  group_by(ow) %>%
-  summarize(n = n()) %>%
-  summarize(mean = mean(n) / (0.8 * 16384), margin = qnorm(0.975) * sd(n)/sqrt(1280-770+1) / (0.8 * 16384))
+  tpr = packets %>% 
+    filter(ow>=attack_first_ow, ow<=attack_last_ow, attack==TRUE, divert(src_delta, dst_delta)==TRUE) %>% 
+    group_by(ow) %>%
+    summarize(n = n()) %>%
+    summarize(mean = mean(n) / (0.2 * 16384), margin = qnorm(0.975) * sd(n)/sqrt(1280-770+1) / (0.2 * 16384))
+  
+  fpr = packets %>% 
+    filter(ow>=attack_first_ow, ow<=attack_last_ow, attack==FALSE, divert(src_delta, dst_delta)==TRUE) %>% 
+    group_by(ow) %>%
+    summarize(n = n()) %>%
+    summarize(mean = mean(n) / (0.8 * 16384), margin = qnorm(0.975) * sd(n)/sqrt(1280-770+1) / (0.8 * 16384))
+  
+  
+  message(str_c("TPR: ", round(tpr$mean,6), " ± ", round(tpr$margin,6)))
+  message(str_c("FPR: ", round(fpr$mean,6), " ± ", round(fpr$margin,6)))
+
+}
+
+stats_ci(packets, attack_first_ow, attack_last_ow)
+
 
 ```
 
@@ -493,7 +478,7 @@ packets %>%
 
 It is interesting to observe what happens **over time**, OW after OW. 
 
-```{r fn_graphs}
+```{r fn_graphs, include=TRUE}
 
 graph_true_good = function() query %>% filter(attack==FALSE) %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("True Good")
 graph_true_evil = function() query %>% filter(attack==TRUE)  %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("True Evil")
@@ -518,7 +503,7 @@ graph_results = function()
 
 ```
 
-```{r classification_graphs}
+```{r classification_graphs, include=TRUE}
 
 query = packets %>% 
   filter(ow>=attack_first_ow, ow<=attack_last_ow) %>% 
@@ -538,7 +523,7 @@ graph_results()
 
 ```
 
-```{r mitigation_overview}
+```{r mitigation_overview, include=TRUE}
 mitigation_out = packets %>% 
   filter(ow>=attack_first_ow, ow<=attack_last_ow) %>% 
   mutate(diverted=(src_delta>=threshold)) %>% 
@@ -563,7 +548,7 @@ How do our findings correlate with TCAD measurements?
 What else can we do?
 
 
-```{r}
+```{r, include=TRUE}
 rm(query)
 ```
 
