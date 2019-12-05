@@ -391,14 +391,14 @@ Let's set an arbitrary threshold and a function which indicates whether or not t
 ```{r fn_divert, include=TRUE}
 
 src_threshold = 0
-dst_threshold = -128
+dst_threshold = 64
 
 #divert = function(src_delta, dst_delta) (src_delta >= threshold)
 #divert = function(src_delta, dst_delta) (dst_delta >= threshold)
 #divert = function(src_delta, dst_delta) (src_delta >= threshold && dst_delta >= threshold)
 
 #divert = function(src_delta, dst_delta) (src_delta > src_threshold && dst_delta < dst_threshold)
-divert = function(src_delta, dst_delta) (dst_delta < dst_threshold)
+divert = function(src_delta, dst_delta) (dst_delta >= dst_threshold)
 
 
 ```
