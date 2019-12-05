@@ -230,7 +230,20 @@ get_plot_tcad_attack(tcad_m18, tcad_m18_k, log2n, 18) + labs(title=str_c(title,"
 
 # Mitigation Studies 
 
-We begin with log2m = 14.
+In this study: log2m = 16.
+
+```{r}
+
+  log2n = as.integer(24)
+  n = as.integer(2^log2n)
+
+  log2m = as.integer(16)
+  m = as.integer(2^log2m)
+
+  pcap_csv = pcap_csv_m16
+  
+```
+
 
 ```{r fn_read_pcap_csv, include=TRUE}
 
@@ -271,9 +284,7 @@ read_pcap_csv = function(log2n, log2m, pcap_csv) {
 
 }
 
-
-
-packets = read_pcap_csv(log2n=24, log2m=14, pcap_csv=pcap_csv_m14)
+packets = read_pcap_csv(log2n, log2m, pcap_csv)
 
 ```
 
@@ -285,21 +296,26 @@ For log2m=14, the attack begins at the fifth packet of OW 769 and lasts for a to
 
 ```{r dataset_checking, include=TRUE}
 
-log2m = as.integer(14)
-m = as.integer(2^log2m)
+check_first_attack_ow = function(log2n, log2m, packets) {
 
-attack_first_ow = attack_first(log2n, log2m)
-attack_last_ow = attack_last(log2n, log2m)
+  m = as.integer(2^log2m)
+  
+  attack_first_ow = attack_first(log2n, log2m)
+  attack_last_ow = attack_last(log2n, log2m)
+  
+  attack_first_packet = (attack_first_ow - 1) * m + 1
+  attack_last_packet  = (attack_last_ow) * m
+  
+  message(str_c(attack_first_ow, attack_last_ow, attack_first_packet, attack_last_packet, sep="\n"))
 
-attack_first_packet = (attack_first_ow - 1) * m + 1
-attack_last_packet  = (attack_last_ow) * m
+  packets %>% filter(index >= attack_first_packet)    
+  
+}
 
-attack_first_ow
-attack_last_ow
-attack_first_packet
-attack_last_packet
+check_first_attack_ow(log2n, log2m, packets)
 
-packets %>% filter(index >= attack_first_packet)
+
+
 
 ```
 
@@ -319,13 +335,18 @@ summarize_deltas = function (log2n, log2m, packets) {
   result = packets %>%
     filter(ow >= attack_first_ow, ow<=attack_last_ow) %>%
     group_by(ow, attack) %>% 
-    summarize(srcq1=quantile(src_delta, 0.25),
+    summarize(
+              srcq0=min(src_delta),
+              srcq1=quantile(src_delta, 0.25),
               srcq2=median(src_delta),
               srcq3=quantile(src_delta, 0.75),
-              srciqr=IQR(src_delta),
+              srqq4=max(src_delta),
+              dstq0=min(dst_delta),
               dstq1=quantile(dst_delta, 0.25),
               dstq2=median(dst_delta),
               dstq3=quantile(dst_delta, 0.75),
+              dstq4=max(dst_delta),
+              srciqr=IQR(src_delta),
               dstiqr=IQR(dst_delta))
   
   return(result)  
@@ -349,10 +370,10 @@ delta_plot_options = list(
   geom_point(mapping = aes(y=srcq2), color="yellow4", position="jitter", size=dot_size),
   geom_point(mapping = aes(y=srcq3), color="orangered4", position="jitter", size=dot_size))
 
-deltas %>% filter(ow<800) %>%
+deltas %>% filter(ow<200) %>%
   ggplot(mapping = aes(x=ow, shape=attack)) + delta_plot_options
 
-deltas %>% filter(ow>=800) %>% 
+deltas %>% filter(ow>=200) %>% 
   ggplot(mapping = aes(x=ow, shape=attack)) + delta_plot_options
 
 delta_plot_options = list(
@@ -360,10 +381,10 @@ delta_plot_options = list(
   geom_point(mapping = aes(y=dstq2), color="yellow4", position="jitter", size=dot_size),
   geom_point(mapping = aes(y=dstq3), color="orangered4", position="jitter", size=dot_size))
 
-deltas %>% filter(ow<800) %>%
+deltas %>% filter(ow<200) %>%
   ggplot(mapping = aes(x=ow, shape=attack)) + delta_plot_options
 
-deltas %>% filter(ow>800) %>% 
+deltas %>% filter(ow>=200) %>% 
   ggplot(mapping = aes(x=ow, shape=attack)) + delta_plot_options
 
 ```
@@ -374,13 +395,14 @@ Let's set an arbitrary threshold and a function which indicates whether or not t
 
 ```{r fn_divert, include=TRUE}
 
-threshold = 16
+src_threshold = 0
+dst_threshold = 32
 
 #divert = function(src_delta, dst_delta) (src_delta >= threshold)
 #divert = function(src_delta, dst_delta) (dst_delta >= threshold)
 #divert = function(src_delta, dst_delta) (src_delta >= threshold && dst_delta >= threshold)
 
-divert = function(src_delta, dst_delta) (dst_delta >= threshold)
+divert = function(src_delta, dst_delta) ((src_delta >= src_threshold) && (dst_delta >= dst_threshold))
 
 ```
 
@@ -391,7 +413,7 @@ Get the stats for all but the first two OWs under attack: address counts for eac
 
 ```{r src_counts, include=TRUE}
 
-src_distinct = packets %>% filter(ow >= 770, ow <= 1280) %>% group_by(ow, attack, src_delta) %>% summarize(srcs=n_distinct(src))
+src_distinct = packets %>% filter(ow >= 194, ow <= 320) %>% group_by(ow, attack, src_delta) %>% summarize(srcs=n_distinct(src))
 
 src_distinct
 
@@ -404,7 +426,7 @@ src_distinct %>%
 
 ```{r dst_counts, include=TRUE}
 
-dst_distinct = packets %>% filter(ow >= 770, ow <= 1280) %>% group_by(ow, attack, dst_delta) %>% summarize(dsts=n_distinct(dst))
+dst_distinct = packets %>% filter(ow >= 194, ow <= 320) %>% group_by(ow, attack, dst_delta) %>% summarize(dsts=n_distinct(dst))
 
 dst_distinct
 
@@ -421,8 +443,11 @@ Base Stats
 
 ```{r fn_stats, include=TRUE}
 
-stats = function(packets, attack_first_ow, attack_last_ow) {
-  
+stats = function(packets, log2n, log2m) {
+
+  attack_first_ow = attack_first(log2n, log2m) + 1
+  attack_last_ow = attack_last(log2n, log2m)  
+    
   query = packets %>% filter(ow>=attack_first_ow, ow<=attack_last_ow)
   
   true_evil = query %>% filter(attack==TRUE) %>% tally()
@@ -441,27 +466,35 @@ stats = function(packets, attack_first_ow, attack_last_ow) {
 
 }
 
-stats(packets, attack_first_ow, attack_last_ow)
+stats(packets, log2n, log2m)
 
 ```
 
 Confidence Intervals
 
+Both TPR and FPR are proportions whose values we need to estimate.
+
+Let X be a random variable whose value is 1 when a classification succeeds, and 0 otherwise. Consequently, X follows a a Bernoulli distribution with probability p. We can use our sample to estimate the mean value of p. This sample mean has a sampling error approximately equal to sqrt(p * (1-p) / n), where n is the sample size (the total number of classification events).     
+
+
 ```{r stats_ci_tpr, include=TRUE}
 
-stats_ci = function(packets, attack_first_ow, attack_last_ow) {
+stats_ci = function(packets, log2n, log2m) {
 
+  attack_first_ow = attack_first(log2n, log2m) + 1
+  attack_last_ow = attack_last(log2n, log2m)    
+  
   tpr = packets %>% 
     filter(ow>=attack_first_ow, ow<=attack_last_ow, attack==TRUE, divert(src_delta, dst_delta)==TRUE) %>% 
     group_by(ow) %>%
     summarize(n = n()) %>%
-    summarize(mean = mean(n) / (0.2 * 16384), margin = qnorm(0.975) * sd(n)/sqrt(1280-770+1) / (0.2 * 16384))
+    summarize(mean = mean(n) / (0.2 * 65536), margin = qnorm(0.975) * sd(n)/sqrt(320-194+1) / (0.2 * 65536))
   
   fpr = packets %>% 
     filter(ow>=attack_first_ow, ow<=attack_last_ow, attack==FALSE, divert(src_delta, dst_delta)==TRUE) %>% 
     group_by(ow) %>%
     summarize(n = n()) %>%
-    summarize(mean = mean(n) / (0.8 * 16384), margin = qnorm(0.975) * sd(n)/sqrt(1280-770+1) / (0.8 * 16384))
+    summarize(mean = mean(n) / (0.8 * 65536), margin = qnorm(0.975) * sd(n)/sqrt(320-194+1) / (0.8 * 65536))
   
   
   message(str_c("TPR: ", round(tpr$mean,6), " ± ", round(tpr$margin,6)))
@@ -469,7 +502,7 @@ stats_ci = function(packets, attack_first_ow, attack_last_ow) {
 
 }
 
-stats_ci(packets, attack_first_ow, attack_last_ow)
+stats_ci(packets, log2n, log2m)
 
 
 ```
@@ -504,6 +537,9 @@ graph_results = function()
 ```
 
 ```{r classification_graphs, include=TRUE}
+
+attack_first_ow = attack_first(log2n, log2m) + 1
+attack_last_ow = attack_last(log2n, log2m)  
 
 query = packets %>% 
   filter(ow>=attack_first_ow, ow<=attack_last_ow) %>% 
@@ -547,9 +583,3 @@ For each OW, how many different attack sources are there?
 How do our findings correlate with TCAD measurements? 
 
 What else can we do?
-
-
-```{r, include=TRUE}
-rm(query)
-```
-
