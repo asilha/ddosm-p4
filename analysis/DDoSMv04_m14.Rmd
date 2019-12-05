@@ -230,7 +230,20 @@ get_plot_tcad_attack(tcad_m18, tcad_m18_k, log2n, 18) + labs(title=str_c(title,"
 
 # Mitigation Studies 
 
-We begin with log2m = 14.
+In this study: log2m = 14.
+
+```{r}
+
+  log2n = as.integer(24)
+  n = as.integer(2^log2n)
+
+  log2m = as.integer(14)
+  m = as.integer(2^log2m)
+
+  pcap_csv = pcap_csv_m14
+  
+```
+
 
 ```{r fn_read_pcap_csv, include=TRUE}
 
@@ -271,9 +284,7 @@ read_pcap_csv = function(log2n, log2m, pcap_csv) {
 
 }
 
-
-
-packets = read_pcap_csv(log2n=24, log2m=14, pcap_csv=pcap_csv_m14)
+packets = read_pcap_csv(log2n, log2m, pcap_csv)
 
 ```
 
@@ -285,21 +296,26 @@ For log2m=14, the attack begins at the fifth packet of OW 769 and lasts for a to
 
 ```{r dataset_checking, include=TRUE}
 
-log2m = as.integer(14)
-m = as.integer(2^log2m)
+check_first_attack_ow = function(log2n, log2m, packets) {
 
-attack_first_ow = attack_first(log2n, log2m)
-attack_last_ow = attack_last(log2n, log2m)
+  m = as.integer(2^log2m)
+  
+  attack_first_ow = attack_first(log2n, log2m)
+  attack_last_ow = attack_last(log2n, log2m)
+  
+  attack_first_packet = (attack_first_ow - 1) * m + 1
+  attack_last_packet  = (attack_last_ow) * m
+  
+  message(str_c(attack_first_ow, attack_last_ow, attack_first_packet, attack_last_packet, sep="\n"))
 
-attack_first_packet = (attack_first_ow - 1) * m + 1
-attack_last_packet  = (attack_last_ow) * m
+  packets %>% filter(index >= attack_first_packet)    
+  
+}
 
-attack_first_ow
-attack_last_ow
-attack_first_packet
-attack_last_packet
+check_first_attack_ow(log2n, log2m, packets)
 
-packets %>% filter(index >= attack_first_packet)
+
+
 
 ```
 
@@ -421,8 +437,11 @@ Base Stats
 
 ```{r fn_stats, include=TRUE}
 
-stats = function(packets, attack_first_ow, attack_last_ow) {
-  
+stats = function(packets, log2n, log2m) {
+
+  attack_first_ow = attack_first(log2n, log2m) + 1
+  attack_last_ow = attack_last(log2n, log2m)  
+    
   query = packets %>% filter(ow>=attack_first_ow, ow<=attack_last_ow)
   
   true_evil = query %>% filter(attack==TRUE) %>% tally()
@@ -441,16 +460,24 @@ stats = function(packets, attack_first_ow, attack_last_ow) {
 
 }
 
-stats(packets, attack_first_ow, attack_last_ow)
+stats(packets, log2n, log2m)
 
 ```
 
 Confidence Intervals
 
+Both TPR and FPR are proportions whose values we need to estimate.
+
+Let X be a random variable whose value is 1 when a classification succeeds, and 0 otherwise. Consequently, X follows a a Bernoulli distribution with probability p. We can use our sample to estimate the mean value of p. This sample mean has a sampling error approximately equal to sqrt(p * (1-p) / n), where n is the sample size (the total number of classification events).     
+
+
 ```{r stats_ci_tpr, include=TRUE}
 
-stats_ci = function(packets, attack_first_ow, attack_last_ow) {
+stats_ci = function(packets, log2n, log2m) {
 
+  attack_first_ow = attack_first(log2n, log2m) + 1
+  attack_last_ow = attack_last(log2n, log2m)    
+  
   tpr = packets %>% 
     filter(ow>=attack_first_ow, ow<=attack_last_ow, attack==TRUE, divert(src_delta, dst_delta)==TRUE) %>% 
     group_by(ow) %>%
@@ -469,7 +496,7 @@ stats_ci = function(packets, attack_first_ow, attack_last_ow) {
 
 }
 
-stats_ci(packets, attack_first_ow, attack_last_ow)
+stats_ci(packets, log2n, log2m)
 
 
 ```
@@ -504,6 +531,9 @@ graph_results = function()
 ```
 
 ```{r classification_graphs, include=TRUE}
+
+attack_first_ow = attack_first(log2n, log2m) + 1
+attack_last_ow = attack_last(log2n, log2m)  
 
 query = packets %>% 
   filter(ow>=attack_first_ow, ow<=attack_last_ow) %>% 
@@ -547,9 +577,3 @@ For each OW, how many different attack sources are there?
 How do our findings correlate with TCAD measurements? 
 
 What else can we do?
-
-
-```{r, include=TRUE}
-rm(query)
-```
-
