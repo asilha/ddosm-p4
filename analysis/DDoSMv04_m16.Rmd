@@ -365,15 +365,19 @@ Can we graph it?
 
 dot_size = 2.0
 
+attack_first_ow = attack_first(log2n, log2m) + 1
+attack_last_ow = attack_last(log2n, log2m)  
+cut = attack_first_ow + 8 
+
 delta_plot_options = list(
   geom_point(mapping = aes(y=srcq1), color="blue4", position="jitter", size=dot_size),
   geom_point(mapping = aes(y=srcq2), color="yellow4", position="jitter", size=dot_size),
   geom_point(mapping = aes(y=srcq3), color="orangered4", position="jitter", size=dot_size))
 
-deltas %>% filter(ow<200) %>%
+deltas %>% filter(ow<cut) %>%
   ggplot(mapping = aes(x=ow, shape=attack)) + delta_plot_options
 
-deltas %>% filter(ow>=200) %>% 
+deltas %>% filter(ow>=cut) %>% 
   ggplot(mapping = aes(x=ow, shape=attack)) + delta_plot_options
 
 delta_plot_options = list(
@@ -381,10 +385,10 @@ delta_plot_options = list(
   geom_point(mapping = aes(y=dstq2), color="yellow4", position="jitter", size=dot_size),
   geom_point(mapping = aes(y=dstq3), color="orangered4", position="jitter", size=dot_size))
 
-deltas %>% filter(ow<200) %>%
+deltas %>% filter(ow<cut) %>%
   ggplot(mapping = aes(x=ow, shape=attack)) + delta_plot_options
 
-deltas %>% filter(ow>=200) %>% 
+deltas %>% filter(ow>=cut) %>% 
   ggplot(mapping = aes(x=ow, shape=attack)) + delta_plot_options
 
 ```
@@ -402,9 +406,8 @@ dst_threshold = 32
 #divert = function(src_delta, dst_delta) (dst_delta >= threshold)
 #divert = function(src_delta, dst_delta) (src_delta >= threshold && dst_delta >= threshold)
 
-#divert = function(src_delta, dst_delta) ((src_delta >= src_threshold) && (dst_delta >= dst_threshold))
+divert = function(src_delta, dst_delta) (dst_delta >= dst_threshold)
 
-divert = function(src_delta, dst_delta) (dst_delta >= threshold)
 
 ```
 
@@ -415,7 +418,7 @@ Get the stats for all but the first two OWs under attack: address counts for eac
 
 ```{r src_counts, include=TRUE}
 
-src_distinct = packets %>% filter(ow >= 194, ow <= 320) %>% group_by(ow, attack, src_delta) %>% summarize(srcs=n_distinct(src))
+src_distinct = packets %>% filter(ow >= attack_first_ow, ow <= attack_last_ow) %>% group_by(ow, attack, src_delta) %>% summarize(srcs=n_distinct(src))
 
 src_distinct
 
@@ -428,7 +431,7 @@ src_distinct %>%
 
 ```{r dst_counts, include=TRUE}
 
-dst_distinct = packets %>% filter(ow >= 194, ow <= 320) %>% group_by(ow, attack, dst_delta) %>% summarize(dsts=n_distinct(dst))
+dst_distinct = packets %>% filter(ow >= attack_first_ow, ow <= attack_last_ow) %>% group_by(ow, attack, dst_delta) %>% summarize(dsts=n_distinct(dst))
 
 dst_distinct
 
@@ -484,19 +487,21 @@ Let X be a random variable whose value is 1 when a classification succeeds, and 
 stats_ci = function(packets, log2n, log2m) {
 
   attack_first_ow = attack_first(log2n, log2m) + 1
-  attack_last_ow = attack_last(log2n, log2m)    
+  attack_last_ow = attack_last(log2n, log2m)
+  attack_length = attack_last_ow - attack_first_ow + 1
+  m = 2^log2m
   
   tpr = packets %>% 
     filter(ow>=attack_first_ow, ow<=attack_last_ow, attack==TRUE, divert(src_delta, dst_delta)==TRUE) %>% 
     group_by(ow) %>%
     summarize(n = n()) %>%
-    summarize(mean = mean(n) / (0.2 * 65536), margin = qnorm(0.975) * sd(n)/sqrt(320-194+1) / (0.2 * 65536))
+    summarize(mean = mean(n) / (0.2 * m), margin = qnorm(0.975) * sd(n)/sqrt(attack_length) / (0.2 * m))
   
   fpr = packets %>% 
     filter(ow>=attack_first_ow, ow<=attack_last_ow, attack==FALSE, divert(src_delta, dst_delta)==TRUE) %>% 
     group_by(ow) %>%
     summarize(n = n()) %>%
-    summarize(mean = mean(n) / (0.8 * 65536), margin = qnorm(0.975) * sd(n)/sqrt(320-194+1) / (0.8 * 65536))
+    summarize(mean = mean(n) / (0.8 * m), margin = qnorm(0.975) * sd(n)/sqrt(attack_length) / (0.8 * m))
   
   
   message(str_c("TPR: ", round(tpr$mean,6), " ± ", round(tpr$margin,6)))
@@ -565,7 +570,7 @@ graph_results()
 ```{r mitigation_overview, include=TRUE}
 mitigation_out = packets %>% 
   filter(ow>=attack_first_ow, ow<=attack_last_ow) %>% 
-  mutate(diverted=(src_delta>=threshold)) %>% 
+  mutate(diverted=(src_delta>=src_threshold)) %>% 
   group_by(ow, attack, diverted) %>% 
   summarize(n=n())
 
