@@ -1,0 +1,253 @@
+---
+title: "DDoS Attack Mitigation"
+output:
+  html_document: default
+  html_notebook: default
+  pdf_document: default
+---
+```{r setup, echo=FALSE, include=FALSE}
+
+source("ddosm.R")
+
+```
+
+# Overview
+
+TODO: Revise Jain's principles and common mistakes. 
+
+TODO: Outline the rest of the work. 
+
+## Parameters
+
+### Dataset
+
+TODO: Introduce the dataset. 
+
+We used a dataset with 2^24 packets in the detection phase.
+
+### Sensitivity Coefficients
+
+TODO: Explain.
+
+What are our chosen k coefficients? 
+
+Our experiments with tcad_m_levels.py show us candidate values for k, as follows: 
+
+Log2(m) | k     | FPR
+--------|-------|-----
+14      | 4.125 | 1.7%
+16      | 4.500 | 1.6%
+18      | 3.625 | 0.0%
+
+### TCAD Traces
+
+TODO: Explain.
+
+[Source: DDoS Mitigation.ipynb, section Finding TCAD Values]
+
+TCAD measurements can be found in the following files: 
+
+  tcad_m_2_14_k_4.125.log
+  tcad_m_2_16_k_4.500.log
+  tcad_m_2_18_k_3.625.log
+
+## Observation Window Numbers
+
+**Note: When we preinitialize training coefficients, the length of the workload is equal to the length of the detection phase.**
+
+For a detection phase of 2^24 packets we have: 
+
+  2^(24-log2m-2) OWs before the attack,
+  2^(24-log2m-1) OWs under attack, 
+  2^(24-log2m-2) OWs after the attack.
+  
+For m=2^14, the detection phase has 2^(24-14)=2^10 windows: 
+  
+  2^8 OWs pre-attack and post attack,  
+  2^9 OWs under attack, 
+
+For m=2^16, 2^8 windows: 
+
+  2^6 OWs pre-attack and post-attack,
+  2^7 OWs under attack.
+  
+For m=2^18, 2^6 windows: 
+  
+  2^4 OWs pre-attack and post-attack,
+  2^5 OWs under attack.
+  
+
+# Workload Characterization
+
+## Reading TCAD Trace Files
+
+```{r read_tcad_traces, include=TRUE}
+
+tcad_m14 = read_tcad_trace(tcad_m14_trace)
+tcad_m16 = read_tcad_trace(tcad_m16_trace)
+tcad_m18 = read_tcad_trace(tcad_m18_trace)
+
+```
+
+## Entropy Overview
+
+```{r entropy_overview, include=TRUE}
+
+title = "Entropy for each Observation Window "
+
+get_plot_tcad(tcad_m14, tcad_m14_k) + labs(title=str_c(title,"(m = 2^14)"))
+get_plot_tcad(tcad_m16, tcad_m16_k) + labs(title=str_c(title,"(m = 2^16)"))
+get_plot_tcad(tcad_m18, tcad_m18_k) + labs(title=str_c(title,"(m = 2^18)"))
+
+```
+
+## Entropy Under Attack
+
+We have the graph for the entire experiments. Now we need to focus in the attack.
+
+```{r entropy_under_attack, include=TRUE}
+
+title = "Entropy for each Observation Window - Attack Phase "
+
+get_plot_tcad_attack(tcad_m14, tcad_m14_k, log2n, 14) + labs(title=str_c(title,"(m = 2^14)"))
+get_plot_tcad_attack(tcad_m16, tcad_m16_k, log2n, 16) + labs(title=str_c(title,"(m = 2^16)"))
+get_plot_tcad_attack(tcad_m18, tcad_m18_k, log2n, 18) + labs(title=str_c(title,"(m = 2^18)"))
+
+```
+
+# Attack Mitigation
+
+## Loading
+
+```{r}
+
+log2m = as.integer(14)
+m = as.integer(2^log2m)
+pcap_csv = pcap_csv_m14
+
+attack_first_ow = attack_first(log2n, log2m) + 1 # Diversion begins at the second OW under attack. 
+attack_last_ow = attack_last(log2n, log2m)
+
+packets = read_pcap_csv(log2n, log2m, pcap_csv) %>% filter(ow >= attack_first_ow, ow <= attack_last_ow)
+
+```
+
+## Typical Deltas
+
+For each OW, what are the typical frequency deltas for attack packets? 
+
+```{r typical_deltas, include=TRUE}
+
+deltas = summarize_deltas(log2n, log2m, packets)
+
+dot_size = 2.0
+
+cut = attack_first_ow + 32
+
+delta_plot_options = list(
+  geom_point(mapping = aes(y=srcq1), color="blue4", position="jitter", size=dot_size),
+  geom_point(mapping = aes(y=srcq2), color="yellow4", position="jitter", size=dot_size),
+  geom_point(mapping = aes(y=srcq3), color="orangered4", position="jitter", size=dot_size))
+
+deltas %>% filter(ow<cut) %>%
+  ggplot(mapping = aes(x=ow, shape=attack)) + delta_plot_options
+
+deltas %>% filter(ow>=cut) %>%
+  ggplot(mapping = aes(x=ow, shape=attack)) + delta_plot_options
+
+delta_plot_options = list(
+  geom_point(mapping = aes(y=dstq1), color="blue4", position="jitter", size=dot_size),
+  geom_point(mapping = aes(y=dstq2), color="yellow4", position="jitter", size=dot_size),
+  geom_point(mapping = aes(y=dstq3), color="orangered4", position="jitter", size=dot_size))
+
+deltas %>% filter(ow<cut) %>%
+  ggplot(mapping = aes(x=ow, shape=attack)) + delta_plot_options
+
+deltas %>% filter(ow>=cut) %>%
+  ggplot(mapping = aes(x=ow, shape=attack)) + delta_plot_options
+
+# deltas.long.good = melt(deltas %>% filter(attack == FALSE), id.vars="ow")
+# deltas.long.evil = melt(deltas %>% filter(attack == TRUE), id.vars="ow")  
+# 
+# deltas.long.evil %>% filter(ow >= cut, str_detect(variable, "dstq")) %>% 
+# ggplot(aes(ow,value,color=variable)) + geom_point()
+
+```
+
+## Address Counts
+
+Get the stats for all but the first two OWs under attack: address counts for each delta value. 
+
+```{r frequencies}
+
+graph_options = list(geom_line(), scale_color_manual(values=c("seagreen4", "orangered1")))
+
+src_distinct = packets %>% group_by(ow, attack, src_delta) %>% summarize(srcs=n_distinct(src))
+src_distinct %>% ggplot(aes(src_delta, srcs, color=attack)) + graph_options
+
+dst_distinct = packets %>% group_by(ow, attack, dst_delta) %>% summarize(dsts=n_distinct(dst))
+dst_distinct %>% ggplot(aes(dst_delta, dsts, color=attack)) + graph_options
+
+```
+
+
+## Classification
+
+```{r fn_divert, include=TRUE}
+
+src_threshold = 0
+dst_threshold = 16
+
+#divert = function(src_delta, dst_delta) (src_delta >= threshold)
+#divert = function(src_delta, dst_delta) (dst_delta >= threshold)
+#divert = function(src_delta, dst_delta) (src_delta >= threshold && dst_delta >= threshold)
+
+divert = function(src_delta, dst_delta) (dst_delta >= dst_threshold)
+
+packets = packets %>% mutate(diverted=divert(src_delta,dst_delta)) %>% group_by(ow)
+
+```
+
+## Statistics
+
+Base Stats and Confidence Intervals
+
+Both TPR and FPR are proportions whose values we need to estimate.
+
+Let X be a random variable whose value is 1 when a classification succeeds, and 0 otherwise. Consequently, X follows a a Bernoulli distribution with probability p. We can use our sample to estimate the mean value of p. This sample mean has a sampling error approximately equal to sqrt(p * (1-p) / n), where n is the sample size (the total number of classification events).     
+
+
+```{r fn_stats, include=TRUE}
+
+stats(packets, log2n, log2m)
+
+stats_ci(packets, log2n, log2m)
+
+```
+
+## Graphs
+
+It is interesting to observe what happens **over time**, OW after OW. 
+
+```{r classification_graphs, include=TRUE}
+
+#packets
+
+graph_actual_good(packets)
+graph_actual_evil(packets)
+graph_marked_good(packets)
+graph_marked_evil(packets)
+graph_false_negatives(packets)
+graph_false_positives(packets)
+graph_results(packets)
+
+
+```
+
+# Points to Ponder
+
+For each OW, how many different attack sources are there? 
+
+How do our findings correlate with TCAD measurements? 
+
+What else can we do?
