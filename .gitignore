@@ -15,3 +15,5 @@ desktop.ini
 .RDataTmp
 .Rhistory
 .Rproj.user
+*.html
+workloads/*
