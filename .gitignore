@@ -1,6 +1,8 @@
+analysis/*.html
 build/*
 datasets/*
 logs/*
+notebooks/.ipynb_checkpoints
 pcaps/*
 .vscode/*
 *.pyc
