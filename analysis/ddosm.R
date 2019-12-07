@@ -238,7 +238,7 @@ graph_results = function(packets) {
   
   packets %>% group_by(ow, attack, diverted) %>% summarize(n=n()) %>% 
   ggplot(mapping=aes(x=ow, y=n, color=attack, shape=diverted)) + 
-  geom_point(position="jitter", size=2.0) + 
+  geom_point(size=2.0) + 
   #coord_cartesian(xlim=c(770,810),ylim=c(0,16384)) + 
   labs(x="Observation Window", y="Packet Count", title ="Classification Results") +
   scale_x_continuous(expand=expand_scale(add=0)) + 

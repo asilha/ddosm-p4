@@ -121,9 +121,17 @@ get_plot_tcad_attack(tcad_m18, tcad_m18_k, log2n, 18) + labs(title=str_c(title,"
 
 ```{r}
 
-log2m = as.integer(14)
-m = as.integer(2^log2m)
-pcap_csv = pcap_csv_m14
+log2m = as.integer(16)
+
+if (log2m == 14)  {
+  pcap_csv = pcap_csv_m14
+} else if (log2m == 16) {
+  pcap_csv = pcap_csv_m16
+} else if (log2m == 18) {
+  pcap_csv = pcap_csv_m18
+} else {
+  stop("Invalid log2m value.")
+}
 
 attack_first_ow = attack_first(log2n, log2m) + 1 # Diversion begins at the second OW under attack. 
 attack_last_ow = attack_last(log2n, log2m)
@@ -142,12 +150,20 @@ deltas = summarize_deltas(log2n, log2m, packets)
 
 dot_size = 2.0
 
-cut = attack_first_ow + 32
+if (log2m == 14)  {
+  cut = attack_first_ow + 32
+} else if (log2m == 16) {
+  cut = attack_first_ow + 8
+} else if (log2m == 18) {
+  cut = attack_first_ow + 2
+} else {
+  stop("Invalid log2m value.")
+}
 
 delta_plot_options = list(
-  geom_point(mapping = aes(y=srcq1), color="blue4", position="jitter", size=dot_size),
-  geom_point(mapping = aes(y=srcq2), color="yellow4", position="jitter", size=dot_size),
-  geom_point(mapping = aes(y=srcq3), color="orangered4", position="jitter", size=dot_size))
+  geom_point(mapping = aes(y=srcq1), color="blue4", size=dot_size),
+  geom_point(mapping = aes(y=srcq2), color="yellow4", size=dot_size),
+  geom_point(mapping = aes(y=srcq3), color="orangered4", size=dot_size))
 
 deltas %>% filter(ow<cut) %>%
   ggplot(mapping = aes(x=ow, shape=attack)) + delta_plot_options
@@ -156,9 +172,12 @@ deltas %>% filter(ow>=cut) %>%
   ggplot(mapping = aes(x=ow, shape=attack)) + delta_plot_options
 
 delta_plot_options = list(
-  geom_point(mapping = aes(y=dstq1), color="blue4", position="jitter", size=dot_size),
-  geom_point(mapping = aes(y=dstq2), color="yellow4", position="jitter", size=dot_size),
-  geom_point(mapping = aes(y=dstq3), color="orangered4", position="jitter", size=dot_size))
+  geom_point(mapping = aes(y=dstq1), color="blue4", size=dot_size),
+  geom_point(mapping = aes(y=dstq2), color="yellow4", size=dot_size),
+  geom_point(mapping = aes(y=dstq3), color="orangered4", size=dot_size))
+
+# delta_plot_options = list(
+#   geom_point(mapping = aes(y=dstq1), color="blue4", size=dot_size))
 
 deltas %>% filter(ow<cut) %>%
   ggplot(mapping = aes(x=ow, shape=attack)) + delta_plot_options
@@ -173,6 +192,7 @@ deltas %>% filter(ow>=cut) %>%
 # ggplot(aes(ow,value,color=variable)) + geom_point()
 
 ```
+It would be cool to plot several box plots. 
 
 ## Address Counts
 
@@ -195,8 +215,18 @@ dst_distinct %>% ggplot(aes(dst_delta, dsts, color=attack)) + graph_options
 
 ```{r fn_divert, include=TRUE}
 
-src_threshold = 0
-dst_threshold = 16
+if (log2m == 14) { 
+  src_threshold = 0
+  dst_threshold = 16  
+} else if (log2m == 16) {
+  src_threshold = 0
+  dst_threshold = 32  
+} else if (log2m == 18) {
+  src_threshold = 0
+  dst_threshold = 64  
+} else {
+  stop("Invalid log2m value.")
+}
 
 #divert = function(src_delta, dst_delta) (src_delta >= threshold)
 #divert = function(src_delta, dst_delta) (dst_delta >= threshold)
@@ -233,8 +263,8 @@ It is interesting to observe what happens **over time**, OW after OW.
 
 #packets
 
-graph_actual_good(packets)
-graph_actual_evil(packets)
+#graph_actual_good(packets)
+#graph_actual_evil(packets)
 graph_marked_good(packets)
 graph_marked_evil(packets)
 graph_false_negatives(packets)
@@ -243,6 +273,8 @@ graph_results(packets)
 
 
 ```
+
+Adjust scale, add legitimate and attack percentage lines. 
 
 # Points to Ponder
 
