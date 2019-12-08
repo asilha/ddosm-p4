@@ -132,6 +132,9 @@ read_pcap_csv = function(log2n, log2m, pcap_csv) {
   twos_complement = function(x) as.integer(ifelse(x > 32767, x - 65536, x))
   packets = packets %>% mutate_at(vars(src_delta, dst_delta), funs(twos_complement)) 
   
+  # Add the difference between dst_delta and src_delta
+  packets = packets %>% mutate(diff = dst_delta - src_delta)
+  
   return(packets)
   
 }
@@ -256,8 +259,8 @@ graph_actual_evil = function(packets) { packets %>% filter(attack==TRUE)    %>% 
 graph_marked_good = function(packets) { packets %>% filter(diverted==FALSE) %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("Forwarded") }
 graph_marked_evil = function(packets) { packets %>% filter(diverted==TRUE)  %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("Diverted")  }
 
-graph_false_negatives = function(packets) { packets %>% filter(!divert(src_delta,dst_delta), attack==TRUE)  %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("False Negatives") }
-graph_false_positives = function(packets) { packets %>% filter(divert(src_delta,dst_delta), attack==FALSE)  %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("False Positives") }
+graph_false_negatives = function(packets) { packets %>% filter(diverted==FALSE, attack==TRUE)  %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("False Negatives") }
+graph_false_positives = function(packets) { packets %>% filter(diverted==TRUE, attack==FALSE)  %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("False Positives") }
 
 graph_results = function(packets) {
   
