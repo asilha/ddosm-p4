@@ -242,14 +242,17 @@ if (log2m == 14) {
   dst_threshold = 32  
 } else if (log2m == 18) {
   src_threshold = 0
-  dst_threshold = 64  
+  dst_threshold = 64
+  diff_threshold = 1024
 } else {
   stop("Invalid log2m value.")
 }
 
-divert = function(src_delta, dst_delta) (src_delta >= src_threshold & dst_delta >= dst_threshold)
+#divert = function(src_delta, dst_delta) ((src_delta >= src_threshold) & (dst_delta >= dst_threshold))
+#packets = packets %>% mutate(diverted=divert(src_delta,dst_delta)) %>% group_by(ow)
 
-packets = packets %>% mutate(diverted=divert(src_delta,dst_delta)) %>% group_by(ow)
+divert = function(diff) (diff >= diff_threshold)
+packets = packets %>% mutate(diverted=divert(diff)) %>% group_by(ow)
 
 ```
 
