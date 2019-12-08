@@ -1,5 +1,6 @@
 library(reshape2)
 library(stringr)
+library(svglite)
 library(tidyverse)
 knitr::opts_chunk$set(tidy=TRUE, tidy.opts=list(width.cutoff=160))
 
