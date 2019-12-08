@@ -99,6 +99,10 @@ get_plot_tcad(tcad_m14, tcad_m14_k) + labs(title=str_c(title,"(m = 2^14)"))
 get_plot_tcad(tcad_m16, tcad_m16_k) + labs(title=str_c(title,"(m = 2^16)"))
 get_plot_tcad(tcad_m18, tcad_m18_k) + labs(title=str_c(title,"(m = 2^18)"))
 
+graph_path = "graphs"
+
+ggsave(path=graph_path, filename="entropy_all.svg")
+
 ```
 
 ## Entropy Under Attack
@@ -112,6 +116,8 @@ title = "Entropy for each Observation Window - Attack Phase "
 get_plot_tcad_attack(tcad_m14, tcad_m14_k, log2n, 14) + labs(title=str_c(title,"(m = 2^14)"))
 get_plot_tcad_attack(tcad_m16, tcad_m16_k, log2n, 16) + labs(title=str_c(title,"(m = 2^16)"))
 get_plot_tcad_attack(tcad_m18, tcad_m18_k, log2n, 18) + labs(title=str_c(title,"(m = 2^18)"))
+ggsave(path=graph_path, filename="entropy_attack.svg")
+
 
 ```
 
@@ -121,7 +127,7 @@ get_plot_tcad_attack(tcad_m18, tcad_m18_k, log2n, 18) + labs(title=str_c(title,"
 
 ```{r}
 
-log2m = as.integer(16)
+log2m = as.integer(18)
 
 if (log2m == 14)  {
   pcap_csv = pcap_csv_m14
@@ -137,6 +143,8 @@ attack_first_ow = attack_first(log2n, log2m) + 1 # Diversion begins at the secon
 attack_last_ow = attack_last(log2n, log2m)
 
 packets = read_pcap_csv(log2n, log2m, pcap_csv) %>% filter(ow >= attack_first_ow, ow <= attack_last_ow)
+
+
 
 ```
 
@@ -160,6 +168,8 @@ if (log2m == 14)  {
   stop("Invalid log2m value.")
 }
 
+graph_path = str_c("graphs_", log2m)
+
 delta_plot_options = list(
   geom_point(mapping = aes(y=srcq1), color="blue4", size=dot_size),
   geom_point(mapping = aes(y=srcq2), color="yellow4", size=dot_size),
@@ -170,6 +180,11 @@ deltas %>% filter(ow<cut) %>%
 
 deltas %>% filter(ow>=cut) %>%
   ggplot(mapping = aes(x=ow, shape=attack)) + delta_plot_options
+
+deltas %>% 
+  ggplot(mapping = aes(x=ow, shape=attack)) + delta_plot_options
+
+ggsave(path=graph_path, filename="src_deltas.svg")
 
 delta_plot_options = list(
   geom_point(mapping = aes(y=dstq1), color="blue4", size=dot_size),
@@ -185,6 +200,11 @@ deltas %>% filter(ow<cut) %>%
 deltas %>% filter(ow>=cut) %>%
   ggplot(mapping = aes(x=ow, shape=attack)) + delta_plot_options
 
+deltas %>%
+  ggplot(mapping = aes(x=ow, shape=attack)) + delta_plot_options
+
+ggsave(path=graph_path, filename="dst_deltas.svg")
+
 # deltas.long.good = melt(deltas %>% filter(attack == FALSE), id.vars="ow")
 # deltas.long.evil = melt(deltas %>% filter(attack == TRUE), id.vars="ow")  
 # 
@@ -198,6 +218,8 @@ It would be cool to plot several box plots.
 
 Get the stats for all but the first two OWs under attack: address counts for each delta value. 
 
+For each OW, how many different attack sources are there? 
+
 ```{r frequencies}
 
 graph_options = list(geom_line(), scale_color_manual(values=c("seagreen4", "orangered1")))
@@ -205,8 +227,12 @@ graph_options = list(geom_line(), scale_color_manual(values=c("seagreen4", "oran
 src_distinct = packets %>% group_by(ow, attack, src_delta) %>% summarize(srcs=n_distinct(src))
 src_distinct %>% ggplot(aes(src_delta, srcs, color=attack)) + graph_options
 
+ggsave(path=graph_path, filename="src_delta_distribution.svg")
+
 dst_distinct = packets %>% group_by(ow, attack, dst_delta) %>% summarize(dsts=n_distinct(dst))
 dst_distinct %>% ggplot(aes(dst_delta, dsts, color=attack)) + graph_options
+
+ggsave(path=graph_path, filename="dst_delta_distribution.svg")
 
 ```
 
@@ -216,25 +242,17 @@ dst_distinct %>% ggplot(aes(dst_delta, dsts, color=attack)) + graph_options
 ```{r fn_divert, include=TRUE}
 
 if (log2m == 14) { 
-  src_threshold = 0
-  dst_threshold = 16  
+  diff_threshold = 128
 } else if (log2m == 16) {
-  src_threshold = 0
-  dst_threshold = 32  
+  diff_threshold = 256
 } else if (log2m == 18) {
-  src_threshold = 0
-  dst_threshold = 64  
+  diff_threshold = 1024
 } else {
   stop("Invalid log2m value.")
 }
 
-#divert = function(src_delta, dst_delta) (src_delta >= threshold)
-#divert = function(src_delta, dst_delta) (dst_delta >= threshold)
-#divert = function(src_delta, dst_delta) (src_delta >= threshold && dst_delta >= threshold)
-
-divert = function(src_delta, dst_delta) (dst_delta >= dst_threshold)
-
-packets = packets %>% mutate(diverted=divert(src_delta,dst_delta)) %>% group_by(ow)
+divert = function(diff) (diff >= diff_threshold)
+packets = packets %>% mutate(diverted=divert(diff)) %>% group_by(ow)
 
 ```
 
@@ -246,14 +264,44 @@ Both TPR and FPR are proportions whose values we need to estimate.
 
 Let X be a random variable whose value is 1 when a classification succeeds, and 0 otherwise. Consequently, X follows a a Bernoulli distribution with probability p. We can use our sample to estimate the mean value of p. This sample mean has a sampling error approximately equal to sqrt(p * (1-p) / n), where n is the sample size (the total number of classification events).     
 
+What are the questions?
+1. Considering the attack as a whole, what are the TPR and the FPR? 
+2. Considering OWs, what are the TPR and the FPR? [This could be a plot]
+3. Considering OWs, what is the 95% confidence interval for the mean TPR and FPR?  
+
 
 ```{r fn_stats, include=TRUE}
 
-stats(packets, log2n, log2m)
+stats = get_stats(packets, log2n, log2m)
 
-stats_ci(packets, log2n, log2m)
+stats
 
+summary = stats %>% 
+  summarize(n = n(),
+            t_evil = sum(n_evil),
+            t_tp   = sum(n_tp),
+            t_good = sum(n_good),
+            t_fp   = sum(n_fp)) %>%
+  mutate(p_tp = t_tp / t_evil,
+         p_fp = t_fp / t_good) %>% 
+  mutate(se_tp = sqrt(p_tp * (1 - p_tp) / n),
+         se_fp = sqrt(p_fp * (1 - p_fp) / n)) %>% 
+  mutate(i95_tp = qnorm(0.975) * se_tp,
+         i95_fp = qnorm(0.975) * se_fp) %>%
+  mutate(i95_tp_lb = p_tp - i95_tp,
+         i95_tp_ub = p_tp + i95_tp,
+         i95_fp_lb = p_fp - i95_fp,
+         i95_fp_ub = p_fp + i95_fp) %>%
+  mutate_if(is.double, funs(round(.,4))) %>%
+  select(n, 
+         p_tp, i95_tp_lb, i95_tp_ub, 
+         p_fp, i95_fp_lb, i95_fp_ub)
+
+summary  
+  
 ```
+
+This should be graphed as a function of t. 
 
 ## Graphs
 
@@ -261,25 +309,24 @@ It is interesting to observe what happens **over time**, OW after OW.
 
 ```{r classification_graphs, include=TRUE}
 
-#packets
-
-#graph_actual_good(packets)
-#graph_actual_evil(packets)
 graph_marked_good(packets)
 graph_marked_evil(packets)
 graph_false_negatives(packets)
+ggsave(path=graph_path, filename="false_negatives.svg")
 graph_false_positives(packets)
+ggsave(path=graph_path, filename="false_positives.svg")
 graph_results(packets)
-
+ggsave(path=graph_path, filename="results.svg")
 
 ```
 
 Adjust scale, add legitimate and attack percentage lines. 
 
-# Points to Ponder
 
-For each OW, how many different attack sources are there? 
+# Discussion 
 
+I have an explanation for the growth of false positives. 
+Results are not sensitive to window size. 
 How do our findings correlate with TCAD measurements? 
 
 What else can we do?
