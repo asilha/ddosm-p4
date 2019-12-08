@@ -98,6 +98,7 @@ title = "Entropy for each Observation Window "
 get_plot_tcad(tcad_m14, tcad_m14_k) + labs(title=str_c(title,"(m = 2^14)"))
 get_plot_tcad(tcad_m16, tcad_m16_k) + labs(title=str_c(title,"(m = 2^16)"))
 get_plot_tcad(tcad_m18, tcad_m18_k) + labs(title=str_c(title,"(m = 2^18)"))
+ggsave("entropy_all.svg")
 
 ```
 
@@ -112,6 +113,8 @@ title = "Entropy for each Observation Window - Attack Phase "
 get_plot_tcad_attack(tcad_m14, tcad_m14_k, log2n, 14) + labs(title=str_c(title,"(m = 2^14)"))
 get_plot_tcad_attack(tcad_m16, tcad_m16_k, log2n, 16) + labs(title=str_c(title,"(m = 2^16)"))
 get_plot_tcad_attack(tcad_m18, tcad_m18_k, log2n, 18) + labs(title=str_c(title,"(m = 2^18)"))
+ggsave("entropy_attack.svg")
+
 
 ```
 
@@ -121,7 +124,7 @@ get_plot_tcad_attack(tcad_m18, tcad_m18_k, log2n, 18) + labs(title=str_c(title,"
 
 ```{r}
 
-log2m = as.integer(16)
+log2m = as.integer(18)
 
 if (log2m == 14)  {
   pcap_csv = pcap_csv_m14
@@ -171,6 +174,11 @@ deltas %>% filter(ow<cut) %>%
 deltas %>% filter(ow>=cut) %>%
   ggplot(mapping = aes(x=ow, shape=attack)) + delta_plot_options
 
+deltas %>% 
+  ggplot(mapping = aes(x=ow, shape=attack)) + delta_plot_options
+
+ggsave("src_deltas.svg")
+
 delta_plot_options = list(
   geom_point(mapping = aes(y=dstq1), color="blue4", size=dot_size),
   geom_point(mapping = aes(y=dstq2), color="yellow4", size=dot_size),
@@ -185,6 +193,11 @@ deltas %>% filter(ow<cut) %>%
 deltas %>% filter(ow>=cut) %>%
   ggplot(mapping = aes(x=ow, shape=attack)) + delta_plot_options
 
+deltas %>%
+  ggplot(mapping = aes(x=ow, shape=attack)) + delta_plot_options
+
+ggsave("dst_deltas.svg")
+
 # deltas.long.good = melt(deltas %>% filter(attack == FALSE), id.vars="ow")
 # deltas.long.evil = melt(deltas %>% filter(attack == TRUE), id.vars="ow")  
 # 
@@ -198,6 +211,8 @@ It would be cool to plot several box plots.
 
 Get the stats for all but the first two OWs under attack: address counts for each delta value. 
 
+For each OW, how many different attack sources are there? 
+
 ```{r frequencies}
 
 graph_options = list(geom_line(), scale_color_manual(values=c("seagreen4", "orangered1")))
@@ -205,8 +220,12 @@ graph_options = list(geom_line(), scale_color_manual(values=c("seagreen4", "oran
 src_distinct = packets %>% group_by(ow, attack, src_delta) %>% summarize(srcs=n_distinct(src))
 src_distinct %>% ggplot(aes(src_delta, srcs, color=attack)) + graph_options
 
+ggsave("src_delta_distribution.svg")
+
 dst_distinct = packets %>% group_by(ow, attack, dst_delta) %>% summarize(dsts=n_distinct(dst))
 dst_distinct %>% ggplot(aes(dst_delta, dsts, color=attack)) + graph_options
+
+ggsave("dst_delta_distribution.svg")
 
 ```
 
@@ -253,7 +272,11 @@ stats(packets, log2n, log2m)
 
 stats_ci(packets, log2n, log2m)
 
+stats_ci_2(packets, log2n, log2m)
+
 ```
+
+This should be graphed as a function of t. 
 
 ## Graphs
 
@@ -268,18 +291,21 @@ It is interesting to observe what happens **over time**, OW after OW.
 graph_marked_good(packets)
 graph_marked_evil(packets)
 graph_false_negatives(packets)
+ggsave("false_negatives.svg")
 graph_false_positives(packets)
+ggsave("false_positives.svg")
 graph_results(packets)
-
+ggsave("results.svg")
 
 ```
 
 Adjust scale, add legitimate and attack percentage lines. 
 
-# Points to Ponder
 
-For each OW, how many different attack sources are there? 
+# Discussion 
 
+I have an explanation for the growth of false positives. 
+Results are not sensitive to window size. 
 How do our findings correlate with TCAD measurements? 
 
 What else can we do?
