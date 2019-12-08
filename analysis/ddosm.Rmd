@@ -129,6 +129,31 @@ my_ggsave(plot=last_plot(), path="graphics_m18", filename="entropy_attack")
 
 # Attack Mitigation
 
+## Loading
+
+```{r}
+
+log2m = as.integer(18)
+
+if (log2m == 14)  {
+  pcap_csv = pcap_csv_m14
+} else if (log2m == 16) {
+  pcap_csv = pcap_csv_m16
+} else if (log2m == 18) {
+  pcap_csv = pcap_csv_m18
+} else {
+  stop("Invalid log2m value.")
+}
+
+attack_first_ow = attack_first(log2n, log2m) + 1 # Diversion begins at the second OW under attack. 
+attack_last_ow = attack_last(log2n, log2m)
+
+packets = read_pcap_csv(log2n, log2m, pcap_csv) %>% filter(ow >= attack_first_ow, ow <= attack_last_ow)
+
+
+
+```
+
 ## Typical Deltas
 
 For each OW, what are the typical frequency deltas for attack packets? 
@@ -262,9 +287,11 @@ my_ggsave(plot=last_plot(), path=graph_path, filename="tpr_fpr_2")
 
 
 
-stats1 = get_stats(packets, log2n, log2m)
+stats = get_stats(packets, log2n, log2m)
 
-stats1 %>% 
+stats
+
+summary = stats %>% 
   summarize(n = n(),
             t_evil = sum(n_evil),
             t_tp   = sum(n_tp),
@@ -276,8 +303,17 @@ stats1 %>%
          se_fp = sqrt(p_fp * (1 - p_fp) / n)) %>% 
   mutate(i95_tp = qnorm(0.975) * se_tp,
          i95_fp = qnorm(0.975) * se_fp) %>%
-  select(p_tp, i95_tp, p_fp, i95_fp)
+  mutate(i95_tp_lb = p_tp - i95_tp,
+         i95_tp_ub = p_tp + i95_tp,
+         i95_fp_lb = p_fp - i95_fp,
+         i95_fp_ub = p_fp + i95_fp) %>%
+  mutate_if(is.double, funs(round(.,4))) %>%
+  select(n, 
+         p_tp, i95_tp_lb, i95_tp_ub, 
+         p_fp, i95_fp_lb, i95_fp_ub)
 
+summary  
+  
 ```
 
 ## Diversion Statistics
