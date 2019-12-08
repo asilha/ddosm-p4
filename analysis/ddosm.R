@@ -178,7 +178,7 @@ summarize_deltas = function (log2n, log2m, packets) {
   
 }
 
-stats = function(packets, log2n, log2m) {
+old_stats = function(packets, log2n, log2m) {
   
   #attack_first_ow = attack_first(log2n, log2m) + 1
   #attack_last_ow = attack_last(log2n, log2m)  
@@ -201,7 +201,7 @@ stats = function(packets, log2n, log2m) {
   
 }
 
-stats_ci = function(packets, log2n, log2m) {
+old_stats_ci = function(packets, log2n, log2m) {
   
   attack_first_ow = attack_first(log2n, log2m) + 1
   attack_last_ow = attack_last(log2n, log2m)
@@ -223,6 +223,30 @@ stats_ci = function(packets, log2n, log2m) {
   message(str_c("TPR: ", round(tpr$mean,6), " ± ", round(tpr$margin,6)))
   message(str_c("FPR: ", round(fpr$mean,6), " ± ", round(fpr$margin,6)))
   
+}
+
+get_stats = function(packets, log2n, log2m) {
+  
+  packets = packets %>% ungroup() 
+  
+  stats = packets %>% 
+    mutate(tp =  attack & diverted,
+           fp = !attack & diverted) %>% 
+    group_by(ow) %>%
+    summarize(n_good = sum(!attack),
+              n_evil = sum(attack),
+              p_good = mean(!attack),
+              p_evil = mean(attack),
+              n_fwd  = sum(!diverted),
+              n_div  = sum(diverted),
+              p_fwd  = mean(!diverted),
+              p_div  = mean(diverted),
+              n_tp   = sum(tp),
+              n_fp   = sum(fp)) %>%
+    mutate(tpr = n_tp / n_evil,
+           fpr = n_fp / n_good)
+  
+  return (stats)
 }
 
 
