@@ -272,9 +272,9 @@ What are the questions?
 
 ```{r fn_stats, include=TRUE}
 
-stats1 = get_stats(packets, log2n, log2m)
+stats = get_stats(packets, log2n, log2m)
 
-stats1 %>% 
+stats %>% 
   summarize(n = n(),
             t_evil = sum(n_evil),
             t_tp   = sum(n_tp),
