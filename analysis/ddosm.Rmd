@@ -253,10 +253,30 @@ summary_all_x %>%
   theme_classic() +
   theme(legend.title = element_blank())
 
+What are the questions?
+1. Considering the attack as a whole, what are the TPR and the FPR? 
+2. Considering OWs, what are the TPR and the FPR? [This could be a plot]
+3. Considering OWs, what is the 95% confidence interval for the mean TPR and FPR?  
 
 my_ggsave(plot=last_plot(), path=graph_path, filename="tpr_fpr_2")
 
 
+
+stats1 = get_stats(packets, log2n, log2m)
+
+stats1 %>% 
+  summarize(n = n(),
+            t_evil = sum(n_evil),
+            t_tp   = sum(n_tp),
+            t_good = sum(n_good),
+            t_fp   = sum(n_fp)) %>%
+  mutate(p_tp = t_tp / t_evil,
+         p_fp = t_fp / t_good) %>% 
+  mutate(se_tp = sqrt(p_tp * (1 - p_tp) / n),
+         se_fp = sqrt(p_fp * (1 - p_fp) / n)) %>% 
+  mutate(i95_tp = qnorm(0.975) * se_tp,
+         i95_fp = qnorm(0.975) * se_fp) %>%
+  select(p_tp, i95_tp, p_fp, i95_fp)
 
 ```
 
