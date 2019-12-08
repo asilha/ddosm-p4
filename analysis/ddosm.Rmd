@@ -98,7 +98,10 @@ title = "Entropy for each Observation Window "
 get_plot_tcad(tcad_m14, tcad_m14_k) + labs(title=str_c(title,"(m = 2^14)"))
 get_plot_tcad(tcad_m16, tcad_m16_k) + labs(title=str_c(title,"(m = 2^16)"))
 get_plot_tcad(tcad_m18, tcad_m18_k) + labs(title=str_c(title,"(m = 2^18)"))
-ggsave(path="graphs", filename="entropy_all.svg")
+
+graph_path = "graphs"
+
+ggsave(path=graph_path, filename="entropy_all.svg")
 
 ```
 
@@ -113,7 +116,7 @@ title = "Entropy for each Observation Window - Attack Phase "
 get_plot_tcad_attack(tcad_m14, tcad_m14_k, log2n, 14) + labs(title=str_c(title,"(m = 2^14)"))
 get_plot_tcad_attack(tcad_m16, tcad_m16_k, log2n, 16) + labs(title=str_c(title,"(m = 2^16)"))
 get_plot_tcad_attack(tcad_m18, tcad_m18_k, log2n, 18) + labs(title=str_c(title,"(m = 2^18)"))
-ggsave(path="graphs", filename="entropy_attack.svg")
+ggsave(path=graph_path, filename="entropy_attack.svg")
 
 
 ```
@@ -141,6 +144,8 @@ attack_last_ow = attack_last(log2n, log2m)
 
 packets = read_pcap_csv(log2n, log2m, pcap_csv) %>% filter(ow >= attack_first_ow, ow <= attack_last_ow)
 
+
+
 ```
 
 ## Typical Deltas
@@ -163,6 +168,8 @@ if (log2m == 14)  {
   stop("Invalid log2m value.")
 }
 
+graph_path = str_c("graphs_", log2m)
+
 delta_plot_options = list(
   geom_point(mapping = aes(y=srcq1), color="blue4", size=dot_size),
   geom_point(mapping = aes(y=srcq2), color="yellow4", size=dot_size),
@@ -177,7 +184,7 @@ deltas %>% filter(ow>=cut) %>%
 deltas %>% 
   ggplot(mapping = aes(x=ow, shape=attack)) + delta_plot_options
 
-ggsave(path="graphs", filename="src_deltas.svg")
+ggsave(path=graph_path, filename="src_deltas.svg")
 
 delta_plot_options = list(
   geom_point(mapping = aes(y=dstq1), color="blue4", size=dot_size),
@@ -196,7 +203,7 @@ deltas %>% filter(ow>=cut) %>%
 deltas %>%
   ggplot(mapping = aes(x=ow, shape=attack)) + delta_plot_options
 
-ggsave(path="graphs", filename="dst_deltas.svg")
+ggsave(path=graph_path, filename="dst_deltas.svg")
 
 # deltas.long.good = melt(deltas %>% filter(attack == FALSE), id.vars="ow")
 # deltas.long.evil = melt(deltas %>% filter(attack == TRUE), id.vars="ow")  
@@ -220,12 +227,12 @@ graph_options = list(geom_line(), scale_color_manual(values=c("seagreen4", "oran
 src_distinct = packets %>% group_by(ow, attack, src_delta) %>% summarize(srcs=n_distinct(src))
 src_distinct %>% ggplot(aes(src_delta, srcs, color=attack)) + graph_options
 
-ggsave(path="graphs", filename="src_delta_distribution.svg")
+ggsave(path=graph_path, filename="src_delta_distribution.svg")
 
 dst_distinct = packets %>% group_by(ow, attack, dst_delta) %>% summarize(dsts=n_distinct(dst))
 dst_distinct %>% ggplot(aes(dst_delta, dsts, color=attack)) + graph_options
 
-ggsave(path="graphs", filename="dst_delta_distribution.svg")
+ggsave(path=graph_path, filename="dst_delta_distribution.svg")
 
 ```
 
@@ -235,21 +242,14 @@ ggsave(path="graphs", filename="dst_delta_distribution.svg")
 ```{r fn_divert, include=TRUE}
 
 if (log2m == 14) { 
-  src_threshold = 0
-  dst_threshold = 16  
+  diff_threshold = 128
 } else if (log2m == 16) {
-  src_threshold = 0
-  dst_threshold = 32  
+  diff_threshold = 256
 } else if (log2m == 18) {
-  src_threshold = 0
-  dst_threshold = 64
   diff_threshold = 1024
 } else {
   stop("Invalid log2m value.")
 }
-
-#divert = function(src_delta, dst_delta) ((src_delta >= src_threshold) & (dst_delta >= dst_threshold))
-#packets = packets %>% mutate(diverted=divert(src_delta,dst_delta)) %>% group_by(ow)
 
 divert = function(diff) (diff >= diff_threshold)
 packets = packets %>% mutate(diverted=divert(diff)) %>% group_by(ow)
@@ -272,9 +272,11 @@ What are the questions?
 
 ```{r fn_stats, include=TRUE}
 
-stats1 = get_stats(packets, log2n, log2m)
+stats = get_stats(packets, log2n, log2m)
 
-stats1 %>% 
+stats
+
+summary = stats %>% 
   summarize(n = n(),
             t_evil = sum(n_evil),
             t_tp   = sum(n_tp),
@@ -286,8 +288,17 @@ stats1 %>%
          se_fp = sqrt(p_fp * (1 - p_fp) / n)) %>% 
   mutate(i95_tp = qnorm(0.975) * se_tp,
          i95_fp = qnorm(0.975) * se_fp) %>%
-  select(p_tp, i95_tp, p_fp, i95_fp)
+  mutate(i95_tp_lb = p_tp - i95_tp,
+         i95_tp_ub = p_tp + i95_tp,
+         i95_fp_lb = p_fp - i95_fp,
+         i95_fp_ub = p_fp + i95_fp) %>%
+  mutate_if(is.double, funs(round(.,4))) %>%
+  select(n, 
+         p_tp, i95_tp_lb, i95_tp_ub, 
+         p_fp, i95_fp_lb, i95_fp_ub)
 
+summary  
+  
 ```
 
 This should be graphed as a function of t. 
@@ -301,11 +312,11 @@ It is interesting to observe what happens **over time**, OW after OW.
 graph_marked_good(packets)
 graph_marked_evil(packets)
 graph_false_negatives(packets)
-ggsave(path="graphs", filename="false_negatives.svg")
+ggsave(path=graph_path, filename="false_negatives.svg")
 graph_false_positives(packets)
-ggsave(path="graphs", filename="false_positives.svg")
+ggsave(path=graph_path, filename="false_positives.svg")
 graph_results(packets)
-ggsave(path="graphs", filename="results.svg")
+ggsave(path=graph_path, filename="results.svg")
 
 ```
 
