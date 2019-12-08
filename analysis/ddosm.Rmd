@@ -124,7 +124,7 @@ ggsave(path="graphs", filename="entropy_attack.svg")
 
 ```{r}
 
-log2m = as.integer(18)
+log2m = as.integer(14)
 
 if (log2m == 14)  {
   pcap_csv = pcap_csv_m14
@@ -237,9 +237,11 @@ ggsave(path="graphs", filename="dst_delta_distribution.svg")
 if (log2m == 14) { 
   src_threshold = 0
   dst_threshold = 16  
+  diff_threshold = 128
 } else if (log2m == 16) {
   src_threshold = 0
   dst_threshold = 32  
+  diff_threshold = 256
 } else if (log2m == 18) {
   src_threshold = 0
   dst_threshold = 64
