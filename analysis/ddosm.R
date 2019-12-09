@@ -263,15 +263,15 @@ graph_marked_evil = function(packets) { packets %>% filter(diverted==TRUE)  %>% 
 graph_false_negatives = function(packets) { packets %>% filter(diverted==FALSE, attack==TRUE)  %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("False Negatives") }
 graph_false_positives = function(packets) { packets %>% filter(diverted==TRUE, attack==FALSE)  %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("False Positives") }
 
-graph_results = function(packets) {
+graph_results = function(packets, m_annotation) {
   
   packets %>% group_by(ow, attack, diverted) %>% summarize(n=n()) %>% 
   ggplot(mapping=aes(x=ow, y=n, color=attack, shape=diverted)) + 
   geom_point(size=2.0) + 
   #coord_cartesian(xlim=c(770,810),ylim=c(0,16384)) + 
-  labs(x="Observation Window", y="Packet Count", title ="Classification Results") +
-  scale_x_continuous(expand=expand_scale(add=0)) + 
-  scale_y_continuous(expand=expand_scale(add=0)) +
+  labs(x="Observation Window", y="Packet Count", title = str_c("Classification Results ", m_annotation)) +
+  #scale_x_continuous(expand=expand_scale(add=0)) + 
+  #scale_y_continuous(expand=expand_scale(add=0)) +
   scale_color_manual(values=c("seagreen4", "orangered1")) + 
   theme_classic()  
 
