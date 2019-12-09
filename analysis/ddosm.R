@@ -38,6 +38,30 @@ attack_last  = function(log2n, log2m) as.integer(training(log2n, log2m) + safety
 
 # We also define a helper function to get the OW number from a packet index.
 
+# Note: When we preinitialize training coefficients, the length of the workload is equal to the length of the detection phase.**
+#  
+# For a detection phase of 2^24 packets we have: 
+#   
+# 2^(24-log2m-2) OWs before the attack,
+# 2^(24-log2m-1) OWs under attack, 
+# 2^(24-log2m-2) OWs after the attack.
+# 
+# For m=2^14, the detection phase has 2^(24-14)=2^10 windows: 
+#   
+# 2^8 OWs pre-attack and post attack,  
+# 2^9 OWs under attack, 
+# 
+# For m=2^16, 2^8 windows: 
+#   
+# 2^6 OWs pre-attack and post-attack,
+# 2^7 OWs under attack.
+# 
+# For m=2^18, 2^6 windows: 
+#   
+# 2^4 OWs pre-attack and post-attack,
+# 2^5 OWs under attack.
+
+
 get_ow = function(index, m) as.integer((index - 1) %/% m + 1) 
 
 read_tcad_trace = function(trace_file) {
@@ -175,7 +199,7 @@ summarize_deltas = function (log2n, log2m, packets) {
   
 }
 
-get_stats = function(packets, log2n, log2m) {
+get_stats = function(packets) {
   
   packets = packets %>% ungroup() 
   
@@ -197,6 +221,36 @@ get_stats = function(packets, log2n, log2m) {
            fpr = n_fp / n_good)
   
   return (stats)
+}
+
+get_summary = function(stats, log2n, log2m, t) {
+  
+  summary = stats %>% 
+    summarize(log2n = log2n,
+              log2m  = log2m,
+              t = diff_threshold,
+              n = n(),
+              t_evil = sum(n_evil),
+              t_tp   = sum(n_tp),
+              t_good = sum(n_good),
+              t_fp   = sum(n_fp)) %>%
+    mutate(p_tp = t_tp / t_evil,
+           p_fp = t_fp / t_good) %>% 
+    mutate(se_tp = sqrt(p_tp * (1 - p_tp) / n),
+           se_fp = sqrt(p_fp * (1 - p_fp) / n)) %>% 
+    mutate(i95_tp = qnorm(0.975) * se_tp,
+           i95_fp = qnorm(0.975) * se_fp) %>%
+    mutate(i95_tp_lb = p_tp - i95_tp,
+           i95_tp_ub = p_tp + i95_tp,
+           i95_fp_lb = p_fp - i95_fp,
+           i95_fp_ub = p_fp + i95_fp) %>%
+    mutate_if(is.double, funs(round(.,4))) %>%
+    select(log2n, log2m, t, 
+           p_tp, i95_tp_lb, i95_tp_ub, 
+           p_fp, i95_fp_lb, i95_fp_ub)  
+  
+  return(summary)
+  
 }
 
 
