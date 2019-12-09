@@ -14,18 +14,21 @@ fi
 
 if [ "$1" = "start" ]
 then
-    nice -8 tcpdump -i veth0 -K -n -s 80 -w $2/if0_workload_out.pcapng &
-    sleep 2 
-    nice -8 tcpdump -i veth2 -K -n -s 80 -w $2/if2_legitimate_out.pcapng & 
-    sleep 2
-    nice -8 tcpdump -i veth4 -K -n -s 80 -w $2/if3_attack_out.pcapng & 
-    sleep 2
-    nice -8 tcpdump -i veth6 -K -n -s 80 -w $2/if4_stats_out.pcapng & 
-    sleep 2
+    for i in {2..6..2} 
+    do 
+        nice -8 tcpdump -i veth$i -K -n -s 80 -w $2/veth$i.pcap & 
+    done
+    sleep 10
 elif [ "$1" = "stop" ]
 then
+    sleep 10
     killall -TERM tcpdump 
     sleep 10
+    for i in {2..6..2} 
+    do 
+        gzip -f $2/veth$i.pcap  
+    done
+
 fi
 
 
