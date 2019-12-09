@@ -152,7 +152,7 @@ if (log2m == 14)  {
   stop("Invalid log2m value.")
 }
 
-attack_first_ow = attack_first(log2n, log2m) + 1 # Diversion begins at the second OW under attack. 
+attack_first_ow = attack_first(log2n, log2m) + 2 # Diversion begins at the second OW under attack. 
 attack_last_ow = attack_last(log2n, log2m)
 
 packets = read_pcap_csv(log2n, log2m, pcap_csv) %>% filter(ow >= attack_first_ow, ow <= attack_last_ow)
@@ -318,8 +318,6 @@ summary = stats %>%
   select(log2m, t, 
          p_tp, i95_tp_lb, i95_tp_ub, 
          p_fp, i95_fp_lb, i95_fp_ub)
-
-summary
 
 summary_all = bind_rows(summary_all, summary)
 
