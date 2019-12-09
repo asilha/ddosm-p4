@@ -146,7 +146,7 @@ if (log2m == 14)  {
   stop("Invalid log2m value.")
 }
 
-attack_first_ow = attack_first(log2n, log2m) + 1 # Diversion begins at the second OW under attack. 
+attack_first_ow = attack_first(log2n, log2m) + 2 # Diversion begins at the second OW under attack. 
 attack_last_ow = attack_last(log2n, log2m)
 
 packets = read_pcap_csv(log2n, log2m, pcap_csv) %>% filter(ow >= attack_first_ow, ow <= attack_last_ow)
@@ -165,83 +165,24 @@ deltas = summarize_deltas(log2n, log2m, packets)
 
 dot_size = 2.0
 
-if (log2m == 14)  {
-  cut = attack_first_ow + 32
-} else if (log2m == 16) {
-  cut = attack_first_ow + 8
-} else if (log2m == 18) {
-  cut = attack_first_ow + 2
-} else {
-  stop("Invalid log2m value.")
-}
-
 graph_path = str_c("graphs_", log2m)
 
 delta_plot_options = list(
-  geom_point(mapping = aes(y=srcq1), color="blue4", size=dot_size),
-  geom_point(mapping = aes(y=srcq2), color="yellow4", size=dot_size),
-  geom_point(mapping = aes(y=srcq3), color="orangered4", size=dot_size))
-
-deltas %>% filter(ow<cut) %>%
-  ggplot(mapping = aes(x=ow, shape=attack)) + delta_plot_options
-
-deltas %>% filter(ow>=cut) %>%
-  ggplot(mapping = aes(x=ow, shape=attack)) + delta_plot_options
+  geom_point(aes(y=diffq1), color="blue4", size=dot_size),
+  geom_point(aes(y=diffq2), color="yellow4", size=dot_size),
+  geom_point(aes(y=diffq3), color="orangered4", size=dot_size))
 
 deltas %>% 
-  ggplot(mapping = aes(x=ow, shape=attack)) + delta_plot_options
+  ggplot(aes(x=ow, shape=attack)) + delta_plot_options
 
-ggsave(path=graph_path, filename="src_deltas.svg")
+ggsave(path=graph_path, filename="diffs.svg")
 
-delta_plot_options = list(
-  geom_point(mapping = aes(y=dstq1), color="blue4", size=dot_size),
-  geom_point(mapping = aes(y=dstq2), color="yellow4", size=dot_size),
-  geom_point(mapping = aes(y=dstq3), color="orangered4", size=dot_size))
+#deltas.m = melt(packets %>% select(ow,attack,diff), id.var = "attack")
+#deltas.m %>% ggplot(aes(x=variable, y=value)) + geom_boxplot(aes(fill=attack))
 
-# delta_plot_options = list(
-#   geom_point(mapping = aes(y=dstq1), color="blue4", size=dot_size))
-
-deltas %>% filter(ow<cut) %>%
-  ggplot(mapping = aes(x=ow, shape=attack)) + delta_plot_options
-
-deltas %>% filter(ow>=cut) %>%
-  ggplot(mapping = aes(x=ow, shape=attack)) + delta_plot_options
-
-deltas %>%
-  ggplot(mapping = aes(x=ow, shape=attack)) + delta_plot_options
-
-ggsave(path=graph_path, filename="dst_deltas.svg")
-
-# deltas.long.good = melt(deltas %>% filter(attack == FALSE), id.vars="ow")
-# deltas.long.evil = melt(deltas %>% filter(attack == TRUE), id.vars="ow")  
-# 
-# deltas.long.evil %>% filter(ow >= cut, str_detect(variable, "dstq")) %>% 
-# ggplot(aes(ow,value,color=variable)) + geom_point()
 
 ```
 It would be cool to plot several box plots. 
-
-## Address Counts
-
-Get the stats for all but the first two OWs under attack: address counts for each delta value. 
-
-For each OW, how many different attack sources are there? 
-
-```{r frequencies}
-
-graph_options = list(geom_line(), scale_color_manual(values=c("seagreen4", "orangered1")))
-
-src_distinct = packets %>% group_by(ow, attack, src_delta) %>% summarize(srcs=n_distinct(src))
-src_distinct %>% ggplot(aes(src_delta, srcs, color=attack)) + graph_options
-
-ggsave(path=graph_path, filename="src_delta_distribution.svg")
-
-dst_distinct = packets %>% group_by(ow, attack, dst_delta) %>% summarize(dsts=n_distinct(dst))
-dst_distinct %>% ggplot(aes(dst_delta, dsts, color=attack)) + graph_options
-
-ggsave(path=graph_path, filename="dst_delta_distribution.svg")
-
-```
 
 
 ## Classification
@@ -253,7 +194,7 @@ if (log2m == 14) {
 } else if (log2m == 16) {
   diff_threshold = 256L
 } else if (log2m == 18) {
-  diff_threshold = 1024L
+  diff_threshold = 256L
 } else {
   stop("Invalid log2m value.")
 }
@@ -304,8 +245,6 @@ summary = stats %>%
          p_tp, i95_tp_lb, i95_tp_ub, 
          p_fp, i95_fp_lb, i95_fp_ub)
 
-summary
-
 summary_all = bind_rows(summary_all, summary)
 
 summary_all 
@@ -333,11 +272,24 @@ ggsave(path=graph_path, filename="results.svg")
 
 Adjust scale, add legitimate and attack percentage lines. 
 
+## Address Counts
+
+```{r frequencies}
+
+# graph_options = list(geom_line(), scale_color_manual(values=c("seagreen4", "orangered1")))
+# 
+# src_distinct = packets %>% group_by(ow, attack, diff) %>% summarize(srcs=n_distinct(src))
+# src_distinct %>% ggplot(aes(diff, srcs, color=attack)) + graph_options
+# 
+# ggsave(path=graph_path, filename="src_delta_distribution.svg")
+# 
+# dst_distinct = packets %>% group_by(ow, attack, diff) %>% summarize(dsts=n_distinct(dst))
+# dst_distinct %>% ggplot(aes(diff, dsts, color=attack)) + graph_options
+# 
+# ggsave(path=graph_path, filename="dst_delta_distribution.svg")
+
+```
+
 
 # Discussion 
 
-I have an explanation for the growth of false positives. 
-Results are not sensitive to window size. 
-How do our findings correlate with TCAD measurements? 
-
-What else can we do?

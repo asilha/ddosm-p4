@@ -164,67 +164,14 @@ summarize_deltas = function (log2n, log2m, packets) {
     filter(ow >= attack_first_ow, ow<=attack_last_ow) %>%
     group_by(ow, attack) %>% 
     summarize(
-      srcmn=min(src_delta),
-      srcq1=quantile(src_delta, 0.25),
-      srcq2=median(src_delta),
-      srcq3=quantile(src_delta, 0.75),
-      srqmx=max(src_delta),
-      dstmn=min(dst_delta),
-      dstq1=quantile(dst_delta, 0.25),
-      dstq2=median(dst_delta),
-      dstq3=quantile(dst_delta, 0.75),
-      dstmx=max(dst_delta),
-      srciqr=IQR(src_delta),
-      dstiqr=IQR(dst_delta))
+      diffmin=min(diff),
+      diffq1=quantile(diff, 0.10),
+      diffq2=median(diff),
+      diffq3=quantile(diff, 0.90),
+      diffmax=max(diff),
+      diffiqr=IQR(diff))
   
   return(result)  
-  
-}
-
-old_stats = function(packets, log2n, log2m) {
-  
-  #attack_first_ow = attack_first(log2n, log2m) + 1
-  #attack_last_ow = attack_last(log2n, log2m)  
-  
-  #query = packets %>% filter(ow>=attack_first_ow, ow<=attack_last_ow)
-  
-  true_evil = packets %>% ungroup() %>% filter(attack==TRUE) %>% tally()
-  true_good = packets %>% ungroup() %>% filter(attack==FALSE) %>% tally()
-  message("True evil: ", true_evil, " True good: ", true_good, " Total: ", true_evil + true_good)
-  
-  class_evil = packets %>% ungroup() %>% filter(divert(src_delta,dst_delta)) %>% tally() 
-  class_good = packets %>% ungroup() %>% filter(!divert(src_delta,dst_delta)) %>% tally() 
-  message("Class evil: ", class_evil, " Class good: ", class_good, " Total: ", class_evil + class_good)
-  
-  error_evil = packets %>% ungroup() %>% filter(!divert(src_delta,dst_delta), attack==TRUE)  %>% tally() 
-  error_good = packets %>% ungroup() %>% filter(divert(src_delta,dst_delta), attack==FALSE) %>% tally() 
-  
-  message("FNcount: ", error_evil, " FPcount: ", error_good, " Total: ", error_evil + error_good)
-  message("FNR: ", round(error_evil/true_evil,4), " FPR: ", round(error_good/true_good,4))  
-  
-}
-
-old_stats_ci = function(packets, log2n, log2m) {
-  
-  attack_first_ow = attack_first(log2n, log2m) + 1
-  attack_last_ow = attack_last(log2n, log2m)
-  attack_length = attack_last_ow - attack_first_ow + 1
-  m = 2^log2m
-  
-  tpr = packets %>% 
-    filter(ow>=attack_first_ow, ow<=attack_last_ow, attack==TRUE, divert(src_delta, dst_delta)==TRUE) %>% 
-    group_by(ow) %>%
-    summarize(n = n()) %>%
-    summarize(mean = mean(n) / (0.2 * m), margin = qnorm(0.975) * sd(n)/sqrt(attack_length) / (0.2 * m))
-  
-  fpr = packets %>% 
-    filter(ow>=attack_first_ow, ow<=attack_last_ow, attack==FALSE, divert(src_delta, dst_delta)==TRUE) %>% 
-    group_by(ow) %>%
-    summarize(n = n()) %>%
-    summarize(mean = mean(n) / (0.8 * m), margin = qnorm(0.975) * sd(n)/sqrt(attack_length) / (0.8 * m))
-
-  message(str_c("TPR: ", round(tpr$mean,6), " ± ", round(tpr$margin,6)))
-  message(str_c("FPR: ", round(fpr$mean,6), " ± ", round(fpr$margin,6)))
   
 }
 
