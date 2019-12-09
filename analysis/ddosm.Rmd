@@ -13,23 +13,13 @@ source("ddosm.R")
 
 # Overview
 
-TODO: Revise Jain's principles and common mistakes. 
-
-TODO: Outline the rest of the work. 
-
 ## Parameters
 
 ### Dataset
 
-TODO: Introduce the dataset. 
-
 We used a dataset with 2^24 packets in the detection phase.
 
 ### Sensitivity Coefficients
-
-TODO: Explain.
-
-What are our chosen k coefficients? 
 
 Our experiments with tcad_m_levels.py show us candidate values for k, as follows: 
 
@@ -41,41 +31,11 @@ Log2(m) | k     | FPR
 
 ### TCAD Traces
 
-TODO: Explain.
-
 [Source: DDoS Mitigation.ipynb, section Finding TCAD Values]
-
-TCAD measurements can be found in the following files: 
 
   tcad_m_2_14_k_4.125.log
   tcad_m_2_16_k_4.500.log
   tcad_m_2_18_k_3.625.log
-
-## Observation Window Numbers
-
-**Note: When we preinitialize training coefficients, the length of the workload is equal to the length of the detection phase.**
-
-For a detection phase of 2^24 packets we have: 
-
-  2^(24-log2m-2) OWs before the attack,
-  2^(24-log2m-1) OWs under attack, 
-  2^(24-log2m-2) OWs after the attack.
-  
-For m=2^14, the detection phase has 2^(24-14)=2^10 windows: 
-  
-  2^8 OWs pre-attack and post attack,  
-  2^9 OWs under attack, 
-
-For m=2^16, 2^8 windows: 
-
-  2^6 OWs pre-attack and post-attack,
-  2^7 OWs under attack.
-  
-For m=2^18, 2^6 windows: 
-  
-  2^4 OWs pre-attack and post-attack,
-  2^5 OWs under attack.
-  
 
 # Workload Characterization
 
@@ -123,18 +83,11 @@ ggsave(path=graph_path, filename="entropy_attack.svg")
 
 # Attack Mitigation
 
-```{r}
-
-summary_all = tibble() 
-
-```
-
-
 ## Loading
 
 ```{r}
 
-log2m = as.integer(18)
+log2m = as.integer(14)
 
 if (log2m == 14)  {
   pcap_csv = pcap_csv_m14
@@ -150,7 +103,6 @@ attack_first_ow = attack_first(log2n, log2m) + 2 # Diversion begins at the secon
 attack_last_ow = attack_last(log2n, log2m)
 
 packets = read_pcap_csv(log2n, log2m, pcap_csv) %>% filter(ow >= attack_first_ow, ow <= attack_last_ow)
-
 
 
 ```
@@ -177,81 +129,46 @@ deltas %>%
 
 ggsave(path=graph_path, filename="diffs.svg")
 
-#deltas.m = melt(packets %>% select(ow,attack,diff), id.var = "attack")
-#deltas.m %>% ggplot(aes(x=variable, y=value)) + geom_boxplot(aes(fill=attack))
-
-
-```
-It would be cool to plot several box plots. 
-
-
-## Classification
-
-```{r fn_divert, include=TRUE}
-
-if (log2m == 14) { 
-  diff_threshold = 128L
-} else if (log2m == 16) {
-  diff_threshold = 256L
-} else if (log2m == 18) {
-  diff_threshold = 256L
-} else {
-  stop("Invalid log2m value.")
-}
-
-divert = function(diff) (diff >= diff_threshold)
-packets = packets %>% mutate(diverted=divert(diff)) %>% group_by(ow)
+# It would be cool to plot several box plots. 
 
 ```
 
-## Statistics
 
-Base Stats and Confidence Intervals
+## Classification and Statistics
 
-Both TPR and FPR are proportions whose values we need to estimate.
+We want to find the best value for t, considering its effect on the accuracy of the mechanism. 
+
+Base Stats and Confidence Intervals: TPR and FPR are proportions whose values we need to estimate.
 
 Let X be a random variable whose value is 1 when a classification succeeds, and 0 otherwise. Consequently, X follows a a Bernoulli distribution with probability p. We can use our sample to estimate the mean value of p. This sample mean has a sampling error approximately equal to sqrt(p * (1-p) / n), where n is the sample size (the total number of classification events).     
 
-What are the questions?
 1. Considering the attack as a whole, what are the TPR and the FPR? 
-2. Considering OWs, what are the TPR and the FPR? [This could be a plot]
+2. Considering OWs, what are the TPR and the FPR? 
 3. Considering OWs, what is the 95% confidence interval for the mean TPR and FPR?  
-
 
 ```{r fn_stats, include=TRUE}
 
-stats = get_stats(packets, log2n, log2m)
+summary_all = tibble() 
 
-summary = stats %>% 
-  summarize(log2m  = log2m,
-            t = diff_threshold,
-            n = n(),
-            t_evil = sum(n_evil),
-            t_tp   = sum(n_tp),
-            t_good = sum(n_good),
-            t_fp   = sum(n_fp)) %>%
-  mutate(p_tp = t_tp / t_evil,
-         p_fp = t_fp / t_good) %>% 
-  mutate(se_tp = sqrt(p_tp * (1 - p_tp) / n),
-         se_fp = sqrt(p_fp * (1 - p_fp) / n)) %>% 
-  mutate(i95_tp = qnorm(0.975) * se_tp,
-         i95_fp = qnorm(0.975) * se_fp) %>%
-  mutate(i95_tp_lb = p_tp - i95_tp,
-         i95_tp_ub = p_tp + i95_tp,
-         i95_fp_lb = p_fp - i95_fp,
-         i95_fp_ub = p_fp + i95_fp) %>%
-  mutate_if(is.double, funs(round(.,4))) %>%
-  select(log2m, t, 
-         p_tp, i95_tp_lb, i95_tp_ub, 
-         p_fp, i95_fp_lb, i95_fp_ub)
+# Log2m == 14: seq(-2048, 2048, by=128) ; ideal = 512
+# Log2m == 16: seq(-2048, 2048, by=128) ; ideal = 768
+# Log2m == 18: seq(-2048, 2048, by=128) ; ideal = 1280
 
-summary_all = bind_rows(summary_all, summary)
+for(diff_threshold in seq(-2048, 2048, by=128)) {
+
+  divert = function(diff) (diff >= diff_threshold)
+  packets = packets %>% mutate(diverted=divert(diff)) %>% group_by(ow)
+  stats = get_stats(packets)
+  summary = get_summary(stats, log2n, log2m, diff_threshold)
+  summary_all = bind_rows(summary_all, summary)
+
+}
 
 summary_all 
-  
+
 ```
 
-This should be graphed as a function of t. 
+
 
 ## Graphs
 
@@ -289,7 +206,3 @@ Adjust scale, add legitimate and attack percentage lines.
 # ggsave(path=graph_path, filename="dst_delta_distribution.svg")
 
 ```
-
-
-# Discussion 
-
