@@ -56,13 +56,13 @@ tcad_m18 = read_tcad_trace(tcad_m18_trace)
 title = "Entropy for each Observation Window "
 
 get_plot_tcad(tcad_m14, tcad_m14_k) + labs(title=str_c(title,"(m = 2^14)"))
-ggsave(path="graphs_14", filename="entropy_all.pdf")
+ggsave(path="graphs_14", filename="entropy_all.svg")
 
 get_plot_tcad(tcad_m16, tcad_m16_k) + labs(title=str_c(title,"(m = 2^16)"))
-ggsave(path="graphs_16", filename="entropy_all.pdf")
+ggsave(path="graphs_16", filename="entropy_all.svg")
 
 get_plot_tcad(tcad_m18, tcad_m18_k) + labs(title=str_c(title,"(m = 2^18)"))
-ggsave(path="graphs_18", filename="entropy_all.pdf")
+ggsave(path="graphs_18", filename="entropy_all.svg")
 
 ```
 
@@ -75,13 +75,13 @@ We have the graph for the entire experiments. Now we need to focus in the attack
 title = "Entropy for each Observation Window - Attack Phase "
 
 get_plot_tcad_attack(tcad_m14, tcad_m14_k, log2n, 14) + labs(title=str_c(title,"(m = 2^14)"))
-ggsave(path="graphs_14", filename="entropy_attack.pdf")
+ggsave(path="graphs_14", filename="entropy_attack.svg")
 
 get_plot_tcad_attack(tcad_m16, tcad_m16_k, log2n, 16) + labs(title=str_c(title,"(m = 2^16)"))
-ggsave(path="graphs_16", filename="entropy_attack.pdf")
+ggsave(path="graphs_16", filename="entropy_attack.svg")
 
 get_plot_tcad_attack(tcad_m18, tcad_m18_k, log2n, 18) + labs(title=str_c(title,"(m = 2^18)"))
-ggsave(path="graphs_18", filename="entropy_attack.pdf")
+ggsave(path="graphs_18", filename="entropy_attack.svg")
 
 
 
@@ -157,7 +157,7 @@ for(log2m in seq(14, 18, by=2)) {
   deltas %>% 
     ggplot(aes(x=ow, shape=attack)) + delta_plot_options
   
-  ggsave(path=graph_path, filename="diffs.pdf")  
+  ggsave(path=graph_path, filename="diffs.svg")  
   
   # It would be cool to plot several box plots. 
 
@@ -166,11 +166,11 @@ for(log2m in seq(14, 18, by=2)) {
   packets = packets %>% mutate(diverted=divert(diff)) %>% group_by(ow)
   
   graph_false_negatives(packets)
-  ggsave(path=graph_path, filename="false_negatives.pdf")
+  ggsave(path=graph_path, filename="false_negatives.svg")
   graph_false_positives(packets)
-  ggsave(path=graph_path, filename="false_positives.pdf")
+  ggsave(path=graph_path, filename="false_positives.svg")
   graph_results(packets, m_annotation)
-  ggsave(path=graph_path, filename="results.pdf")
+  ggsave(path=graph_path, filename="results.svg")
     
   # Adjust scale, add legitimate and attack percentage lines. 
 
@@ -230,11 +230,11 @@ summary_all
 # src_distinct = packets %>% group_by(ow, attack, diff) %>% summarize(srcs=n_distinct(src))
 # src_distinct %>% ggplot(aes(diff, srcs, color=attack)) + graph_options
 # 
-# ggsave(path=graph_path, filename="src_delta_distribution.pdf")
+# ggsave(path=graph_path, filename="src_delta_distribution.svg")
 # 
 # dst_distinct = packets %>% group_by(ow, attack, diff) %>% summarize(dsts=n_distinct(dst))
 # dst_distinct %>% ggplot(aes(diff, dsts, color=attack)) + graph_options
 # 
-# ggsave(path=graph_path, filename="dst_delta_distribution.pdf")
+# ggsave(path=graph_path, filename="dst_delta_distribution.svg")
 
 ```
