@@ -148,33 +148,46 @@ Let X be a random variable whose value is 1 when a classification succeeds, and 
 
 ```{r fn_stats, include=TRUE}
 
-summary_all = tibble() 
+# summary_all = tibble() 
 
-# Log2m == 14: seq(-2048, 2048, by=128) ; ideal = 512
-# Log2m == 16: seq(-2048, 2048, by=128) ; ideal = 768
-# Log2m == 18: seq(-2048, 2048, by=128) ; ideal = 1280
+# for(diff_threshold in seq(-2048, 2048, by=128)) {
+# 
+#   divert = function(diff) (diff >= diff_threshold)
+#   packets = packets %>% mutate(diverted=divert(diff)) %>% group_by(ow)
+#   stats = get_stats(packets)
+#   summary = get_summary(stats, log2n, log2m, diff_threshold)
+#   summary_all = bind_rows(summary_all, summary)
+# 
+# }
 
-for(diff_threshold in seq(-2048, 2048, by=128)) {
+summary_all = read_csv2("summary_all.csv")
 
-  divert = function(diff) (diff >= diff_threshold)
-  packets = packets %>% mutate(diverted=divert(diff)) %>% group_by(ow)
-  stats = get_stats(packets)
-  summary = get_summary(stats, log2n, log2m, diff_threshold)
-  summary_all = bind_rows(summary_all, summary)
-
-}
-
-summary_all 
+summary_all
 
 ```
-
-
 
 ## Graphs
 
 It is interesting to observe what happens **over time**, OW after OW. 
 
 ```{r classification_graphs, include=TRUE}
+
+# Log2m == 14: seq(-2048, 2048, by=128) ; ideal = 512
+# Log2m == 16: seq(-2048, 2048, by=128) ; ideal = 768
+# Log2m == 18: seq(-2048, 2048, by=128) ; ideal = 1280
+
+if (log2m == 14)  {
+  diff_threshold = 512
+} else if (log2m == 16) {
+  diff_threshold = 768
+} else if (log2m == 18) {
+  diff_threshold = 1280
+} else {
+  stop("Invalid log2m value.")
+}
+
+divert = function(diff) (diff >= diff_threshold)
+packets = packets %>% mutate(diverted=divert(diff)) %>% group_by(ow)
 
 graph_marked_good(packets)
 graph_marked_evil(packets)
