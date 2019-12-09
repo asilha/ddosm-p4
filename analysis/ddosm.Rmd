@@ -123,6 +123,13 @@ ggsave(path=graph_path, filename="entropy_attack.svg")
 
 # Attack Mitigation
 
+```{r}
+
+summary_all = tibble() 
+
+```
+
+
 ## Loading
 
 ```{r}
@@ -242,11 +249,11 @@ ggsave(path=graph_path, filename="dst_delta_distribution.svg")
 ```{r fn_divert, include=TRUE}
 
 if (log2m == 14) { 
-  diff_threshold = 128
+  diff_threshold = 128L
 } else if (log2m == 16) {
-  diff_threshold = 256
+  diff_threshold = 256L
 } else if (log2m == 18) {
-  diff_threshold = 1024
+  diff_threshold = 1024L
 } else {
   stop("Invalid log2m value.")
 }
@@ -274,10 +281,10 @@ What are the questions?
 
 stats = get_stats(packets, log2n, log2m)
 
-stats
-
 summary = stats %>% 
-  summarize(n = n(),
+  summarize(log2m  = log2m,
+            t = diff_threshold,
+            n = n(),
             t_evil = sum(n_evil),
             t_tp   = sum(n_tp),
             t_good = sum(n_good),
@@ -293,11 +300,15 @@ summary = stats %>%
          i95_fp_lb = p_fp - i95_fp,
          i95_fp_ub = p_fp + i95_fp) %>%
   mutate_if(is.double, funs(round(.,4))) %>%
-  select(n, 
+  select(log2m, t, 
          p_tp, i95_tp_lb, i95_tp_ub, 
          p_fp, i95_fp_lb, i95_fp_ub)
 
-summary  
+summary
+
+summary_all = bind_rows(summary_all, summary)
+
+summary_all 
   
 ```
 
