@@ -228,6 +228,8 @@ summary_all
 
 ```{r diversion_stats}
 
+stats_all = tibble()
+
 for(log2m in seq(14, 18, by=2)) {
 
   log2m = as.integer(log2m)
@@ -248,6 +250,9 @@ for(log2m in seq(14, 18, by=2)) {
   divert = function(diff) (diff >= diff_threshold)
   packets = packets %>% mutate(diverted=divert(diff)) %>% group_by(ow)
 
+  stats = get_stats(packets) %>% mutate(log2n=log2n, log2m=log2m, t=diff_threshold)
+  stats_all = bind_rows(stats_all, stats)
+    
   graph_path = str_c("graphs_", log2m)
   m_annotation = str_c("(m = 2^", log2m, ")")   
   
