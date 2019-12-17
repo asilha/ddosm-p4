@@ -233,6 +233,12 @@ get_summary = function(stats, log2n, log2m, t) {
   
 }
 
+my_ggsave = function(plot, path, filename) { 
+  
+  ggsave(plot = plot, path = path, filename = stringr::str_c(filename, ".pdf"))
+  ggsave(plot = plot, path = path, filename = stringr::str_c(filename, ".svg"))
+  
+}
 
 graph_actual_good = function(packets) { packets %>% filter(attack==FALSE)   %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("Actual Good") }
 graph_actual_evil = function(packets) { packets %>% filter(attack==TRUE)    %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("Actual Evil") }
