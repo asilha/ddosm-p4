@@ -32,9 +32,9 @@ n = as.integer(2^log2n)
 
 pcap_dir = "~/p4sec/ddosm-p4/pcaps"
 
-pcap_csv_m14 = str_c(pcap_dir,"/ddos20m14b/if3_attack_out.csv")
-pcap_csv_m16 = str_c(pcap_dir,"/ddos20m16b/if3_attack_out.csv")
-pcap_csv_m18 = str_c(pcap_dir,"/ddos20m18b/if3_attack_out.csv")
+pcap_csv_m14 = str_c(pcap_dir,"/ddos20m14b/if3_attack_out.csv.gz")
+pcap_csv_m16 = str_c(pcap_dir,"/ddos20m16b/if3_attack_out.csv.gz")
+pcap_csv_m18 = str_c(pcap_dir,"/ddos20m18b/if3_attack_out.csv.gz")
 
 log2m = as.integer(14)
 packets_m14 = read_pcap_csv(log2n, log2m, pcap_csv=pcap_csv_m14) 
@@ -99,13 +99,13 @@ tcad_m18 = read_tcad_trace(tcad_m18_trace)
 title = "Entropy for each Observation Window "
 
 get_plot_tcad(tcad_m14, tcad_m14_k) + labs(title=str_c(title,"(m = 2^14)"))
-ggsave(path="graphs_14", filename="entropy_all.svg")
+my_ggsave(plot=last_plot(), path="graphics_m14", filename="entropy_all")
 
 get_plot_tcad(tcad_m16, tcad_m16_k) + labs(title=str_c(title,"(m = 2^16)"))
-ggsave(path="graphs_16", filename="entropy_all.svg")
+my_ggsave(plot=last_plot(), path="graphics_m16", filename="entropy_all")
 
 get_plot_tcad(tcad_m18, tcad_m18_k) + labs(title=str_c(title,"(m = 2^18)"))
-ggsave(path="graphs_18", filename="entropy_all.svg")
+my_ggsave(plot=last_plot(), path="graphics_m18", filename="entropy_all")
 
 ```
 
@@ -118,13 +118,13 @@ We have the graph for the entire experiments. Now we need to focus in the attack
 title = "Entropy for each Observation Window - Attack Phase "
 
 get_plot_tcad_attack(tcad_m14, tcad_m14_k, log2n, 14) + labs(title=str_c(title,"(m = 2^14)"))
-ggsave(path="graphs_14", filename="entropy_attack.svg")
+my_ggsave(plot=last_plot(), path="graphics_m14", filename="entropy_attack")
 
 get_plot_tcad_attack(tcad_m16, tcad_m16_k, log2n, 16) + labs(title=str_c(title,"(m = 2^16)"))
-ggsave(path="graphs_16", filename="entropy_attack.svg")
+my_ggsave(plot=last_plot(), path="graphics_m16", filename="entropy_attack")
 
 get_plot_tcad_attack(tcad_m18, tcad_m18_k, log2n, 18) + labs(title=str_c(title,"(m = 2^18)"))
-ggsave(path="graphs_18", filename="entropy_attack.svg")
+my_ggsave(plot=last_plot(), path="graphics_m18", filename="entropy_attack")
 
 ```
 
@@ -152,7 +152,7 @@ for(log2m in seq(14, 18, by=2)) {
   
   deltas = summarize_deltas(log2n, log2m, packets)
 
-  graph_path = str_c("graphs_", log2m)
+  graph_path = str_c("graphics_m", log2m)
   m_annotation = str_c("(m = 2^", log2m, ")") 
   dot_size = 2.0
 
@@ -165,7 +165,7 @@ for(log2m in seq(14, 18, by=2)) {
   
   deltas %>% ggplot(aes(x=ow, shape=attack)) + delta_plot_options
   
-  ggsave(path=graph_path, filename="diffs.svg")  
+  my_ggsave(plot=last_plot(), path=graph_path, filename="diffs")  
   
 }
 
@@ -253,16 +253,16 @@ for(log2m in seq(14, 18, by=2)) {
   stats = get_stats(packets) %>% mutate(log2n=log2n, log2m=log2m, t=diff_threshold)
   stats_all = bind_rows(stats_all, stats)
     
-  graph_path = str_c("graphs_", log2m)
+  graph_path = str_c("graphics_m", log2m)
   m_annotation = str_c("(m = 2^", log2m, ")")   
   
   # It would be cool to plot several box plots. 
   graph_false_negatives(packets)
-  ggsave(path=graph_path, filename="false_negatives.svg")
+  my_ggsave(plot=last_plot(), path=graph_path, filename="false_negatives")
   graph_false_positives(packets)
-  ggsave(path=graph_path, filename="false_positives.svg")
+  my_ggsave(plot=last_plot(), path=graph_path, filename="false_positives")
   graph_results(packets, m_annotation)
-  ggsave(path=graph_path, filename="results.svg")
+  my_ggsave(plot=last_plot(), path=graph_path, filename="results")
 
 }
 
@@ -277,11 +277,11 @@ for(log2m in seq(14, 18, by=2)) {
 # src_distinct = packets %>% group_by(ow, attack, diff) %>% summarize(srcs=n_distinct(src))
 # src_distinct %>% ggplot(aes(diff, srcs, color=attack)) + graph_options
 # 
-# ggsave(path=graph_path, filename="src_delta_distribution.svg")
+# my_ggsave(plot=last_plot(), path=graph_path, filename="src_delta_distribution")
 # 
 # dst_distinct = packets %>% group_by(ow, attack, diff) %>% summarize(dsts=n_distinct(dst))
 # dst_distinct %>% ggplot(aes(diff, dsts, color=attack)) + graph_options
 # 
-# ggsave(path=graph_path, filename="dst_delta_distribution.svg")
+# my_ggsave(plot=last_plot(), path=graph_path, filename="dst_delta_distribution")
 
 ```
