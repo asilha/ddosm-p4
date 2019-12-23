@@ -9,91 +9,32 @@ output:
 
 source("ddosm.R")
 
+knitr::opts_chunk$set(tidy=TRUE, tidy.opts=list(width.cutoff=160))
+
 ```
 
 # Overview
 
 ## Parameters
 
-### Dataset
+We used a packet trace with n=2^24 packets in the detection phase.
 
-We used a dataset with 2^24 packets in the detection phase.
+```{r parameters}
 
-### Sensitivity Coefficients
-
-Our experiments with tcad_m_levels.py show us candidate values for k, as follows: 
-
-Log2(m) | k     | FPR
---------|-------|-----
-14      | 4.125 | 1.7%
-16      | 4.500 | 1.6%
-18      | 3.625 | 0.0%
-
-### TCAD Traces
-
-[Source: DDoS Mitigation.ipynb, section Finding TCAD Values]
-
-  tcad_m_2_14_k_4.125.log
-  tcad_m_2_16_k_4.500.log
-  tcad_m_2_18_k_3.625.log
-
-# Workload Characterization
-
-## Reading TCAD Trace Files
-
-```{r read_tcad_traces, include=TRUE}
-
-tcad_m14 = read_tcad_trace(tcad_m14_trace)
-tcad_m16 = read_tcad_trace(tcad_m16_trace)
-tcad_m18 = read_tcad_trace(tcad_m18_trace)
+log2n = as.integer(24)  # n is passed to trafg. 
+n = as.integer(2^log2n)
 
 ```
 
-## Entropy Overview
-
-```{r entropy_overview, include=TRUE}
-
-title = "Entropy for each Observation Window "
-
-get_plot_tcad(tcad_m14, tcad_m14_k) + labs(title=str_c(title,"(m = 2^14)"))
-ggsave(path="graphs_14", filename="entropy_all.svg")
-
-get_plot_tcad(tcad_m16, tcad_m16_k) + labs(title=str_c(title,"(m = 2^16)"))
-ggsave(path="graphs_16", filename="entropy_all.svg")
-
-get_plot_tcad(tcad_m18, tcad_m18_k) + labs(title=str_c(title,"(m = 2^18)"))
-ggsave(path="graphs_18", filename="entropy_all.svg")
-
-```
-
-## Entropy Under Attack
-
-We have the graph for the entire experiments. Now we need to focus in the attack.
-
-```{r entropy_under_attack, include=TRUE}
-
-title = "Entropy for each Observation Window - Attack Phase "
-
-get_plot_tcad_attack(tcad_m14, tcad_m14_k, log2n, 14) + labs(title=str_c(title,"(m = 2^14)"))
-ggsave(path="graphs_14", filename="entropy_attack.svg")
-
-get_plot_tcad_attack(tcad_m16, tcad_m16_k, log2n, 16) + labs(title=str_c(title,"(m = 2^16)"))
-ggsave(path="graphs_16", filename="entropy_attack.svg")
-
-get_plot_tcad_attack(tcad_m18, tcad_m18_k, log2n, 18) + labs(title=str_c(title,"(m = 2^18)"))
-ggsave(path="graphs_18", filename="entropy_attack.svg")
-
-
-
-```
-
-# Attack Mitigation
-
-## Loading 
+## Packet Traces 
 
 ```{r loading}
 
-log2n = as.integer(24)
+pcap_dir = "~/p4sec/ddosm-p4/pcaps"
+
+pcap_csv_m14 = str_c(pcap_dir,"/ddos20m14b/if3_attack_out.csv.gz")
+pcap_csv_m16 = str_c(pcap_dir,"/ddos20m16b/if3_attack_out.csv.gz")
+pcap_csv_m18 = str_c(pcap_dir,"/ddos20m18b/if3_attack_out.csv.gz")
 
 log2m = as.integer(14)
 packets_m14 = read_pcap_csv(log2n, log2m, pcap_csv=pcap_csv_m14) 
@@ -115,11 +56,83 @@ packets_m18 = packets_m18 %>% filter(ow >= attack_first_ow, ow <= attack_last_ow
 
 ```
 
+## TCAD Traces
 
-## Deltas and Graphs
+Sensitivity Coefficients 
+
+Our experiments with tcad_m_levels.py show us candidate values for k, as follows: 
+
+Log2(m) | k     | FPR
+--------|-------|-----
+14      | 4.125 | 1.7%
+16      | 4.500 | 1.6%
+18      | 3.625 | 0.0%
+
+[Source: DDoS Mitigation.ipynb, section Finding TCAD Values]
+
+```{r }
+
+trace_dir = "~/p4sec/ddosm-p4/lab/ddos20/tcad_logs"
+
+tcad_m14_k = 4.125
+tcad_m16_k = 4.500
+tcad_m18_k = 3.625
+
+tcad_m14_trace = str_c(trace_dir,"/tcad_m_2_14_k_4.125.log")
+tcad_m16_trace = str_c(trace_dir,"/tcad_m_2_16_k_4.500.log")
+tcad_m18_trace = str_c(trace_dir,"/tcad_m_2_18_k_3.625.log")
+
+tcad_m14 = read_tcad_trace(tcad_m14_trace)
+tcad_m16 = read_tcad_trace(tcad_m16_trace)
+tcad_m18 = read_tcad_trace(tcad_m18_trace)
+
+
+
+```
+
+# Workload Characterization
+
+## Entropy Overview
+
+```{r entropy_overview, include=TRUE}
+
+title = "Entropy for each Observation Window "
+
+get_plot_tcad(tcad_m14, tcad_m14_k) + labs(title=str_c(title,"(m = 2^14)"))
+my_ggsave(plot=last_plot(), path="graphics_m14", filename="entropy_all")
+
+get_plot_tcad(tcad_m16, tcad_m16_k) + labs(title=str_c(title,"(m = 2^16)"))
+my_ggsave(plot=last_plot(), path="graphics_m16", filename="entropy_all")
+
+get_plot_tcad(tcad_m18, tcad_m18_k) + labs(title=str_c(title,"(m = 2^18)"))
+my_ggsave(plot=last_plot(), path="graphics_m18", filename="entropy_all")
+
+```
+
+## Entropy Under Attack
+
+We have the graph for the entire experiments. Now we need to focus in the attack.
+
+```{r entropy_under_attack, include=TRUE}
+
+title = "Entropy for each Observation Window - Attack Phase "
+
+get_plot_tcad_attack(tcad_m14, tcad_m14_k, log2n, 14) + labs(title=str_c(title,"(m = 2^14)"))
+my_ggsave(plot=last_plot(), path="graphics_m14", filename="entropy_attack")
+
+get_plot_tcad_attack(tcad_m16, tcad_m16_k, log2n, 16) + labs(title=str_c(title,"(m = 2^16)"))
+my_ggsave(plot=last_plot(), path="graphics_m16", filename="entropy_attack")
+
+get_plot_tcad_attack(tcad_m18, tcad_m18_k, log2n, 18) + labs(title=str_c(title,"(m = 2^18)"))
+my_ggsave(plot=last_plot(), path="graphics_m18", filename="entropy_attack")
+
+```
+
+# Attack Mitigation
+
+## Typical Deltas
 
 For each OW, what are the typical frequency deltas for attack packets? 
-
 
 ```{r typical_deltas}
 
@@ -128,25 +141,21 @@ for(log2m in seq(14, 18, by=2)) {
   log2m = as.integer(log2m)
   
   if (log2m == 14)  {
-    packets = packets_m14 %>% select(-src,-dst)
-    diff_threshold = 512
+    packets = packets_m14 
   } else if (log2m == 16) {
-    packets = packets_m16 %>% select(-src,-dst)
-    diff_threshold = 768
+    packets = packets_m16 
   } else if (log2m == 18) {
-    packets = packets_m18 %>% select(-src,-dst)
-    diff_threshold = 1280
+    packets = packets_m18 
   } else {
     stop("Invalid log2m value.")
   }
   
   deltas = summarize_deltas(log2n, log2m, packets)
-  
-  dot_size = 2.0
-  
-  graph_path = str_c("graphs_", log2m)
+
+  graph_path = str_c("graphics_m", log2m)
   m_annotation = str_c("(m = 2^", log2m, ")") 
-  
+  dot_size = 2.0
+
   delta_plot_options = list(
 #    geom_point(aes(y=diffq1), color="blue4", size=dot_size),
     geom_point(aes(y=diffq2), color="blue4", size=dot_size),
@@ -154,70 +163,108 @@ for(log2m in seq(14, 18, by=2)) {
     labs(x="Observation Window", y="Median Address Frequency Variation", title = str_c("Median Address Frequency Variations ", m_annotation)),
     theme_classic())
   
-  deltas %>% 
-    ggplot(aes(x=ow, shape=attack)) + delta_plot_options
+  deltas %>% ggplot(aes(x=ow, shape=attack)) + delta_plot_options
   
-  ggsave(path=graph_path, filename="diffs.svg")  
-  
-  # It would be cool to plot several box plots. 
-
-  divert = function(diff) (diff >= diff_threshold)
-
-  packets = packets %>% mutate(diverted=divert(diff)) %>% group_by(ow)
-  
-  graph_false_negatives(packets)
-  ggsave(path=graph_path, filename="false_negatives.svg")
-  graph_false_positives(packets)
-  ggsave(path=graph_path, filename="false_positives.svg")
-  graph_results(packets, m_annotation)
-  ggsave(path=graph_path, filename="results.svg")
-    
-  # Adjust scale, add legitimate and attack percentage lines. 
-
+  my_ggsave(plot=last_plot(), path=graph_path, filename="diffs")  
   
 }
 
 
+```
+
+## Diversion Thresholds
+
+We want to find the best value for t, considering its effect on the accuracy of the mechanism. 
+
+Base Stats and Confidence Intervals: TPR and FPR are proportions whose values we need to estimate. Let X be a random variable whose value is 1 when a classification succeeds, and 0 otherwise. Consequently, X follows a a Bernoulli distribution with probability p. We can use our sample to estimate the mean value of p. This sample mean has a sampling error approximately equal to sqrt(p * (1-p) / n), where n is the sample size. Considering the attack as a whole, what is the 95% confidence interval for the mean TPR and FPR?       
+
+```{r best_threshold, include=TRUE}
+
+summary_all = tibble() 
+
+for(log2m in seq(14, 18, by=2)) {
+
+  log2m = as.integer(log2m)
+  
+  if (log2m == 14)  {
+    packets = packets_m14 
+  } else if (log2m == 16) {
+    packets = packets_m16 
+  } else if (log2m == 18) {
+    packets = packets_m18 
+  } else {
+    stop("Invalid log2m value.")
+  }
+
+  for(diff_threshold in seq(-2048, 2048, by=128)) {
+  
+    divert = function(diff) (diff >= diff_threshold)
+    packets = packets %>% mutate(diverted=divert(diff)) %>% group_by(ow)
+    stats = get_stats(packets)
+    summary = get_summary(stats, log2n, log2m, diff_threshold)
+    summary_all = bind_rows(summary_all, summary)
+  
+  }
+  
+
+}
+
+summary_all
+
+# I have saved a good summary in this file: 
+
+# summary_all = read_csv2("summary_all.csv")
+
+# summary_all
+
+# Log2m == 14: ideal = 512
+# Log2m == 16: ideal = 768
+# Log2m == 18: ideal = 1280
 
 
 ```
 
-## Classification and Statistics
+## Diversion Statistics
 
-We want to find the best value for t, considering its effect on the accuracy of the mechanism. 
+```{r diversion_stats}
 
-Base Stats and Confidence Intervals: TPR and FPR are proportions whose values we need to estimate.
+stats_all = tibble()
 
-Let X be a random variable whose value is 1 when a classification succeeds, and 0 otherwise. Consequently, X follows a a Bernoulli distribution with probability p. We can use our sample to estimate the mean value of p. This sample mean has a sampling error approximately equal to sqrt(p * (1-p) / n), where n is the sample size (the total number of classification events).     
+for(log2m in seq(14, 18, by=2)) {
 
-1. Considering the attack as a whole, what are the TPR and the FPR? 
-2. Considering OWs, what are the TPR and the FPR? 
-3. Considering OWs, what is the 95% confidence interval for the mean TPR and FPR?  
+  log2m = as.integer(log2m)
+  
+  if (log2m == 14)  {
+    packets = packets_m14 
+    diff_threshold = 512
+  } else if (log2m == 16) {
+    packets = packets_m16 
+    diff_threshold = 768
+  } else if (log2m == 18) {
+    packets = packets_m18 
+    diff_threshold = 1280
+  } else {
+    stop("Invalid log2m value.")
+  }
 
-It is interesting to observe what happens **over time**, OW after OW. 
+  divert = function(diff) (diff >= diff_threshold)
+  packets = packets %>% mutate(diverted=divert(diff)) %>% group_by(ow)
 
-```{r fn_stats, include=TRUE}
+  stats = get_stats(packets) %>% mutate(log2n=log2n, log2m=log2m, t=diff_threshold)
+  stats_all = bind_rows(stats_all, stats)
+    
+  graph_path = str_c("graphics_m", log2m)
+  m_annotation = str_c("(m = 2^", log2m, ")")   
+  
+  # It would be cool to plot several box plots. 
+  graph_false_negatives(packets)
+  my_ggsave(plot=last_plot(), path=graph_path, filename="false_negatives")
+  graph_false_positives(packets)
+  my_ggsave(plot=last_plot(), path=graph_path, filename="false_positives")
+  graph_results(packets, m_annotation)
+  my_ggsave(plot=last_plot(), path=graph_path, filename="results")
 
-# summary_all = tibble() 
-
-# Log2m == 14: seq(-2048, 2048, by=128) ; ideal = 512
-# Log2m == 16: seq(-2048, 2048, by=128) ; ideal = 768
-# Log2m == 18: seq(-2048, 2048, by=128) ; ideal = 1280
-
-# for(diff_threshold in seq(-2048, 2048, by=128)) {
-# 
-#   divert = function(diff) (diff >= diff_threshold)
-#   packets = packets %>% mutate(diverted=divert(diff)) %>% group_by(ow)
-#   stats = get_stats(packets)
-#   summary = get_summary(stats, log2n, log2m, diff_threshold)
-#   summary_all = bind_rows(summary_all, summary)
-# 
-# }
-
-summary_all = read_csv2("summary_all.csv")
-
-summary_all
-
+}
 
 ```
 
@@ -230,11 +277,11 @@ summary_all
 # src_distinct = packets %>% group_by(ow, attack, diff) %>% summarize(srcs=n_distinct(src))
 # src_distinct %>% ggplot(aes(diff, srcs, color=attack)) + graph_options
 # 
-# ggsave(path=graph_path, filename="src_delta_distribution.svg")
+# my_ggsave(plot=last_plot(), path=graph_path, filename="src_delta_distribution")
 # 
 # dst_distinct = packets %>% group_by(ow, attack, diff) %>% summarize(dsts=n_distinct(dst))
 # dst_distinct %>% ggplot(aes(diff, dsts, color=attack)) + graph_options
 # 
-# ggsave(path=graph_path, filename="dst_delta_distribution.svg")
+# my_ggsave(plot=last_plot(), path=graph_path, filename="dst_delta_distribution")
 
 ```
