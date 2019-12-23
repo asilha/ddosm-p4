@@ -2,26 +2,6 @@ library(reshape2)
 library(stringr)
 library(svglite)
 library(tidyverse)
-knitr::opts_chunk$set(tidy=TRUE, tidy.opts=list(width.cutoff=160))
-
-log2n = as.integer(24)  # n is passed to trafg. 
-n = as.integer(2^log2n)
-
-pcap_dir = "~/p4sec/ddosm-p4/pcaps"
-
-pcap_csv_m14 = str_c(pcap_dir,"/ddos20m14b/if3_attack_out.csv")
-pcap_csv_m16 = str_c(pcap_dir,"/ddos20m16b/if3_attack_out.csv")
-pcap_csv_m18 = str_c(pcap_dir,"/ddos20m18b/if3_attack_out.csv")
-
-tcad_m14_k = 4.125
-tcad_m16_k = 4.500
-tcad_m18_k = 3.625
-
-trace_dir = "~/p4sec/ddosm-p4/lab/ddos20/tcad_logs"
-
-tcad_m14_trace = str_c(trace_dir,"/tcad_m_2_14_k_4.125.log")
-tcad_m16_trace = str_c(trace_dir,"/tcad_m_2_16_k_4.500.log")
-tcad_m18_trace = str_c(trace_dir,"/tcad_m_2_18_k_3.625.log")
 
 # Function inputs are expressed in numbers of packets.
 #   Log2n: Length of the detection phase, passed to trafg (as '-n 1048576', for instance).
@@ -253,6 +233,12 @@ get_summary = function(stats, log2n, log2m, t) {
   
 }
 
+my_ggsave = function(plot, path, filename) { 
+  
+  ggsave(plot = plot, path = path, filename = stringr::str_c(filename, ".pdf"))
+  ggsave(plot = plot, path = path, filename = stringr::str_c(filename, ".svg"))
+  
+}
 
 graph_actual_good = function(packets) { packets %>% filter(attack==FALSE)   %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("Actual Good") }
 graph_actual_evil = function(packets) { packets %>% filter(attack==TRUE)    %>% summarize(n=n()) %>% ggplot(mapping=aes(x=ow,y=n)) + geom_point() + ggtitle("Actual Evil") }
