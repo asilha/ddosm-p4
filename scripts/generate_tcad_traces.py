@@ -7,27 +7,28 @@ for i in range(0,65):    # This goes from 0.000 to 8.000
     kvalues.append(i/8.0)
 
 mvalues = []
-for i in range(13,19):  # This goes from 13 to 18.
+for i in range(18,19):  # This goes from 18 to 18.
     mvalues.append(i)
 
-training_packets_log2_n = 23
+# training_packets_log2_n = 23
 
 paths = {}
-paths["tcad_bin"]= "/media/p4/ddosd-cpp/bin"
-paths["working_dir"] = "/media/p4/p4damp/datasets/ddos20/ddos20_results"
+paths["tcad_bin"]= "~/p4sec/ddosd-cpp/bin"
+paths["ee_logs"] = "~/p4sec/ddosm-p4/lab/ddos20-full/ee_logs"
+paths["tcad_logs"] = "~/p4sec/ddosm-p4/lab/ddos20-full/tcad_logs"
 
-summary_log = paths["working_dir"]+"/summary.log"   
+summary_log = paths["tcad_logs"]+"/summary.log"   
 
 with open(summary_log, "w") as f:
     f.write("log2m,k,n,t,p1len,p1alm,p2len,p2alm,p3len,p3alm,tpr,fpr,fpr1,fpr3\n")
 
 for mvalue in mvalues:
-    ee_log = paths["working_dir"]+"/ee_m_2_"+str(mvalue)+".log"
+    ee_log = paths["ee_logs"]+"/ee_m_2_"+str(mvalue)+".log"
     # print(ee_log)
      
-    training_length = 2 ** (training_packets_log2_n - mvalue)
+    training_length = 2**16 * 1000  # 2 ** (training_packets_log2_n - mvalue)
     for kvalue in kvalues:
-        tcad_log = paths["working_dir"]+"/tcad_m_2_"+str(mvalue)+"_k_"+ "{:.3f}".format(kvalue) +".log"
+        tcad_log = paths["tcad_logs"]+"/tcad_m_2_"+str(mvalue)+"_k_"+ "{:.3f}".format(kvalue) +".log"
         # print(tcad_log) 
         tcad_command = paths["tcad_bin"] + "/tcad -t " + str(training_length) + " -s 0.078125 -k " + str(kvalue) 
         # print(tcad_command)
