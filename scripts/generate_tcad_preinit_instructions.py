@@ -17,8 +17,8 @@ ow_field_names = ["timestamp", "src_ent", "src_ewma", "src_ewmmd", "dst_ent", "d
 for m in range(18,19,1):
     filename = "tcad_m_2_" + str(m) + "_k_" + "{:.3f}".format(k_values[m]) + ".log"
     print("Trace file:", filename)
-    t_exp = 24-m
-    t_end_ow = 2**t_exp
+    #t_exp = 24-m
+    t_end_ow = 250 # 2**t_exp
     print("Last training OW:", t_end_ow)
     with open(paths["working_dir"] + "/" + filename) as f: 
         line_num = 0
