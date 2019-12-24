@@ -24,7 +24,7 @@ def main():
     parser.add_argument("-l", "--log_path", help="Directory for ee trace output"),
     args = parser.parse_args()
 
-    print(args)
+    #print(args)
 
     ee_bin = "~/p4sec/ddosd-cpp/bin/ee"
     base_name = "ee_m_2_18" 
@@ -37,8 +37,8 @@ def main():
 
     # ./generate_ee_traces.py 
     # -i ~/p4sec/ddosm-p4/datasets/synthetic-ilha-ddos20-full/ddos20-full.pcap 
-    # -j ~/p4sec/ddosm-p4/labs/ddos20-full/ee_json/ee_m_2_18.json
-    # -l ~/p4sec/ddosm-p4/labs/ddos20-full/ee_logs/
+    # -j ~/p4sec/ddosm-p4/lab/ddos20-full/ee_json
+    # -l ~/p4sec/ddosm-p4/lab/ddos20-full/ee_logs
         
 if __name__ == '__main__':
     main()
