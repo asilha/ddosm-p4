@@ -50,13 +50,15 @@ def pkt_to_string_human_readable(ddosd):
 
 def handle_pkt(pkt):
     ddosd=pkt[DDoSD] 
-    print(pkt_to_string_human_readable(ddosd))
+    #print(pkt_to_string_human_readable(ddosd))
+    print(pkt_to_string(ddosd))
 
 def main():
     bind_layers(Ether, DDoSD, type=0x6605)
     bind_layers(DDoSD, IP, ethertype=0x0800)
     bind_layers(IP, DDoSDPayload, proto=253)
     packets = rdpcap('if4_stats_out.pcapng')
+    #packets = rdpcap('if4_stats_out.pcap')
     for packet in packets: 
     	handle_pkt(packet)
     	
