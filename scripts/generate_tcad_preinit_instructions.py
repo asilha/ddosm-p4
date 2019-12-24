@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 
 paths = {}
-paths["tcad_bin"]= "/media/p4/ddosd-cpp/bin"
-paths["working_dir"] = "/media/p4/p4damp/datasets/ddos20/ddos20_results"
+paths["tcad_bin"]= "~/p4sec/ddosd-cpp/bin"
+paths["working_dir"] = "/home/ilha/p4sec/ddosm-p4/lab/ddos20-full/tcad_logs"
 
 k_values = {}
 k_values[13] = 4.000
@@ -14,7 +14,7 @@ k_values[18] = 3.625
 
 ow_field_names = ["timestamp", "src_ent", "src_ewma", "src_ewmmd", "dst_ent", "dst_ewma", "dst_ewmmd", "alarm"]
 
-for m in range(13,19,1):
+for m in range(18,19,1):
     filename = "tcad_m_2_" + str(m) + "_k_" + "{:.3f}".format(k_values[m]) + ".log"
     print("Trace file:", filename)
     t_exp = 24-m
