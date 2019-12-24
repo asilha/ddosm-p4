@@ -15,7 +15,7 @@ for i in range(18,19):  # This goes from 18 to 18.
 paths = {}
 paths["tcad_bin"]= "~/p4sec/ddosd-cpp/bin"
 paths["ee_logs"] = "~/p4sec/ddosm-p4/lab/ddos20-full/ee_logs"
-paths["tcad_logs"] = "~/p4sec/ddosm-p4/lab/ddos20-full/tcad_logs"
+paths["tcad_logs"] = "/home/ilha/p4sec/ddosm-p4/lab/ddos20-full/tcad_logs"
 
 summary_log = paths["tcad_logs"]+"/summary.log"   
 
@@ -26,7 +26,7 @@ for mvalue in mvalues:
     ee_log = paths["ee_logs"]+"/ee_m_2_"+str(mvalue)+".log"
     # print(ee_log)
      
-    training_length = 2**16 * 1000  # 2 ** (training_packets_log2_n - mvalue)
+    training_length = 250  # 2 ** (training_packets_log2_n - mvalue)
     for kvalue in kvalues:
         tcad_log = paths["tcad_logs"]+"/tcad_m_2_"+str(mvalue)+"_k_"+ "{:.3f}".format(kvalue) +".log"
         # print(tcad_log) 
