@@ -37,6 +37,6 @@ for m in range(18,19,1):
                 print("register_write", "src_ewmmd",            0, ow_dict["src_ewmmd"])
                 print("register_write", "dst_ewma",             0, ow_dict["dst_ewma"])
                 print("register_write", "dst_ewmmd",            0, ow_dict["dst_ewmmd"])
-                print("register_write", "migration_t",          0, 10)
+                print("register_write", "mitigation_t",          0, 10)
                 break
             line=f.readline()
