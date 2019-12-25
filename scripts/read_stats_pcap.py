@@ -50,7 +50,8 @@ def pkt_to_string_human_readable(ddosd):
 
 def handle_pkt(pkt):
     ddosd=pkt[DDoSD] 
-    print(pkt_to_string_human_readable(ddosd))
+    #print(pkt_to_string_human_readable(ddosd))
+    print(pkt_to_string(ddosd))
 
 def main():
     bind_layers(Ether, DDoSD, type=0x6605)
