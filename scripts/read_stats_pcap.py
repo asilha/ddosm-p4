@@ -58,6 +58,7 @@ def main():
     bind_layers(DDoSD, IP, ethertype=0x0800)
     bind_layers(IP, DDoSDPayload, proto=253)
     packets = rdpcap('if4_stats_out.pcapng')
+    #packets = rdpcap('if4_stats_out.pcap')
     for packet in packets: 
     	handle_pkt(packet)
     	
