@@ -1,6 +1,8 @@
 reset_state
-set_queue_depth 4096000 2
-set_queue_depth 4096000 3
+set_queue_depth 1000000 1
+set_queue_depth 1000000 2
+set_queue_depth 1000000 3
+set_queue_depth 1000000 4
 mirroring_add 250 4
 table_clear ingress.ipv4_fib
 table_add ingress.ipv4_fib ingress.forward 0/0 => 2

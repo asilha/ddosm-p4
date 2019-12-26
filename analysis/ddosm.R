@@ -103,7 +103,7 @@ get_plot_tcad_attack = function(tcad, tcad_k, log2n, log2m) {
   
 }
 
-read_pcap_csv = function(log2n, log2m, pcap_csv) {
+read_pcap_csv = function(log2n, log2m, pcap_csv, attack_only) {
   
   m = as.integer(2^log2m)
   
@@ -138,6 +138,12 @@ read_pcap_csv = function(log2n, log2m, pcap_csv) {
   
   # Add the difference between dst_delta and src_delta
   packets = packets %>% mutate(diff = dst_delta - src_delta)
+  
+  # Keep only the attack phase. 
+  
+  if (attack_only) {
+    packets = packets %>% filter(ow >= attack_first(log2n,log2m) + 2, ow <= attack_last(log2n,log2m)) 
+  } 
   
   return(packets)
   
@@ -181,11 +187,10 @@ summarize_deltas = function (log2n, log2m, packets) {
 
 get_stats = function(packets) {
   
-  packets = packets %>% ungroup() 
+  # packets = packets %>% ungroup() 
   
   stats = packets %>% 
-    mutate(tp =  attack & diverted,
-           fp = !attack & diverted) %>% 
+    # mutate(tp =  attack & diverted, fp = !attack & diverted) %>% 
     group_by(ow) %>%
     summarize(n_good = sum(!attack),
               n_evil = sum(attack),
@@ -208,7 +213,7 @@ get_summary = function(stats, log2n, log2m, t) {
   summary = stats %>% 
     summarize(log2n = log2n,
               log2m  = log2m,
-              t = diff_threshold,
+              t = t,
               n = n(),
               t_evil = sum(n_evil),
               t_tp   = sum(n_tp),
@@ -220,10 +225,10 @@ get_summary = function(stats, log2n, log2m, t) {
            se_fp = sqrt(p_fp * (1 - p_fp) / n)) %>% 
     mutate(i95_tp = qnorm(0.975) * se_tp,
            i95_fp = qnorm(0.975) * se_fp) %>%
-    mutate(i95_tp_lb = p_tp - i95_tp,
-           i95_tp_ub = p_tp + i95_tp,
-           i95_fp_lb = p_fp - i95_fp,
-           i95_fp_ub = p_fp + i95_fp) %>%
+    mutate(i95_tp_lb = max(p_tp - i95_tp, 0),
+           i95_tp_ub = min(p_tp + i95_tp, 1),
+           i95_fp_lb = max(p_fp - i95_fp, 0),
+           i95_fp_ub = min(p_fp + i95_fp, 1)) %>%
     mutate_if(is.double, funs(round(.,4))) %>%
     select(log2n, log2m, t, 
            p_tp, i95_tp_lb, i95_tp_ub, 

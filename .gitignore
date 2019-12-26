@@ -17,4 +17,5 @@ scripts/lib/__pycache__
 .Rhistory
 .Rproj.user
 *.html
+desktop.ini
 workloads/*
