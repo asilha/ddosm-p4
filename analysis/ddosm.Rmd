@@ -21,8 +21,8 @@ We used a packet trace with n=2^24 packets in the detection phase.
 
 ```{r parameters}
 
-log2n = as.integer(24)  # n is passed to trafg. 
-n = as.integer(2^log2n)
+log2n = as.integer(24)   
+# n = as.integer(2^log2n) # n is passed to trafg
 
 ```
 
@@ -36,23 +36,23 @@ pcap_csv_m14 = str_c(pcap_dir,"/ddos20m14b/if3_attack_out.csv.gz")
 pcap_csv_m16 = str_c(pcap_dir,"/ddos20m16b/if3_attack_out.csv.gz")
 pcap_csv_m18 = str_c(pcap_dir,"/ddos20m18b/if3_attack_out.csv.gz")
 
-log2m = as.integer(14)
-packets_m14 = read_pcap_csv(log2n, log2m, pcap_csv=pcap_csv_m14) 
-attack_first_ow = attack_first(log2n, log2m) + 2 # Diversion begins at the second OW under attack. 
-attack_last_ow = attack_last(log2n, log2m)
-packets_m14 = packets_m14 %>% filter(ow >= attack_first_ow, ow <= attack_last_ow) 
+# log2m = as.integer(14)
+packets_m14 = read_pcap_csv(log2n=log2n, log2m=14, pcap_csv=pcap_csv_m14, attack_only=TRUE) 
+# attack_first_ow = attack_first(log2n, log2m) + 2 # Diversion begins at the second OW under attack. 
+# attack_last_ow = attack_last(log2n, log2m)
+# packets_m14 = packets_m14 %>% filter(ow >= attack_first_ow, ow <= attack_last_ow) 
 
-log2m = as.integer(16)
-packets_m16 = read_pcap_csv(log2n, log2m, pcap_csv=pcap_csv_m16)  
-attack_first_ow = attack_first(log2n, log2m) + 2 # Diversion begins at the second OW under attack. 
-attack_last_ow = attack_last(log2n, log2m)
-packets_m16 = packets_m16 %>% filter(ow >= attack_first_ow, ow <= attack_last_ow) 
+# log2m = as.integer(16)
+packets_m16 = read_pcap_csv(log2n=log2n, log2m=16, pcap_csv=pcap_csv_m16, attack_only=TRUE) 
+# attack_first_ow = attack_first(log2n, log2m) + 2 # Diversion begins at the second OW under attack. 
+# attack_last_ow = attack_last(log2n, log2m)
+# packets_m16 = packets_m16 %>% filter(ow >= attack_first_ow, ow <= attack_last_ow) 
 
-log2m = as.integer(18)
-packets_m18 = read_pcap_csv(log2n, log2m, pcap_csv=pcap_csv_m18) 
-attack_first_ow = attack_first(log2n, log2m) + 2 # Diversion begins at the second OW under attack. 
-attack_last_ow = attack_last(log2n, log2m)
-packets_m18 = packets_m18 %>% filter(ow >= attack_first_ow, ow <= attack_last_ow) 
+# log2m = as.integer(18)
+packets_m18 = read_pcap_csv(log2n=log2n, log2m=18, pcap_csv=pcap_csv_m18, attack_only=TRUE) 
+# attack_first_ow = attack_first(log2n, log2m) + 2 # Diversion begins at the second OW under attack. 
+# attack_last_ow = attack_last(log2n, log2m)
+# packets_m18 = packets_m18 %>% filter(ow >= attack_first_ow, ow <= attack_last_ow) 
 
 ```
 
@@ -72,20 +72,19 @@ Log2(m) | k     | FPR
 
 ```{r }
 
-trace_dir = "~/p4sec/ddosm-p4/lab/ddos20/tcad_logs"
+tcad.trace.dir = "~/p4sec/ddosm-p4/lab/ddos20/tcad_logs"
 
-tcad_m14_k = 4.125
-tcad_m16_k = 4.500
-tcad_m18_k = 3.625
+tcad.m14.k = 4.125
+tcad.m16.k = 4.500
+tcad.m18.k = 3.625
 
-tcad_m14_trace = str_c(trace_dir,"/tcad_m_2_14_k_4.125.log")
-tcad_m16_trace = str_c(trace_dir,"/tcad_m_2_16_k_4.500.log")
-tcad_m18_trace = str_c(trace_dir,"/tcad_m_2_18_k_3.625.log")
+tcad.m14.trace = str_c(tcad.trace.dir,"/tcad_m_2_14_k_4.125.log")
+tcad.m16.trace = str_c(tcad.trace.dir,"/tcad_m_2_16_k_4.500.log")
+tcad.m18.trace = str_c(tcad.trace.dir,"/tcad_m_2_18_k_3.625.log")
 
-tcad_m14 = read_tcad_trace(tcad_m14_trace)
-tcad_m16 = read_tcad_trace(tcad_m16_trace)
-tcad_m18 = read_tcad_trace(tcad_m18_trace)
-
+tcad.m14 = read_tcad_trace(tcad.m14.trace)
+tcad.m16 = read_tcad_trace(tcad.m16.trace)
+tcad.m18 = read_tcad_trace(tcad.m18.trace)
 
 
 ```
@@ -96,15 +95,15 @@ tcad_m18 = read_tcad_trace(tcad_m18_trace)
 
 ```{r entropy_overview, include=TRUE}
 
-title = "Entropy for each Observation Window "
+entropy.title = "Entropy for each Observation Window "
 
-get_plot_tcad(tcad_m14, tcad_m14_k) + labs(title=str_c(title,"(m = 2^14)"))
+get_plot_tcad(tcad.m14, tcad.m14.k) + labs(title=str_c(entropy.title,"(m = 2^14)"))
 my_ggsave(plot=last_plot(), path="graphics_m14", filename="entropy_all")
 
-get_plot_tcad(tcad_m16, tcad_m16_k) + labs(title=str_c(title,"(m = 2^16)"))
+get_plot_tcad(tcad.m16, tcad.m16.k) + labs(title=str_c(entropy.title,"(m = 2^16)"))
 my_ggsave(plot=last_plot(), path="graphics_m16", filename="entropy_all")
 
-get_plot_tcad(tcad_m18, tcad_m18_k) + labs(title=str_c(title,"(m = 2^18)"))
+get_plot_tcad(tcad.m18, tcad.m18.k) + labs(title=str_c(entropy.title,"(m = 2^18)"))
 my_ggsave(plot=last_plot(), path="graphics_m18", filename="entropy_all")
 
 ```
@@ -117,13 +116,13 @@ We have the graph for the entire experiments. Now we need to focus in the attack
 
 title = "Entropy for each Observation Window - Attack Phase "
 
-get_plot_tcad_attack(tcad_m14, tcad_m14_k, log2n, 14) + labs(title=str_c(title,"(m = 2^14)"))
+get_plot_tcad_attack(tcad.m14, tcad.m14.k, log2n, 14) + labs(title=str_c(title,"(m = 2^14)"))
 my_ggsave(plot=last_plot(), path="graphics_m14", filename="entropy_attack")
 
-get_plot_tcad_attack(tcad_m16, tcad_m16_k, log2n, 16) + labs(title=str_c(title,"(m = 2^16)"))
+get_plot_tcad_attack(tcad.m16, tcad.m16.k, log2n, 16) + labs(title=str_c(title,"(m = 2^16)"))
 my_ggsave(plot=last_plot(), path="graphics_m16", filename="entropy_attack")
 
-get_plot_tcad_attack(tcad_m18, tcad_m18_k, log2n, 18) + labs(title=str_c(title,"(m = 2^18)"))
+get_plot_tcad_attack(tcad.m18, tcad.m18.k, log2n, 18) + labs(title=str_c(title,"(m = 2^18)"))
 my_ggsave(plot=last_plot(), path="graphics_m18", filename="entropy_attack")
 
 ```
@@ -247,7 +246,7 @@ summary_all_x %>%
   geom_line(aes(y=mean), linetype="dashed" ) + 
   geom_point(aes(y=mean), size=2) + 
   geom_errorbar(aes(ymin=lb, ymax=ub)) + 
-  scale_color_manual(name="type", values=c("blue","red")) +
+  scale_color_manual(name="type", values=c("red","blue")) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
   labs(x="Mitigation Threshold (t)", y="") + 
   facet_grid(rows = vars(log2m), labeller = label_both) +
@@ -285,7 +284,10 @@ for(log2m in seq(14, 18, by=2)) {
   }
 
   divert = function(diff) (diff >= diff_threshold)
-  packets = packets %>% mutate(diverted=divert(diff)) %>% group_by(ow)
+  packets = packets %>% 
+    mutate(diverted=divert(diff)) %>%
+    mutate(tp =  attack & diverted, fp = !attack & diverted) %>%
+    group_by(ow)
 
   stats = get_stats(packets) %>% mutate(log2n=log2n, log2m=log2m, t=diff_threshold)
   stats_all = bind_rows(stats_all, stats)
