@@ -236,22 +236,24 @@ summary_all %>%
 graph_path = "graphics"
 my_ggsave(plot=last_plot(), path=graph_path, filename="tpr_fpr")
 
-summary_all_tpr = summary_all %>% transmute(log2m=log2m, t=t, type="tpr", mean=p_tp, lb=i95_tp_lb, ub=i95_tp_ub) 
-summary_all_fpr = summary_all %>% transmute(log2m=log2m, t=t, type="fpr", mean=p_fp, lb=i95_fp_lb, ub=i95_fp_ub) 
+summary_all_tpr = summary_all %>% transmute(log2m=log2m, t=t, type="TPR", mean=p_tp, lb=i95_tp_lb, ub=i95_tp_ub) 
+summary_all_fpr = summary_all %>% transmute(log2m=log2m, t=t, type="FPR", mean=p_fp, lb=i95_fp_lb, ub=i95_fp_ub) 
 summary_all_x = bind_rows(summary_all_tpr, summary_all_fpr)
 
 summary_all_x
 
 summary_all_x %>% 
-  ggplot(aes(x=t, color=as.factor(log2m), shape=type)) + 
-  geom_line(aes(y=mean)) + 
-  geom_point(aes(y=mean)) + 
+  ggplot(aes(x=t, color=type, shape=type)) + 
+  geom_line(aes(y=mean), linetype="dashed" ) + 
+  geom_point(aes(y=mean), size=1.5) + 
   geom_errorbar(aes(ymin=lb, ymax=ub)) + 
-  scale_color_manual(name="log2m", breaks=c(14,16,18), values=c("red","green","blue")) +
+  scale_color_manual(name="type", values=c("blue","red")) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
   labs(x="Mitigation Threshold (t)", y="") + 
-  facet_grid(cols = vars(as.factor(log2m))) +
-  theme_classic()
+  facet_grid(rows = vars(log2m), labeller = label_both) +
+  theme_classic() +
+  theme(legend.title = element_blank())
+
 
 my_ggsave(plot=last_plot(), path=graph_path, filename="tpr_fpr_2")
 
