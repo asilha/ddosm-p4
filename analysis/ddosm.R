@@ -181,11 +181,10 @@ summarize_deltas = function (log2n, log2m, packets) {
 
 get_stats = function(packets) {
   
-  packets = packets %>% ungroup() 
+  # packets = packets %>% ungroup() 
   
   stats = packets %>% 
-    mutate(tp =  attack & diverted,
-           fp = !attack & diverted) %>% 
+    # mutate(tp =  attack & diverted, fp = !attack & diverted) %>% 
     group_by(ow) %>%
     summarize(n_good = sum(!attack),
               n_evil = sum(attack),
