@@ -199,11 +199,14 @@ for(log2m in seq(14, 18, by=2)) {
   for(diff_threshold in seq(-640, 640, by=32)) {
   
     divert = function(diff) (diff >= diff_threshold)
-    packets = packets %>% mutate(diverted=divert(diff)) %>% group_by(ow)
+    packets = packets %>% 
+      mutate(diverted=divert(diff)) %>% 
+      mutate(tp =  attack & diverted, fp = !attack & diverted) %>%
+      ungroup() # %>% group_by(ow)
     stats = get_stats(packets)
     summary = get_summary(stats, log2n, log2m, diff_threshold)
     summary_all = bind_rows(summary_all, summary)
-  
+    
   }
   
 
@@ -221,7 +224,6 @@ summary_all
 # Log2m == 16: ideal = 768
 # Log2m == 18: ideal = 1280
 
-
 summary_all %>% 
   ggplot(aes(x=t, color=as.factor(log2m))) + 
   geom_line(aes(y=p_tp)) + geom_point(aes(y=p_tp), shape=5) + 
@@ -231,9 +233,25 @@ summary_all %>%
   labs(x="Mitigation Threshold (t)", y="") + 
   theme_classic()
 
-
 graph_path = "graphics"
 my_ggsave(plot=last_plot(), path=graph_path, filename="tpr_fpr")
+
+summary_all_2 = summary_all %>% select(-log2n) %>% pivot_longer(p_tp:i95_fp_ub, names_to = "var") 
+
+summary_all_2  
+
+summary_all_2 %>% 
+  filter(var %in% c("p_tp","p_fp")) %>%
+  ggplot(aes(x=t, color=as.factor(log2m), shape=var)) + 
+  geom_line(aes(y=value)) + geom_point(aes(y=value)) + 
+  scale_color_manual(name="log2m", breaks=c(14,16,18), values=c("red","green","blue")) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  labs(x="Mitigation Threshold (t)", y="") + 
+  theme_classic()
+
+my_ggsave(plot=last_plot(), path=graph_path, filename="tpr_fpr_2")
+
+
 
 ```
 
