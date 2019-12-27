@@ -328,9 +328,29 @@ summary_all %>%
   labs(x="Mitigation Threshold (t)", y="") + 
   theme_classic()
 
-
 graph_path = "graphics"
 my_ggsave(plot=last_plot(), path=graph_path, filename="tpr_fpr")
+
+summary_all_2 = summary_all %>% select(-log2n) %>% pivot_longer(p_tp:i95_fp_ub, names_to = "var") 
+
+summary_all_x
+
+summary_all_x %>% 
+  ggplot(aes(x=t, color=as.factor(log2m), shape=type)) + 
+  geom_line(aes(y=mean)) + 
+  geom_point(aes(y=mean)) + 
+  geom_errorbar(aes(ymin=lb, ymax=ub)) + 
+  scale_color_manual(name="type", values=c("blue","red")) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  labs(x="Mitigation Threshold (t)", y="") + 
+  facet_grid(rows = vars(log2m), labeller = label_both) +
+  theme_classic() +
+  theme(legend.title = element_blank())
+
+
+my_ggsave(plot=last_plot(), path=graph_path, filename="tpr_fpr_2")
+
+
 
 ```
 
