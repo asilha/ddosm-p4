@@ -219,10 +219,10 @@ get_summary = function(stats, log2n, log2m, t) {
            se_fp = sqrt(p_fp * (1 - p_fp) / n)) %>% 
     mutate(i95_tp = qnorm(0.975) * se_tp,
            i95_fp = qnorm(0.975) * se_fp) %>%
-    mutate(i95_tp_lb = p_tp - i95_tp,
-           i95_tp_ub = p_tp + i95_tp,
-           i95_fp_lb = p_fp - i95_fp,
-           i95_fp_ub = p_fp + i95_fp) %>%
+    mutate(i95_tp_lb = max(p_tp - i95_tp, 0),
+           i95_tp_ub = min(p_tp + i95_tp, 1),
+           i95_fp_lb = max(p_fp - i95_fp, 0),
+           i95_fp_ub = min(p_fp + i95_fp, 1)) %>%
     mutate_if(is.double, funs(round(.,4))) %>%
     select(log2n, log2m, t, 
            p_tp, i95_tp_lb, i95_tp_ub, 
