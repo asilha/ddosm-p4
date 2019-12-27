@@ -236,18 +236,21 @@ summary_all %>%
 graph_path = "graphics"
 my_ggsave(plot=last_plot(), path=graph_path, filename="tpr_fpr")
 
-summary_all_2 = summary_all %>% select(-log2n) %>% pivot_longer(p_tp:i95_fp_ub, names_to = "var") 
+summary_all_tpr = summary_all %>% transmute(log2m=log2m, t=t, type="tpr", mean=p_tp, lb=i95_tp_lb, ub=i95_tp_ub) 
+summary_all_fpr = summary_all %>% transmute(log2m=log2m, t=t, type="fpr", mean=p_fp, lb=i95_fp_lb, ub=i95_fp_ub) 
+summary_all_x = bind_rows(summary_all_tpr, summary_all_fpr)
 
-summary_all_2  
+summary_all_x
 
-summary_all_2 %>% 
-  filter(var %in% c("p_tp","p_fp")) %>%
-  ggplot(aes(x=t, color=as.factor(log2m), shape=var)) + 
-  geom_line(aes(y=value)) + geom_point(aes(y=value)) + 
+summary_all_x %>% 
+  ggplot(aes(x=t, color=as.factor(log2m), shape=type)) + 
+  geom_line(aes(y=mean)) + 
+  geom_point(aes(y=mean)) + 
+  geom_errorbar(aes(ymin=lb, ymax=ub)) + 
   scale_color_manual(name="log2m", breaks=c(14,16,18), values=c("red","green","blue")) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
   labs(x="Mitigation Threshold (t)", y="") + 
-  #facet_grid(cols = vars(as.factor(log2m))) +
+  facet_grid(cols = vars(as.factor(log2m))) +
   theme_classic()
 
 my_ggsave(plot=last_plot(), path=graph_path, filename="tpr_fpr_2")
