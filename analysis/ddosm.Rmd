@@ -245,7 +245,7 @@ summary_all_x
 summary_all_x %>% 
   ggplot(aes(x=t, color=type, shape=type)) + 
   geom_line(aes(y=mean), linetype="dashed" ) + 
-  geom_point(aes(y=mean), size=1.5) + 
+  geom_point(aes(y=mean), size=2) + 
   geom_errorbar(aes(ymin=lb, ymax=ub)) + 
   scale_color_manual(name="type", values=c("blue","red")) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
