@@ -103,7 +103,7 @@ get_plot_tcad_attack = function(tcad, tcad_k, log2n, log2m) {
   
 }
 
-read_pcap_csv = function(log2n, log2m, pcap_csv) {
+read_pcap_csv = function(log2n, log2m, pcap_csv, attack_only) {
   
   m = as.integer(2^log2m)
   
@@ -138,6 +138,12 @@ read_pcap_csv = function(log2n, log2m, pcap_csv) {
   
   # Add the difference between dst_delta and src_delta
   packets = packets %>% mutate(diff = dst_delta - src_delta)
+  
+  # Keep only the attack phase. 
+  
+  if (attack_only) {
+    packets = packets %>% filter(ow >= attack_first(log2n,log2m) + 2, ow <= attack_last(log2n,log2m)) 
+  } 
   
   return(packets)
   
@@ -207,7 +213,7 @@ get_summary = function(stats, log2n, log2m, t) {
   summary = stats %>% 
     summarize(log2n = log2n,
               log2m  = log2m,
-              t = diff_threshold,
+              t = t,
               n = n(),
               t_evil = sum(n_evil),
               t_tp   = sum(n_tp),
