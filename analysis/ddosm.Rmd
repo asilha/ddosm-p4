@@ -231,7 +231,7 @@ summary_all %>%
   scale_color_manual(name="log2m", breaks=c(14,16,18), values=c("red","green","blue")) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
   labs(x="Mitigation Threshold (t)", y="") + 
-  theme_classic()
+  theme_classic() 
 
 graph_path = "graphics"
 my_ggsave(plot=last_plot(), path=graph_path, filename="tpr_fpr")
@@ -247,6 +247,7 @@ summary_all_2 %>%
   scale_color_manual(name="log2m", breaks=c(14,16,18), values=c("red","green","blue")) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
   labs(x="Mitigation Threshold (t)", y="") + 
+  #facet_grid(cols = vars(as.factor(log2m))) +
   theme_classic()
 
 my_ggsave(plot=last_plot(), path=graph_path, filename="tpr_fpr_2")
