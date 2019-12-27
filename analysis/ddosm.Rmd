@@ -87,8 +87,6 @@ tcad.m16 = read_tcad_trace(tcad.m16.trace)
 tcad.m18 = read_tcad_trace(tcad.m18.trace)
 
 
-
-
 ```
 
 # Workload Characterization
@@ -275,72 +273,6 @@ summary_all_x %>%
   geom_point(aes(y=mean), size=2) + 
   geom_errorbar(aes(ymin=lb, ymax=ub)) + 
   scale_color_manual(name="type", values=c("red","blue")) +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
-  labs(x="Mitigation Threshold (t)", y="") + 
-  facet_grid(rows = vars(log2m), labeller = label_both) +
-  theme_classic() +
-  theme(legend.title = element_blank())
-
-summary_all
-
-# I have saved a good summary in this file: 
-
-# summary_all = read_csv2("summary_all.csv")
-
-# summary_all
-
-# Log2m == 14: ideal = 512
-# Log2m == 16: ideal = 768
-# Log2m == 18: ideal = 1280
-
-
-```
-
-## Diversion Statistics
-
-```{r diversion_stats}
-
-stats_all = tibble()
-
-for(log2m in seq(14, 18, by=2)) {
-
-  log2m = as.integer(log2m)
-  
-  if (log2m == 14)  {
-    packets = packets_m14 
-    diff_threshold = 512
-  } else if (log2m == 16) {
-    packets = packets_m16 
-    diff_threshold = 768
-  } else if (log2m == 18) {
-    packets = packets_m18 
-    diff_threshold = 1280
-  } else {
-    stop("Invalid log2m value.")
-  }
-
-summary_all %>% 
-  ggplot(aes(x=t, color=as.factor(log2m))) + 
-  geom_line(aes(y=p_tp)) + geom_point(aes(y=p_tp), shape=5) + 
-  geom_line(aes(y=p_fp)) + geom_point(aes(y=p_fp), shape=4) + 
-  scale_color_manual(name="log2m", breaks=c(14,16,18), values=c("red","green","blue")) +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
-  labs(x="Mitigation Threshold (t)", y="") + 
-  theme_classic()
-
-graph_path = "graphics"
-my_ggsave(plot=last_plot(), path=graph_path, filename="tpr_fpr")
-
-summary_all_2 = summary_all %>% select(-log2n) %>% pivot_longer(p_tp:i95_fp_ub, names_to = "var") 
-
-summary_all_x
-
-summary_all_x %>% 
-  ggplot(aes(x=t, color=as.factor(log2m), shape=type)) + 
-  geom_line(aes(y=mean)) + 
-  geom_point(aes(y=mean)) + 
-  geom_errorbar(aes(ymin=lb, ymax=ub)) + 
-  scale_color_manual(name="type", values=c("blue","red")) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
   labs(x="Mitigation Threshold (t)", y="") + 
   facet_grid(rows = vars(log2m), labeller = label_both) +
