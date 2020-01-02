@@ -14,9 +14,8 @@ $(PROJECT): $(SOURCES)
 	$(P4C) $(P4C_FLAGS) -o $(BUILD_DIR) $(SOURCE_DIR)/$(PROJECT).p4
 
 SS_PREFIX = /usr/local/bin
-SS_BIN = $(SS_PREFIX)/simple_switch --log-level warn
+SS_BIN = $(SS_PREFIX)/simple_switch --log-level off
 SS_CLI = $(SS_PREFIX)/simple_switch_CLI
-
 
 SCRIPT_DIR=scripts
 
@@ -37,6 +36,74 @@ run_without_config:	$(PROJECT)
 clean:
 	rm -rf $(BUILD_DIR) $(LOG_DIR) 
 
+# OK
+ddos20m18a_:
+	$(SS_BIN) --use-files 15 -i 1@$(PCAP_DIR)/$@/$(LOAD) -i 2@$(PCAP_DIR)/$@/$(GOOD) -i 3@$(PCAP_DIR)/$@/$(EVIL) -i 4@$(PCAP_DIR)/$@/$(STAT) $(BUILD_DIR)/ddosm.json &
+	sleep 5
+	$(SS_CLI) < $(LAB_DIR)/ddos20/control_rules/control_rules_base.txt
+	$(SS_CLI) < $(LAB_DIR)/ddos20/control_rules/control_rules_m_2_18.txt
+	# TODO Set the adequate mitigation threshold.
+	echo "register_write mitigation_t 0 10" | $(SS_CLI)
+	./scripts/monitor.sh $(PCAP_DIR)/$@
+	editcap -T ether $(PCAP_DIR)/$@/if2_legitimate_out.pcap $(PCAP_DIR)/$@/if2_legitimate_out.pcapng
+	editcap -T ether $(PCAP_DIR)/$@/if3_attack_out.pcap $(PCAP_DIR)/$@/if3_attack_out.pcapng
+	editcap -T ether $(PCAP_DIR)/$@/if4_stats_out.pcap $(PCAP_DIR)/$@/if4_stats_out.pcapng
+	rm -f $(PCAP_DIR)/$@/*_out.pcap
+
+ddos20m18a:
+	$(SS_BIN) --use-files 15 -i 1@$(PCAP_DIR)/$@/$(LOAD) -i 2@$(PCAP_DIR)/$@/$(GOOD) -i 3@$(PCAP_DIR)/$@/$(EVIL) -i 4@$(PCAP_DIR)/$@/$(STAT) $(BUILD_DIR)/ddosm.json &
+	sleep 5
+	$(SS_CLI) < $(LAB_DIR)/ddos20-full/control_rules/control_rules_base.txt
+	$(SS_CLI) < $(LAB_DIR)/ddos20-full/control_rules/control_rules_m_2_18.txt
+	# TODO Set the adequate mitigation threshold.
+	echo "register_write mitigation_t 0 10" | $(SS_CLI)
+	./scripts/monitor.sh $(PCAP_DIR)/$@
+	editcap -T ether $(PCAP_DIR)/$@/if2_legitimate_out.pcap $(PCAP_DIR)/$@/if2_legitimate_out.pcapng
+	editcap -T ether $(PCAP_DIR)/$@/if3_attack_out.pcap $(PCAP_DIR)/$@/if3_attack_out.pcapng
+	editcap -T ether $(PCAP_DIR)/$@/if4_stats_out.pcap $(PCAP_DIR)/$@/if4_stats_out.pcapng
+	rm -f $(PCAP_DIR)/$@/*_out.pcap
+
+# OK
+ddos20m14b:
+	$(SS_BIN) --use-files 15 -i 1@$(PCAP_DIR)/$@/$(LOAD) -i 2@$(PCAP_DIR)/$@/$(GOOD) -i 3@$(PCAP_DIR)/$@/$(EVIL) -i 4@$(PCAP_DIR)/$@/$(STAT) $(BUILD_DIR)/ddosm.json &
+	sleep 5
+	$(SS_CLI) < $(LAB_DIR)/ddos20/control_rules/control_rules_base.txt
+	$(SS_CLI) < $(LAB_DIR)/ddos20/control_rules/control_rules_m_2_14.txt
+	# TODO Set the adequate mitigation threshold.
+	echo "register_write mitigation_t 0 10" | $(SS_CLI)
+	./scripts/monitor.sh $(PCAP_DIR)/$@
+	editcap -T ether $(PCAP_DIR)/$@/if2_legitimate_out.pcap $(PCAP_DIR)/$@/if2_legitimate_out.pcapng
+	editcap -T ether $(PCAP_DIR)/$@/if3_attack_out.pcap $(PCAP_DIR)/$@/if3_attack_out.pcapng
+	editcap -T ether $(PCAP_DIR)/$@/if4_stats_out.pcap $(PCAP_DIR)/$@/if4_stats_out.pcapng
+	rm -f $(PCAP_DIR)/$@/*_out.pcap
+
+# TODO
+ddos20m16b:
+	$(SS_BIN) --use-files 15 -i 1@$(PCAP_DIR)/$@/$(LOAD) -i 2@$(PCAP_DIR)/$@/$(GOOD) -i 3@$(PCAP_DIR)/$@/$(EVIL) -i 4@$(PCAP_DIR)/$@/$(STAT) $(BUILD_DIR)/ddosm.json &
+	sleep 5
+	$(SS_CLI) < $(LAB_DIR)/ddos20/control_rules/control_rules_base.txt
+	$(SS_CLI) < $(LAB_DIR)/ddos20/control_rules/control_rules_m_2_16.txt
+	# TODO Set the adequate mitigation threshold.
+	echo "register_write mitigation_t 0 10" | $(SS_CLI)
+	./scripts/monitor.sh $(PCAP_DIR)/$@
+	editcap -T ether $(PCAP_DIR)/$@/if2_legitimate_out.pcap $(PCAP_DIR)/$@/if2_legitimate_out.pcapng
+	editcap -T ether $(PCAP_DIR)/$@/if3_attack_out.pcap $(PCAP_DIR)/$@/if3_attack_out.pcapng
+	editcap -T ether $(PCAP_DIR)/$@/if4_stats_out.pcap $(PCAP_DIR)/$@/if4_stats_out.pcapng
+	rm -f $(PCAP_DIR)/$@/*_out.pcap
+
+# TODO
+ddos20m18b:
+	$(SS_BIN) --use-files 15 -i 1@$(PCAP_DIR)/$@/$(LOAD) -i 2@$(PCAP_DIR)/$@/$(GOOD) -i 3@$(PCAP_DIR)/$@/$(EVIL) -i 4@$(PCAP_DIR)/$@/$(STAT) $(BUILD_DIR)/ddosm.json &
+	sleep 5
+	$(SS_CLI) < $(LAB_DIR)/ddos20/control_rules/control_rules_base.txt
+	$(SS_CLI) < $(LAB_DIR)/ddos20/control_rules/control_rules_m_2_18.txt
+	# TODO Set the adequate mitigation threshold.
+	echo "register_write mitigation_t 0 10" | $(SS_CLI)
+	./scripts/monitor.sh $(PCAP_DIR)/$@
+	editcap -T ether $(PCAP_DIR)/$@/if2_legitimate_out.pcap $(PCAP_DIR)/$@/if2_legitimate_out.pcapng
+	editcap -T ether $(PCAP_DIR)/$@/if3_attack_out.pcap $(PCAP_DIR)/$@/if3_attack_out.pcapng
+	editcap -T ether $(PCAP_DIR)/$@/if4_stats_out.pcap $(PCAP_DIR)/$@/if4_stats_out.pcapng
+	rm -f $(PCAP_DIR)/$@/*_out.pcap
 
 INTERFACE_PAIRS=8
 
@@ -51,24 +118,11 @@ TCPREPLAY=sudo nice -19 tcpreplay --preload-pcap --stats=10
 PACKET_RATE=8192
 PACKET_LIMIT=262144
 
-ddos20m18a_:
+ddos20m18a_tcpreplay:
 	$(SS_CLI) < $(LAB_DIR)/ddos20-full/control_rules/control_rules_base.txt
 	$(SS_CLI) < $(LAB_DIR)/ddos20-full/control_rules/control_rules_m_2_18.txt
 	echo "register_write mitigation_t 0 10" | $(SS_CLI)
 	$(SCRIPT_DIR)/run_capture_to_files.sh start $(PCAP_DIR)/$@
 	$(TCPREPLAY) --pps=$(PACKET_RATE) --limit=$(PACKET_LIMIT) -i veth0 $(PCAP_DIR)/$@/$(LOAD)_in.pcap 2>&1
 	$(SCRIPT_DIR)/run_capture_to_files.sh stop $(PCAP_DIR)/$@
-
-ddos20m18a:
-	$(SS_BIN) --use-files 15 -i 1@$(PCAP_DIR)/$@/$(LOAD) -i 2@$(PCAP_DIR)/$@/$(GOOD) -i 3@$(PCAP_DIR)/$@/$(EVIL) -i 4@$(PCAP_DIR)/$@/$(STAT) $(BUILD_DIR)/ddosm.json &
-	sleep 5
-	$(SS_CLI) < $(LAB_DIR)/ddos20-full/control_rules/control_rules_base.txt
-	$(SS_CLI) < $(LAB_DIR)/ddos20-full/control_rules/control_rules_m_2_18.txt
-	# TODO Set the adequate mitigation threshold.
-	echo "register_write mitigation_t 0 10" | $(SS_CLI)
-	./scripts/monitor.sh $(PCAP_DIR)/$@
-	editcap -T ether $(PCAP_DIR)/$@/if2_legitimate_out.pcap $(PCAP_DIR)/$@/if2_legitimate_out.pcapng
-	editcap -T ether $(PCAP_DIR)/$@/if3_attack_out.pcap $(PCAP_DIR)/$@/if3_attack_out.pcapng
-	editcap -T ether $(PCAP_DIR)/$@/if4_stats_out.pcap $(PCAP_DIR)/$@/if4_stats_out.pcapng
-	rm -f $(PCAP_DIR)/$@/*_out.pcap
 
