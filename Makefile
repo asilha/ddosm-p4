@@ -62,8 +62,8 @@ ddos20m18a_:
 ddos20m18a:
 	$(SS_BIN) --use-files 15 -i 1@$(PCAP_DIR)/$@/$(LOAD) -i 2@$(PCAP_DIR)/$@/$(GOOD) -i 3@$(PCAP_DIR)/$@/$(EVIL) -i 4@$(PCAP_DIR)/$@/$(STAT) $(BUILD_DIR)/ddosm.json &
 	sleep 5
-	$(SS_CLI) < $(LAB_DIR)/ddos20-full/control_rules/control_rules_base.txt
-	$(SS_CLI) < $(LAB_DIR)/ddos20-full/control_rules/control_rules_m_2_18.txt
+	$(SS_CLI) < $(LAB_DIR)/ddos20/control_rules/control_rules_base.txt
+	$(SS_CLI) < $(LAB_DIR)/ddos20/control_rules/control_rules_m_2_18.txt
 	# TODO Set the adequate mitigation threshold.
 	echo "register_write mitigation_t 0 10" | $(SS_CLI)
 	./scripts/monitor.sh $(PCAP_DIR)/$@
