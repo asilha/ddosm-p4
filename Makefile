@@ -48,10 +48,10 @@ veth_stop:
 
 TCPREPLAY=sudo nice -19 tcpreplay --preload-pcap --stats=10
 
-PACKET_RATE=65536
-PACKET_LIMIT=2621440
+PACKET_RATE=8192
+PACKET_LIMIT=262144
 
-ddos20m18a_tcpreplay:
+ddos20m18a_:
 	$(SS_CLI) < $(LAB_DIR)/ddos20-full/control_rules/control_rules_base.txt
 	$(SS_CLI) < $(LAB_DIR)/ddos20-full/control_rules/control_rules_m_2_18.txt
 	echo "register_write mitigation_t 0 10" | $(SS_CLI)
@@ -60,10 +60,10 @@ ddos20m18a_tcpreplay:
 	$(SCRIPT_DIR)/run_capture_to_files.sh stop $(PCAP_DIR)/$@
 
 ddos20m18a:
-	$(SS_BIN) -i 1@veth0$(PCAP_DIR)/$@/$(LOAD) -i 2@$(PCAP_DIR)/$@/$(GOOD) -i 3@$(PCAP_DIR)/$@/$(EVIL) -i 4@$(PCAP_DIR)/$@/$(STAT) $(BUILD_DIR)/ddosm.json &
+	$(SS_BIN) --use-files 15 -i 1@$(PCAP_DIR)/$@/$(LOAD) -i 2@$(PCAP_DIR)/$@/$(GOOD) -i 3@$(PCAP_DIR)/$@/$(EVIL) -i 4@$(PCAP_DIR)/$@/$(STAT) $(BUILD_DIR)/ddosm.json &
 	sleep 5
-	$(SS_CLI) < ddos20-full/control_rules/control_rules_base.txt
-	$(SS_CLI) < ddos20-full/control_rules/control_rules_m_2_18.txt
+	$(SS_CLI) < $(LAB_DIR)/ddos20-full/control_rules/control_rules_base.txt
+	$(SS_CLI) < $(LAB_DIR)/ddos20-full/control_rules/control_rules_m_2_18.txt
 	# TODO Set the adequate mitigation threshold.
 	echo "register_write mitigation_t 0 10" | $(SS_CLI)
 	./scripts/monitor.sh $(PCAP_DIR)/$@
