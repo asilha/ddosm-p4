@@ -6,6 +6,7 @@ notebooks/.ipynb_checkpoints
 pcaps/*
 scripts/__pycache__
 scripts/lib/__pycache__
+workloads/*
 .vscode/*
 *.pcap
 *.pcap.gz
