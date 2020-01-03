@@ -99,7 +99,12 @@ n_2_24_m_2_18:
 	rm -f $(PCAP_DIR)/$@/*_out.pcap
 	~/p4sec/ddosd-cpp/bin/ercnv $(PCAP_DIR)/$@/if4_stats_out.pcapng > $(PCAP_DIR)/$@/stats.txt
 
-# Status: TODO
+n_2_24_copy_logs:
+	cp pcaps/n_2_24_m_2_14/stats.txt labs/ddos20_short/n_2_24_m_2_14.stats.txt
+	cp pcaps/n_2_24_m_2_16/stats.txt labs/ddos20_short/n_2_24_m_2_16.stats.txt
+	cp pcaps/n_2_24_m_2_18/stats.txt labs/ddos20_short/n_2_24_m_2_18.stats.txt
+
+# Status: OK!
 n_2_27_m_2_18:
 	$(SS_BIN) --use-files 15 -i 1@$(PCAP_DIR)/$@/$(LOAD) -i 2@$(PCAP_DIR)/$@/$(GOOD) -i 3@$(PCAP_DIR)/$@/$(EVIL) -i 4@$(PCAP_DIR)/$@/$(STAT) $(BUILD_DIR)/ddosm.json &
 	sleep 5
@@ -114,6 +119,10 @@ n_2_27_m_2_18:
 	rm -f $(PCAP_DIR)/$@/*_out.pcap
 	~/p4sec/ddosd-cpp/bin/ercnv $(PCAP_DIR)/$@/if4_stats_out.pcapng > $(PCAP_DIR)/$@/stats.txt
 
+n_2_27_copy_logs:
+	#cp pcaps/n_2_27_m_2_14/stats.txt labs/ddos20_long/n_2_27_m_2_14.stats.txt
+	#cp pcaps/n_2_27_m_2_16/stats.txt labs/ddos20_long/n_2_27_m_2_16.stats.txt
+	cp pcaps/n_2_27_m_2_18/stats.txt labs/ddos20_long/n_2_27_m_2_18.stats.txt
 
 run_plain: $(PROJECT)
 	./$(SCRIPT_DIR)/run_plain.sh
