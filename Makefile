@@ -69,7 +69,7 @@ n_2_24_m_2_14:
 	rm -f $(PCAP_DIR)/$@/*_out.pcap
 	~/p4sec/ddosd-cpp/bin/ercnv $(PCAP_DIR)/$@/if4_stats_out.pcapng > $(PCAP_DIR)/$@/stats.txt
 
-# Status: TODO
+# Status: OK!
 n_2_24_m_2_16:
 	$(SS_BIN) --use-files 15 -i 1@$(PCAP_DIR)/$@/$(LOAD) -i 2@$(PCAP_DIR)/$@/$(GOOD) -i 3@$(PCAP_DIR)/$@/$(EVIL) -i 4@$(PCAP_DIR)/$@/$(STAT) $(BUILD_DIR)/ddosm.json &
 	sleep 5
@@ -84,7 +84,7 @@ n_2_24_m_2_16:
 	rm -f $(PCAP_DIR)/$@/*_out.pcap
 	~/p4sec/ddosd-cpp/bin/ercnv $(PCAP_DIR)/$@/if4_stats_out.pcapng > $(PCAP_DIR)/$@/stats.txt
 
-# Status: TODO
+# Status: OK! 
 n_2_24_m_2_18:
 	$(SS_BIN) --use-files 15 -i 1@$(PCAP_DIR)/$@/$(LOAD) -i 2@$(PCAP_DIR)/$@/$(GOOD) -i 3@$(PCAP_DIR)/$@/$(EVIL) -i 4@$(PCAP_DIR)/$@/$(STAT) $(BUILD_DIR)/ddosm.json &
 	sleep 5
