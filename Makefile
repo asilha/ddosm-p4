@@ -59,8 +59,8 @@ ee_n_2_27:
 	cp -nv labs/ddos20_short/ee_json/ee_m_2_18.json labs/ddos20_long/ee_json/
 	# $(EE_BIN) -c labs/ddos20_long/ee_json/ee_m_2_14.json workloads/synthetic/a_0.200/n_2_27/complete.pcap > /tmp/ee_m_2_14.log
 	# mv -nv /tmp/ee_m_2_14.log labs/ddos20_long/ee_logs/ 
-	$(EE_BIN) -c labs/ddos20_long/ee_json/ee_m_2_16.json workloads/synthetic/a_0.200/n_2_27/complete.pcap > /tmp/ee_m_2_16.log
-	mv -nv /tmp/ee_m_2_16.log labs/ddos20_long/ee_logs/ 
+	# $(EE_BIN) -c labs/ddos20_long/ee_json/ee_m_2_16.json workloads/synthetic/a_0.200/n_2_27/complete.pcap > /tmp/ee_m_2_16.log
+	# mv -nv /tmp/ee_m_2_16.log labs/ddos20_long/ee_logs/ 
 
 tcad_n_2_27:
 	scripts/generate_tcad_traces.py -m 14 -t 4000 -i labs/ddos20_long/ee_logs/ee_m_2_14.log -o labs/ddos20_long/tcad_logs/
