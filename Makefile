@@ -57,8 +57,10 @@ ee_n_2_27:
 	cp -nv labs/ddos20_short/ee_json/ee_m_2_14.json labs/ddos20_long/ee_json/
 	cp -nv labs/ddos20_short/ee_json/ee_m_2_16.json labs/ddos20_long/ee_json/
 	cp -nv labs/ddos20_short/ee_json/ee_m_2_18.json labs/ddos20_long/ee_json/
-	$(EE_BIN) -c labs/ddos20_long/ee_json/ee_m_2_14.json workloads/synthetic/a_0.200/n_2_27/complete.pcap > /tmp/ee_m_2_14.log
-	mv -nv /tmp/ee_m_14.log labs/ddos20_long/ee_logs/ee_m_2_14.log 
+	# $(EE_BIN) -c labs/ddos20_long/ee_json/ee_m_2_14.json workloads/synthetic/a_0.200/n_2_27/complete.pcap > /tmp/ee_m_2_14.log
+	# mv -nv /tmp/ee_m_2_14.log labs/ddos20_long/ee_logs/ 
+	$(EE_BIN) -c labs/ddos20_long/ee_json/ee_m_2_16.json workloads/synthetic/a_0.200/n_2_27/complete.pcap > /tmp/ee_m_2_16.log
+	mv -nv /tmp/ee_m_2_16.log labs/ddos20_long/ee_logs/ 
 
 
 # ------------------------------------------
@@ -163,9 +165,9 @@ n_2_27_m_2_18:
 	~/p4sec/ddosd-cpp/bin/ercnv $(PCAP_DIR)/$@/if4_stats_out.pcapng > $(PCAP_DIR)/$@/stats.txt
 
 n_2_27_copy_logs:
-	#cp pcaps/n_2_27_m_2_14/stats.txt labs/ddos20_long/n_2_27_m_2_14.stats.txt
-	#cp pcaps/n_2_27_m_2_16/stats.txt labs/ddos20_long/n_2_27_m_2_16.stats.txt
-	cp pcaps/n_2_27_m_2_18/stats.txt labs/ddos20_long/n_2_27_m_2_18.stats.txt
+	cp -nv pcaps/n_2_27_m_2_14/stats.txt labs/ddos20_long/n_2_27_m_2_14.stats.txt
+	cp -nv pcaps/n_2_27_m_2_16/stats.txt labs/ddos20_long/n_2_27_m_2_16.stats.txt
+	cp -nv pcaps/n_2_27_m_2_18/stats.txt labs/ddos20_long/n_2_27_m_2_18.stats.txt
 
 run_plain: $(PROJECT)
 	./$(SCRIPT_DIR)/run_plain.sh
