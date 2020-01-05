@@ -32,7 +32,7 @@ def main():
         tcad_command = tcad_bin + " -t " + str(training_length) + " -s 0.078125 -k " + str(kvalue) 
         command = "cat " + input_log_file + " | " + tcad_command + " > " + tcad_log
         print(command)
-        os.system(command)
+        # os.system(command)
         phases = []
         phases.append({"start" : 1,                       "length" : training_length,   "alarms" : 0.0})  # phase 0: training
         phases.append({"start" : 1+training_length,       "length" : training_length/2, "alarms" : 0.0})  # phase 1: detection under safety
