@@ -14,8 +14,8 @@ def main():
 
     print(args)
 
-    log2_m = args.log2_m
-    training_length = args.training_length
+    log2_m = int(args.log2_m)
+    training_length = int(args.training_length)
     input_log_file = args.input_log_file
     output_log_path = args.output_log_path
     summary_log = output_log_path + "/summary.log"   
