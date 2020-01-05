@@ -62,6 +62,11 @@ ee_n_2_27:
 	$(EE_BIN) -c labs/ddos20_long/ee_json/ee_m_2_16.json workloads/synthetic/a_0.200/n_2_27/complete.pcap > /tmp/ee_m_2_16.log
 	mv -nv /tmp/ee_m_2_16.log labs/ddos20_long/ee_logs/ 
 
+tcad_n_2_27:
+	scripts/generate_tcad_traces.py -m 14 -t 4000 -i labs/ddos20_long/ee_logs/ee_m_2_14.log -o labs/ddos20_long/tcad_logs/
+	scripts/generate_tcad_traces.py -m 16 -t 1000 -i labs/ddos20_long/ee_logs/ee_m_2_16.log -o labs/ddos20_long/tcad_logs/
+	# scripts/generate_tcad_traces.py -m 18 -t 250 -i labs/ddos20_long/ee_logs/ee_m_2_18.log -o labs/ddos20_long/tcad_logs/
+
 
 # ------------------------------------------
 # Experiments using the 16-Mpacket workload
