@@ -30,7 +30,7 @@ def main():
         kvalues.append(i/8.0)
 
     for kvalue in kvalues:
-        tcad_log = output_log_path + "/tcad_m_2_" + log2_m + "_k_" + "{:.3f}".format(kvalue) +".log"
+        tcad_log = output_log_path + "/tcad_m_2_" + str(log2_m) + "_k_" + "{:.3f}".format(kvalue) +".log"
         tcad_command = tcad_bin + " -t " + str(training_length) + " -s 0.078125 -k " + str(kvalue) 
         command = "cat " + input_log_file + " | " + tcad_command + " > " + tcad_log
         print(command)
