@@ -7,7 +7,6 @@ SOURCES = $(wildcard $(SOURCE_DIR)/*.p4)
 BUILD_DIR = build
 LOG_DIR = logs
 
-
 P4C = /usr/local/bin/p4c
 P4C_FLAGS = -b $(ARCHITECTURE) -I$(SOURCE_DIR)
 
