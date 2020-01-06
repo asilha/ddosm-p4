@@ -41,7 +41,7 @@ def main():
     print("Rule file:", output_rule_file)
 
     with open(output_rule_file, "w") as f:
-        f.write("register_write ingress.log2_m 0 " + log2_m)
+        f.write("register_write ingress.log2_m 0 " +        str(log2_m))
         f.write("register_write ingress.training_len 0 ",   str(0))  #TODO Parameterize?
         f.write("register_write ingress.alpha 0 " +         str(20)) #TODO Parameterize?
         f.write("register_write ingress.k 0 " +             str(int(sensitivity_coefficient * 8)))
