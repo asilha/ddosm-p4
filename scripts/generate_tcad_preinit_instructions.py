@@ -1,42 +1,56 @@
 #!/usr/bin/python3
 
-paths = {}
-paths["tcad_bin"]= "~/p4sec/ddosd-cpp/bin"
-paths["working_dir"] = "/home/ilha/p4sec/ddosm-p4/lab/ddos20-full/tcad_logs"
+import argparse
+import os
 
-k_values = {}
-k_values[13] = 4.000
-k_values[14] = 4.125
-k_values[15] = 4.250
-k_values[16] = 4.500
-k_values[17] = 4.750 	
-k_values[18] = 3.625
+def main():
 
-ow_field_names = ["timestamp", "src_ent", "src_ewma", "src_ewmmd", "dst_ent", "dst_ewma", "dst_ewmmd", "alarm"]
 
-for m in range(18,19,1):
-    filename = "tcad_m_2_" + str(m) + "_k_" + "{:.3f}".format(k_values[m]) + ".log"
-    print("Trace file:", filename)
-    #t_exp = 24-m
-    t_end_ow = 250 # 2**t_exp
-    print("Last training OW:", t_end_ow)
-    with open(paths["working_dir"] + "/" + filename) as f: 
+    parser = argparse.ArgumentParser(description="Generates preinit control rules.")
+    parser.add_argument("-m", "--log2_m", help="Binary logarithm of OW length")
+    parser.add_argument("-t", "--training_length", help="Training length")
+    parser.add_argument("-k", "--sensitivity_coefficient", help="Sensitivity coefficient")
+    parser.add_argument("-i", "--input_log_file", help="File with tcad traces")
+    parser.add_argument("-o", "--output_rule_dir", help="Directory for rule output")
+    args = parser.parse_args()
+
+    print(args)
+
+    log2_m = int(args.log2_m)
+    training_length = int(args.training_length)
+    sensitivity_coefficient = float(args.sensitivity_coefficient)
+    input_log_file = args.input_log_file
+    output_rule_dir = args.output_rule_dir
+
+    ow_field_names = ["timestamp", "src_ent", "src_ewma", "src_ewmmd", "dst_ent", "dst_ewma", "dst_ewmmd", "alarm"]
+
+    # print("Last training OW:", training_length)
+ 
+    with open(input_log_file) as f: 
         line_num = 0
         line=f.readline()
         while line:
             line_num += 1
-            if line_num == t_end_ow:
+            if line_num == training_length:
                 ow_field_values = line.split()
                 ow_dict = dict(zip(ow_field_names,ow_field_values))
-                #  print(ow_dict)
-                print("register_write", "ingress.log2_m",       0, m)
-                print("register_write", "ingress.training_len", 0, 0)
-                print("register_write", "ingress.alpha",        0, 20)
-                print("register_write", "ingress.k",            0, int(k_values[m] * 8))
-                print("register_write", "src_ewma",             0, ow_dict["src_ewma"])
-                print("register_write", "src_ewmmd",            0, ow_dict["src_ewmmd"])
-                print("register_write", "dst_ewma",             0, ow_dict["dst_ewma"])
-                print("register_write", "dst_ewmmd",            0, ow_dict["dst_ewmmd"])
-                print("register_write", "mitigation_t",          0, 10)
                 break
             line=f.readline()
+
+    output_rule_file = output_rule_dir + "control_rules_m_2_" + str(log2_m) + ".txt"
+    print("Rule file:", output_rule_file)
+
+    with open(output_rule_file, "w") as f:
+        f.write("register_write ingress.log2_m 0 " 		+ str(log2_m) + "\n")
+        f.write("register_write ingress.training_len 0 "	+ str(0) + "\n")  # TODO Parameterize?
+        f.write("register_write ingress.alpha 0 " 		+ str(20) + "\n") # TODO Parameterize?
+        f.write("register_write ingress.k 0 "			+ str(int(sensitivity_coefficient * 8)) + "\n")
+        f.write("register_write src_ewma 0 " 			+ ow_dict["src_ewma"] + "\n")
+        f.write("register_write src_ewmmd 0 " 			+ ow_dict["src_ewmmd"] + "\n")
+        f.write("register_write dst_ewma 0 " 			+ ow_dict["dst_ewma"] + "\n")
+        f.write("register_write dst_ewmmd 0 " 			+ ow_dict["dst_ewmmd"] + "\n")
+        f.write("register_write mitigation_t 0 " 		+ str(10) + "\n") # TODO Parameterize? 
+
+
+if __name__ == '__main__':
+    main()
