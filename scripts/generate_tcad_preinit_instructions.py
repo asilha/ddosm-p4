@@ -41,15 +41,15 @@ def main():
     print("Rule file:", output_rule_file)
 
     with open(output_rule_file, "w") as f:
-        print("register_write", "ingress.log2_m",       0, log2_m)
-        print("register_write", "ingress.training_len", 0, 0)
-        print("register_write", "ingress.alpha",        0, 20)
-        print("register_write", "ingress.k",            0, int(sensitivity_coefficient * 8))
-        print("register_write", "src_ewma",             0, ow_dict["src_ewma"])
-        print("register_write", "src_ewmmd",            0, ow_dict["src_ewmmd"])
-        print("register_write", "dst_ewma",             0, ow_dict["dst_ewma"])
-        print("register_write", "dst_ewmmd",            0, ow_dict["dst_ewmmd"])
-        print("register_write", "mitigation_t",          0, 10)
+        f.write("register_write", "ingress.log2_m",       0, log2_m)
+        f.write("register_write", "ingress.training_len", 0, 0)
+        f.write("register_write", "ingress.alpha",        0, 20)
+        f.write("register_write", "ingress.k",            0, int(sensitivity_coefficient * 8))
+        f.write("register_write", "src_ewma",             0, ow_dict["src_ewma"])
+        f.write("register_write", "src_ewmmd",            0, ow_dict["src_ewmmd"])
+        f.write("register_write", "dst_ewma",             0, ow_dict["dst_ewma"])
+        f.write("register_write", "dst_ewmmd",            0, ow_dict["dst_ewmmd"])
+        f.write("register_write", "mitigation_t",          0, 10)
 
 
 if __name__ == '__main__':
