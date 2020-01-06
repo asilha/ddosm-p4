@@ -12,7 +12,7 @@ def main():
     parser.add_argument("-o", "--output_log_path", help="Directory for tcad trace output")
     args = parser.parse_args()
 
-    print(args)
+    # print(args)
 
     log2_m = int(args.log2_m)
     training_length = int(args.training_length)
