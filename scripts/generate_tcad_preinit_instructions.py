@@ -41,15 +41,15 @@ def main():
     print("Rule file:", output_rule_file)
 
     with open(output_rule_file, "w") as f:
-        f.write("register_write ingress.log2_m 0 " +        str(log2_m))
-        f.write("register_write ingress.training_len 0 ",   str(0))  #TODO Parameterize?
-        f.write("register_write ingress.alpha 0 " +         str(20)) #TODO Parameterize?
-        f.write("register_write ingress.k 0 " +             str(int(sensitivity_coefficient * 8)))
-        f.write("register_write src_ewma 0 ",               ow_dict["src_ewma"])
-        f.write("register_write src_ewmmd 0 ",              ow_dict["src_ewmmd"])
-        f.write("register_write dst_ewma 0 ",               ow_dict["dst_ewma"])
-        f.write("register_write dst_ewmmd 0 ",              ow_dict["dst_ewmmd"])
-        f.write("register_write mitigation_t 0 ",           str(10)) #TODO Parameterize? 
+        f.write("register_write ingress.log2_m 0 " 		+ str(log2_m) + "\n")
+        f.write("register_write ingress.training_len 0 "	+ str(0) + "\n")  # TODO Parameterize?
+        f.write("register_write ingress.alpha 0 " 		+ str(20) + "\n") # TODO Parameterize?
+        f.write("register_write ingress.k 0 "			+ str(int(sensitivity_coefficient * 8)) + "\n")
+        f.write("register_write src_ewma 0 " 			+ ow_dict["src_ewma"] + "\n")
+        f.write("register_write src_ewmmd 0 " 			+ ow_dict["src_ewmmd"] + "\n")
+        f.write("register_write dst_ewma 0 " 			+ ow_dict["dst_ewma"] + "\n")
+        f.write("register_write dst_ewmmd 0 " 			+ ow_dict["dst_ewmmd"] + "\n")
+        f.write("register_write mitigation_t 0 " 		+ str(10) + "\n") # TODO Parameterize? 
 
 
 if __name__ == '__main__':
