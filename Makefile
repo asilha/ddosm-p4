@@ -67,6 +67,10 @@ tcad_n_2_27:
 	scripts/generate_tcad_traces.py -m 16 -t 1000 -i labs/ddos20_long/ee_logs/ee_m_2_16.log -o labs/ddos20_long/tcad_logs/
 	# scripts/generate_tcad_traces.py -m 18 -t 250 -i labs/ddos20_long/ee_logs/ee_m_2_18.log -o labs/ddos20_long/tcad_logs/
 
+control_rules_n_2_27:
+	scripts/generate_tcad_preinit_instructions.py -m 14 -t 4000 -k 4.875 -i labs/ddos20_long/tcad_logs/tcad_m_2_14_k_4.875.log -o labs/ddos20_long/control_rules/
+	scripts/generate_tcad_preinit_instructions.py -m 16 -t 1000 -k 4.875 -i labs/ddos20_long/tcad_logs/tcad_m_2_16_k_4.875.log -o labs/ddos20_long/control_rules/
+	scripts/generate_tcad_preinit_instructions.py -m 18 -t 250  -k 3.625 -i labs/ddos20_long/tcad_logs/tcad_m_2_18_k_3.625.log -o labs/ddos20_long/control_rules/
 
 # ------------------------------------------
 # Experiments using the 16-Mpacket workload
