@@ -75,7 +75,7 @@ control_rules_n_2_27:
 # ------------------------------------------
 # Experiments using the 16-Mpacket workload
 
-# Status: OK!
+# Status: OK!  Are control_rules_m_2_14, tcad_m_2_14_k_4.125.log, and stats.txt consistent? Yes.
 n_2_24_m_2_14:
 	$(SS_BIN) --use-files 15 -i 1@$(PCAP_DIR)/$@/$(LOAD) -i 2@$(PCAP_DIR)/$@/$(GOOD) -i 3@$(PCAP_DIR)/$@/$(EVIL) -i 4@$(PCAP_DIR)/$@/$(STAT) $(BUILD_DIR)/ddosm.json &
 	sleep 5
@@ -90,7 +90,7 @@ n_2_24_m_2_14:
 	rm -f $(PCAP_DIR)/$@/*_out.pcap
 	~/p4sec/ddosd-cpp/bin/ercnv $(PCAP_DIR)/$@/if4_stats_out.pcapng > $(PCAP_DIR)/$@/stats.txt
 
-# Status: OK!
+# Status: OK! Are control_rules_m_2_16, tcad_m_2_16_k_4.500.log, and stats.txt consistent? Yes.
 n_2_24_m_2_16:
 	$(SS_BIN) --use-files 15 -i 1@$(PCAP_DIR)/$@/$(LOAD) -i 2@$(PCAP_DIR)/$@/$(GOOD) -i 3@$(PCAP_DIR)/$@/$(EVIL) -i 4@$(PCAP_DIR)/$@/$(STAT) $(BUILD_DIR)/ddosm.json &
 	sleep 5
@@ -105,7 +105,7 @@ n_2_24_m_2_16:
 	rm -f $(PCAP_DIR)/$@/*_out.pcap
 	~/p4sec/ddosd-cpp/bin/ercnv $(PCAP_DIR)/$@/if4_stats_out.pcapng > $(PCAP_DIR)/$@/stats.txt
 
-# Status: OK! 
+# Status: OK!  Are control_rules_m_2_18, tcad_m_2_18_k_3.625.log, and stats.txt consistent? Yes.
 n_2_24_m_2_18:
 	$(SS_BIN) --use-files 15 -i 1@$(PCAP_DIR)/$@/$(LOAD) -i 2@$(PCAP_DIR)/$@/$(GOOD) -i 3@$(PCAP_DIR)/$@/$(EVIL) -i 4@$(PCAP_DIR)/$@/$(STAT) $(BUILD_DIR)/ddosm.json &
 	sleep 5
@@ -128,7 +128,7 @@ n_2_24_copy_logs:
 # ------------------------------------------
 # Experiments using the 128-Mpacket workload
 
-# Status: TODO
+# Status: OK! Are control_rules_m_2_14, tcad_m_2_14_k_4.875.log, and stats.txt consistent? Yes.
 n_2_27_m_2_14:
 	$(SS_BIN) --use-files 15 -i 1@$(PCAP_DIR)/$@/$(LOAD) -i 2@$(PCAP_DIR)/$@/$(GOOD) -i 3@$(PCAP_DIR)/$@/$(EVIL) -i 4@$(PCAP_DIR)/$@/$(STAT) $(BUILD_DIR)/ddosm.json &
 	sleep 5
@@ -143,7 +143,7 @@ n_2_27_m_2_14:
 	rm -f $(PCAP_DIR)/$@/*_out.pcap
 	~/p4sec/ddosd-cpp/bin/ercnv $(PCAP_DIR)/$@/if4_stats_out.pcapng > $(PCAP_DIR)/$@/stats.txt
 
-# Status: TODO
+# Status: OK! Are control_rules_m_2_16.txt, tcad_m_2_16_k_4.875.log, and stats.txt consistent? Yes. 
 n_2_27_m_2_16:
 	$(SS_BIN) --use-files 15 -i 1@$(PCAP_DIR)/$@/$(LOAD) -i 2@$(PCAP_DIR)/$@/$(GOOD) -i 3@$(PCAP_DIR)/$@/$(EVIL) -i 4@$(PCAP_DIR)/$@/$(STAT) $(BUILD_DIR)/ddosm.json &
 	sleep 5
@@ -158,7 +158,7 @@ n_2_27_m_2_16:
 	rm -f $(PCAP_DIR)/$@/*_out.pcap
 	~/p4sec/ddosd-cpp/bin/ercnv $(PCAP_DIR)/$@/if4_stats_out.pcapng > $(PCAP_DIR)/$@/stats.txt
 
-# Status: OK!
+# Status: OK! Are control_rules_m_2_18.txt, tcad_m_2_18_k_3.625.log, and stats.txt consistent? Yes. 
 n_2_27_m_2_18:
 	$(SS_BIN) --use-files 15 -i 1@$(PCAP_DIR)/$@/$(LOAD) -i 2@$(PCAP_DIR)/$@/$(GOOD) -i 3@$(PCAP_DIR)/$@/$(EVIL) -i 4@$(PCAP_DIR)/$@/$(STAT) $(BUILD_DIR)/ddosm.json &
 	sleep 5
