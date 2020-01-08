@@ -7,7 +7,6 @@ SOURCES = $(wildcard $(SOURCE_DIR)/*.p4)
 BUILD_DIR = build
 LOG_DIR = logs
 
-
 P4C = /usr/local/bin/p4c
 P4C_FLAGS = -b $(ARCHITECTURE) -I$(SOURCE_DIR)
 
@@ -30,7 +29,6 @@ LOAD=if1_workload
 GOOD=if2_legitimate
 EVIL=if3_attack
 STAT=if4_stats
-
 
 clean:
 	rm -rf $(BUILD_DIR) $(LOG_DIR) 
@@ -57,15 +55,17 @@ ee_n_2_27:
 	cp -nv labs/ddos20_short/ee_json/ee_m_2_14.json labs/ddos20_long/ee_json/
 	cp -nv labs/ddos20_short/ee_json/ee_m_2_16.json labs/ddos20_long/ee_json/
 	cp -nv labs/ddos20_short/ee_json/ee_m_2_18.json labs/ddos20_long/ee_json/
-	# $(EE_BIN) -c labs/ddos20_long/ee_json/ee_m_2_14.json workloads/synthetic/a_0.200/n_2_27/complete.pcap > /tmp/ee_m_2_14.log
-	# mv -nv /tmp/ee_m_2_14.log labs/ddos20_long/ee_logs/ 
-	# $(EE_BIN) -c labs/ddos20_long/ee_json/ee_m_2_16.json workloads/synthetic/a_0.200/n_2_27/complete.pcap > /tmp/ee_m_2_16.log
-	# mv -nv /tmp/ee_m_2_16.log labs/ddos20_long/ee_logs/ 
+	$(EE_BIN) -c labs/ddos20_long/ee_json/ee_m_2_14.json workloads/synthetic/a_0.200/n_2_27/complete.pcap > /tmp/ee_m_2_14.log
+	mv -nv /tmp/ee_m_2_14.log labs/ddos20_long/ee_logs/ 
+	$(EE_BIN) -c labs/ddos20_long/ee_json/ee_m_2_16.json workloads/synthetic/a_0.200/n_2_27/complete.pcap > /tmp/ee_m_2_16.log
+	mv -nv /tmp/ee_m_2_16.log labs/ddos20_long/ee_logs/ 
+	$(EE_BIN) -c labs/ddos20_long/ee_json/ee_m_2_18.json workloads/synthetic/a_0.200/n_2_27/complete.pcap > /tmp/ee_m_2_18.log
+	mv -nv /tmp/ee_m_2_18.log labs/ddos20_long/ee_logs/ 
 
 tcad_n_2_27:
 	scripts/generate_tcad_traces.py -m 14 -t 4000 -i labs/ddos20_long/ee_logs/ee_m_2_14.log -o labs/ddos20_long/tcad_logs/
 	scripts/generate_tcad_traces.py -m 16 -t 1000 -i labs/ddos20_long/ee_logs/ee_m_2_16.log -o labs/ddos20_long/tcad_logs/
-	# scripts/generate_tcad_traces.py -m 18 -t 250 -i labs/ddos20_long/ee_logs/ee_m_2_18.log -o labs/ddos20_long/tcad_logs/
+	scripts/generate_tcad_traces.py -m 18 -t 250 -i labs/ddos20_long/ee_logs/ee_m_2_18.log -o labs/ddos20_long/tcad_logs/
 
 control_rules_n_2_27:
 	scripts/generate_tcad_preinit_instructions.py -m 14 -t 4000 -k 4.875 -i labs/ddos20_long/tcad_logs/tcad_m_2_14_k_4.875.log -o labs/ddos20_long/control_rules/
@@ -181,37 +181,10 @@ n_2_27_copy_logs:
 n_2_24_generate_csv:
 	scripts/pcap_to_csv.py -i pcaps/n_2_24_m_2_14/if3_attack_out.pcapng -o pcaps/n_2_24_m_2_14/if3_attack_out.csv.gz &
 	scripts/pcap_to_csv.py -i pcaps/n_2_24_m_2_16/if3_attack_out.pcapng -o pcaps/n_2_24_m_2_16/if3_attack_out.csv.gz & 	
-    scripts/pcap_to_csv.py -i pcaps/n_2_24_m_2_18/if3_attack_out.pcapng -o pcaps/n_2_24_m_2_18/if3_attack_out.csv.gz &
+	scripts/pcap_to_csv.py -i pcaps/n_2_24_m_2_18/if3_attack_out.pcapng -o pcaps/n_2_24_m_2_18/if3_attack_out.csv.gz &
 
-n_2_28_generate_csv:
-	scripts/pcap_to_csv.py -i pcaps/n_2_28_m_2_14/if3_attack_out.pcapng -o pcaps/n_2_28_m_2_14/if3_attack_out.csv.gz &
-	scripts/pcap_to_csv.py -i pcaps/n_2_28_m_2_16/if3_attack_out.pcapng -o pcaps/n_2_28_m_2_16/if3_attack_out.csv.gz & 	
-    scripts/pcap_to_csv.py -i pcaps/n_2_28_m_2_18/if3_attack_out.pcapng -o pcaps/n_2_28_m_2_18/if3_attack_out.csv.gz &
-
-run_plain: $(PROJECT)
-	./$(SCRIPT_DIR)/run_plain.sh
-
-run_without_config: $(PROJECT)
-	./$(SCRIPT_DIR)/run_without_config.sh
-
-INTERFACE_PAIRS=8
-
-veth_start:	
-	./$(SCRIPT_DIR)/run_veth.sh setup $(INTERFACE_PAIRS)
-
-veth_stop:
-	./$(SCRIPT_DIR)/run_veth.sh delete $(INTERFACE_PAIRS)
-
-TCPREPLAY=sudo nice -19 tcpreplay --preload-pcap --stats=10
-
-PACKET_RATE=8192
-PACKET_LIMIT=262144
-
-tcpreplay:
-	$(SS_CLI) < $(LAB_DIR)/ddos20-full/control_rules/control_rules_base.txt
-	$(SS_CLI) < $(LAB_DIR)/ddos20-full/control_rules/control_rules_m_2_18.txt
-	echo "register_write mitigation_t 0 10" | $(SS_CLI)
-	$(SCRIPT_DIR)/run_capture_to_files.sh start $(PCAP_DIR)/$@
-	$(TCPREPLAY) --pps=$(PACKET_RATE) --limit=$(PACKET_LIMIT) -i veth0 $(PCAP_DIR)/$@/$(LOAD)_in.pcap 2>&1
-	$(SCRIPT_DIR)/run_capture_to_files.sh stop $(PCAP_DIR)/$@
+n_2_27_generate_csv:
+	scripts/pcap_to_csv.py -i pcaps/n_2_27_m_2_14/if3_attack_out.pcapng -o pcaps/n_2_27_m_2_14/if3_attack_out.csv.gz &
+	scripts/pcap_to_csv.py -i pcaps/n_2_27_m_2_16/if3_attack_out.pcapng -o pcaps/n_2_27_m_2_16/if3_attack_out.csv.gz & 	
+	scripts/pcap_to_csv.py -i pcaps/n_2_27_m_2_18/if3_attack_out.pcapng -o pcaps/n_2_27_m_2_18/if3_attack_out.csv.gz &
 
