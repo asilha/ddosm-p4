@@ -181,12 +181,12 @@ n_2_27_copy_logs:
 n_2_24_generate_csv:
 	scripts/pcap_to_csv.py -i pcaps/n_2_24_m_2_14/if3_attack_out.pcapng -o pcaps/n_2_24_m_2_14/if3_attack_out.csv.gz &
 	scripts/pcap_to_csv.py -i pcaps/n_2_24_m_2_16/if3_attack_out.pcapng -o pcaps/n_2_24_m_2_16/if3_attack_out.csv.gz & 	
-    scripts/pcap_to_csv.py -i pcaps/n_2_24_m_2_18/if3_attack_out.pcapng -o pcaps/n_2_24_m_2_18/if3_attack_out.csv.gz &
+	scripts/pcap_to_csv.py -i pcaps/n_2_24_m_2_18/if3_attack_out.pcapng -o pcaps/n_2_24_m_2_18/if3_attack_out.csv.gz &
 
-n_2_28_generate_csv:
-	scripts/pcap_to_csv.py -i pcaps/n_2_28_m_2_14/if3_attack_out.pcapng -o pcaps/n_2_28_m_2_14/if3_attack_out.csv.gz &
-	scripts/pcap_to_csv.py -i pcaps/n_2_28_m_2_16/if3_attack_out.pcapng -o pcaps/n_2_28_m_2_16/if3_attack_out.csv.gz & 	
-    scripts/pcap_to_csv.py -i pcaps/n_2_28_m_2_18/if3_attack_out.pcapng -o pcaps/n_2_28_m_2_18/if3_attack_out.csv.gz &
+n_2_27_generate_csv:
+	scripts/pcap_to_csv.py -i pcaps/n_2_27_m_2_14/if3_attack_out.pcapng -o pcaps/n_2_27_m_2_14/if3_attack_out.csv.gz &
+	scripts/pcap_to_csv.py -i pcaps/n_2_27_m_2_16/if3_attack_out.pcapng -o pcaps/n_2_27_m_2_16/if3_attack_out.csv.gz & 	
+	scripts/pcap_to_csv.py -i pcaps/n_2_27_m_2_18/if3_attack_out.pcapng -o pcaps/n_2_27_m_2_18/if3_attack_out.csv.gz &
 
 run_plain: $(PROJECT)
 	./$(SCRIPT_DIR)/run_plain.sh
