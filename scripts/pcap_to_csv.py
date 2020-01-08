@@ -1,18 +1,7 @@
-#!/usr/bin/python3.7
-
-from dataclasses import dataclass
+#!/usr/bin/python3
 
 import argparse
 import os
-
-@dataclass
-class PCAPSample:
-    ow_first: int = 0
-    ow_last:  int = 0
-    ow_size:  int = 0
-    base_path: str = ""
-    base_name: str = ""
-
 
 def run_tshark(in_pcap, out_csv_gz):
     command = "tshark -r " + in_pcap + " -T fields -e ip.src -e ip.dst -e ip.id -e ip.checksum -e data.data | " + \

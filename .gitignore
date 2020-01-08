@@ -1,5 +1,7 @@
 .vscode/*
 analysis/*.html
+analysis/*.pdf
+analysis/*.svg
 analysis/.RData
 analysis/.RDataTmp
 analysis/.Rhistory
@@ -7,8 +9,6 @@ analysis/.Rproj.user
 build/*
 logs/*
 notebooks/.ipynb_checkpoints
-scripts/__pycache__
-scripts/lib/__pycache__
 workloads/*
 *_out.csv.gz
 *_out.pcapng
