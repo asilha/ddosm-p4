@@ -1,3 +1,8 @@
+<<<<<<< HEAD
+version https://git-lfs.github.com/spec/v1
+oid sha256:f8e1561d5eef555b66449213d822f91610d7bdaa74dfeef70445988cd566594c
+size 16808
+=======
 <?xml version='1.0' encoding='UTF-8' ?>
 <svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' viewBox='0 0 525.00 324.00'>
 <defs>
@@ -112,3 +117,4 @@
 <g clip-path='url(#cpMC4wMHw1MjUuMDB8MzI0LjAwfDAuMDA=)'><text transform='translate(13.78,176.61) rotate(-90)' style='font-size: 11.00px; font-family: TeX Gyre Heros;' textLength='37.91px' lengthAdjust='spacingAndGlyphs'>Entropy</text></g>
 <g clip-path='url(#cpMC4wMHw1MjUuMDB8MzI0LjAwfDAuMDA=)'><text x='40.96' y='15.39' style='font-size: 13.20px; font-family: TeX Gyre Heros;' textLength='378.60px' lengthAdjust='spacingAndGlyphs'>Entropy for each Observation Window - Attack Phase (m = 2^18)</text></g>
 </svg>
+>>>>>>> 587ddc4f3682fe26eb61ef3e7dd1f587b73479b7

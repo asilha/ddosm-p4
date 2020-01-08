@@ -1,3 +1,8 @@
+<<<<<<< HEAD
+version https://git-lfs.github.com/spec/v1
+oid sha256:3c8e8d44fd19d62bb6844279996c01349906c80ae37d063ae19652dfb2860c6a
+size 16025
+=======
 <?xml version='1.0' encoding='UTF-8' ?>
 <svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' viewBox='0 0 504.00 504.00'>
 <defs>
@@ -110,3 +115,4 @@
 <g clip-path='url(#cpMC4wMHw1MDQuMDB8NTA0LjAwfDAuMDA=)'><text x='465.17' y='267.71' style='font-size: 8.80px; font-family: TeX Gyre Heros;' textLength='23.95px' lengthAdjust='spacingAndGlyphs'>TRUE</text></g>
 <g clip-path='url(#cpMC4wMHw1MDQuMDB8NTA0LjAwfDAuMDA=)'><text x='48.29' y='15.39' style='font-size: 13.20px; font-family: TeX Gyre Heros;' textLength='290.54px' lengthAdjust='spacingAndGlyphs'>Median Address Frequency Variations (m = 2^18)</text></g>
 </svg>
+>>>>>>> 587ddc4f3682fe26eb61ef3e7dd1f587b73479b7

@@ -1,3 +1,8 @@
+<<<<<<< HEAD
+version https://git-lfs.github.com/spec/v1
+oid sha256:eb3706567fa771cfe7194f134fecd7fe902c107e0d1a1d1fa82eca0bbdb31544
+size 82792
+=======
 <?xml version='1.0' encoding='UTF-8' ?>
 <svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' viewBox='0 0 504.00 504.00'>
 <defs>
@@ -574,3 +579,4 @@
 <g clip-path='url(#cpMC4wMHw1MDQuMDB8NTA0LjAwfDAuMDA=)'><text transform='translate(13.78,250.71) rotate(-90)' style='font-size: 11.00px; font-family: TeX Gyre Heros;' textLength='6.12px' lengthAdjust='spacingAndGlyphs'>n</text></g>
 <g clip-path='url(#cpMC4wMHw1MDQuMDB8NTA0LjAwfDAuMDA=)'><text x='43.40' y='15.39' style='font-size: 13.20px; font-family: TeX Gyre Heros;' textLength='94.65px' lengthAdjust='spacingAndGlyphs'>False Negatives</text></g>
 </svg>
+>>>>>>> 587ddc4f3682fe26eb61ef3e7dd1f587b73479b7
