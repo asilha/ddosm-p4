@@ -5,7 +5,6 @@ import os
 
 def main():
 
-
     parser = argparse.ArgumentParser(description="Generates preinit control rules.")
     parser.add_argument("-m", "--log2_m", help="Binary logarithm of OW length")
     parser.add_argument("-t", "--training_length", help="Training length")
@@ -14,8 +13,6 @@ def main():
     parser.add_argument("-o", "--output_rule_dir", help="Directory for rule output")
     args = parser.parse_args()
 
-    # print(args)
-
     log2_m = int(args.log2_m)
     training_length = int(args.training_length)
     sensitivity_coefficient = float(args.sensitivity_coefficient)
@@ -23,8 +20,6 @@ def main():
     output_rule_dir = args.output_rule_dir
 
     ow_field_names = ["timestamp", "src_ent", "src_ewma", "src_ewmmd", "dst_ent", "dst_ewma", "dst_ewmmd", "alarm"]
-
-    # print("Last training OW:", training_length)
  
     with open(input_log_file) as f: 
         line_num = 0
@@ -50,7 +45,6 @@ def main():
         f.write("register_write dst_ewma 0 " 			+ ow_dict["dst_ewma"] + "\n")
         f.write("register_write dst_ewmmd 0 " 			+ ow_dict["dst_ewmmd"] + "\n")
         f.write("register_write mitigation_t 0 " 		+ str(10) + "\n") # TODO Parameterize? 
-
 
 if __name__ == '__main__':
     main()
