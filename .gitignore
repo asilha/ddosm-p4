@@ -1,5 +1,7 @@
 .vscode/*
 analysis/*.html
+analysis/*.pdf
+analysis/*.svg
 analysis/.RData
 analysis/.RDataTmp
 analysis/.Rhistory
