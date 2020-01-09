@@ -14,3 +14,4 @@ workloads/*
 *_out.pcapng
 *.pyc
 desktop.ini
+.Rproj.user
