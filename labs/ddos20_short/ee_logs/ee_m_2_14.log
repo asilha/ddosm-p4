@@ -1,3 +1,42 @@
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> ddf0ce1
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 2cf6812
+<<<<<<< HEAD
+version https://git-lfs.github.com/spec/v1
+oid sha256:6fbf47c8ab04d0a5068832fcbdf51c8ebcd466a7f96c7c98f400f0e47aee9ca9
+size 41898
+=======
+version https://git-lfs.github.com/spec/v1
+oid sha256:87f73ca6dd8c72d4c377e0b7b48a23c6487053c59752fae31b3782c1f75f8ebc
+size 39936
+>>>>>>> dd1805f
+=======
+version https://git-lfs.github.com/spec/v1
+oid sha256:87f73ca6dd8c72d4c377e0b7b48a23c6487053c59752fae31b3782c1f75f8ebc
+size 39936
+>>>>>>> 38e2d40
+=======
+version https://git-lfs.github.com/spec/v1
+oid sha256:87f73ca6dd8c72d4c377e0b7b48a23c6487053c59752fae31b3782c1f75f8ebc
+size 39936
+>>>>>>> c5a382b
+=======
+=======
+>>>>>>> ae7b143... Fixing logs
+>>>>>>> dfa5db5e... Fixing logs
 1459947780015588 161 159 
 1459947780029788 159 156 
 1459947780044149 162 157 
@@ -1534,3 +1573,50 @@
 1459947801384291 159 154 
 1459947801399511 164 159 
 1459947801415469 166 161 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+>>>>>>> 3f8e119
+=======
+version https://git-lfs.github.com/spec/v1
+oid sha256:81a08e290b3862c3985460ce97cfc267c3cf0221f5c66e601fdf85d39356bff7
+size 40136
+>>>>>>> f48ecf8
+=======
+>>>>>>> 587ddc4f3682fe26eb61ef3e7dd1f587b73479b7
+>>>>>>> dd1805f
+=======
+version https://git-lfs.github.com/spec/v1
+oid sha256:81a08e290b3862c3985460ce97cfc267c3cf0221f5c66e601fdf85d39356bff7
+size 40136
+>>>>>>> 349884c
+=======
+>>>>>>> 587ddc4f3682fe26eb61ef3e7dd1f587b73479b7
+<<<<<<< HEAD
+<<<<<<< HEAD
+>>>>>>> 38e2d40
+=======
+>>>>>>> ddf0ce1
+=======
+>>>>>>> 2cf6812
+=======
+version https://git-lfs.github.com/spec/v1
+oid sha256:81a08e290b3862c3985460ce97cfc267c3cf0221f5c66e601fdf85d39356bff7
+size 40136
+<<<<<<< HEAD
+>>>>>>> 8d79f4c
+=======
+>>>>>>> 587ddc4f3682fe26eb61ef3e7dd1f587b73479b7
+>>>>>>> c5a382b
+=======
+>>>>>>> 70238e08249cac7bd497cf178abe20b08de7a63b
+<<<<<<< HEAD
+>>>>>>> ddf0ce1
+=======
+>>>>>>> 2cf6812
+=======
+>>>>>>> ae7b143... Fixing logs
+>>>>>>> dfa5db5e... Fixing logs

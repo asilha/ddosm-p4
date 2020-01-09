@@ -1,3 +1,42 @@
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> ddf0ce1
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 2cf6812
+<<<<<<< HEAD
+version https://git-lfs.github.com/spec/v1
+oid sha256:72dd19d3a5a765aa4a71b3a82db310a79ff698268303a8f423e6d966404bb5c8
+size 42551
+=======
+version https://git-lfs.github.com/spec/v1
+oid sha256:7291991b62d4c6fb7778a44d760384b79b04922c232ad681cc6c684fad28dcca
+size 41357
+>>>>>>> dd1805f
+=======
+version https://git-lfs.github.com/spec/v1
+oid sha256:7291991b62d4c6fb7778a44d760384b79b04922c232ad681cc6c684fad28dcca
+size 41357
+>>>>>>> 38e2d40
+=======
+version https://git-lfs.github.com/spec/v1
+oid sha256:7291991b62d4c6fb7778a44d760384b79b04922c232ad681cc6c684fad28dcca
+size 41357
+>>>>>>> c5a382b
+=======
+=======
+>>>>>>> ae7b143... Fixing logs
+>>>>>>> dfa5db5e... Fixing logs
 1459947780029788 168 2752512 0 165 2703360 0 0
 1459947780058037 168 2752512 0 164 2702080 1180 0
 1459947780087841 169 2753792 1180 167 2704740 3539 0
@@ -766,3 +805,50 @@
 1459947801355096 167 2772105 8501 163 2721826 6267 1
 1459947801384291 168 2772105 8501 163 2721826 6267 1
 1459947801415469 173 2772105 8501 168 2721826 6267 1
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+>>>>>>> 3f8e119
+=======
+version https://git-lfs.github.com/spec/v1
+oid sha256:7408cfa54df44019292c6c8a9a071492def28aec625ccb2f5689748c734a51b6
+size 41557
+>>>>>>> f48ecf8
+=======
+>>>>>>> 587ddc4f3682fe26eb61ef3e7dd1f587b73479b7
+>>>>>>> dd1805f
+=======
+version https://git-lfs.github.com/spec/v1
+oid sha256:7408cfa54df44019292c6c8a9a071492def28aec625ccb2f5689748c734a51b6
+size 41557
+>>>>>>> 349884c
+=======
+>>>>>>> 587ddc4f3682fe26eb61ef3e7dd1f587b73479b7
+<<<<<<< HEAD
+<<<<<<< HEAD
+>>>>>>> 38e2d40
+=======
+>>>>>>> ddf0ce1
+=======
+>>>>>>> 2cf6812
+=======
+version https://git-lfs.github.com/spec/v1
+oid sha256:7408cfa54df44019292c6c8a9a071492def28aec625ccb2f5689748c734a51b6
+size 41557
+<<<<<<< HEAD
+>>>>>>> 8d79f4c
+=======
+>>>>>>> 587ddc4f3682fe26eb61ef3e7dd1f587b73479b7
+>>>>>>> c5a382b
+=======
+>>>>>>> 70238e08249cac7bd497cf178abe20b08de7a63b
+<<<<<<< HEAD
+>>>>>>> ddf0ce1
+=======
+>>>>>>> 2cf6812
+=======
+>>>>>>> ae7b143... Fixing logs
+>>>>>>> dfa5db5e... Fixing logs
