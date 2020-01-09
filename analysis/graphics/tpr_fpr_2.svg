@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 version https://git-lfs.github.com/spec/v1
 oid sha256:14a5982bfeb6acc7c821e78074087644f69335b8b13dc91d8252399230da29f2
 size 186390
@@ -1129,3 +1130,8 @@ size 186390
 <g clip-path='url(#cpMC4wMHw1MjUuMDB8MzI0LjAwfDAuMDA=)'><text x='496.45' y='163.24' style='font-size: 8.80px; font-family: TeX Gyre Heros;' textLength='17.59px' lengthAdjust='spacingAndGlyphs'>TPR</text></g>
 </svg>
 >>>>>>> 587ddc4f3682fe26eb61ef3e7dd1f587b73479b7
+=======
+version https://git-lfs.github.com/spec/v1
+oid sha256:a5acf721f09c895a30689075c326ba7e1034e7b90ccd2770c835e13a425e0d1c
+size 186591
+>>>>>>> ddf0ce1f0044d27ccbf85e02f6cd72dccbbd7019
