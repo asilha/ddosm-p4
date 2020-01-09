@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 version https://git-lfs.github.com/spec/v1
 oid sha256:3c8e8d44fd19d62bb6844279996c01349906c80ae37d063ae19652dfb2860c6a
 size 16025
@@ -116,3 +117,8 @@ size 16025
 <g clip-path='url(#cpMC4wMHw1MDQuMDB8NTA0LjAwfDAuMDA=)'><text x='48.29' y='15.39' style='font-size: 13.20px; font-family: TeX Gyre Heros;' textLength='290.54px' lengthAdjust='spacingAndGlyphs'>Median Address Frequency Variations (m = 2^18)</text></g>
 </svg>
 >>>>>>> 587ddc4f3682fe26eb61ef3e7dd1f587b73479b7
+=======
+version https://git-lfs.github.com/spec/v1
+oid sha256:615ba7f020ac63af1c34590b793a8086a16a9c3008bf657e3920f3edd81b44e4
+size 16225
+>>>>>>> ddf0ce1f0044d27ccbf85e02f6cd72dccbbd7019

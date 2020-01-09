@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 version https://git-lfs.github.com/spec/v1
 oid sha256:317fc4f9ac1b064a3c80e28531de90ec291002154c272bf0ecbe7d7a518ef460
 size 40028
@@ -250,3 +251,8 @@ size 40028
 <g clip-path='url(#cpMC4wMHw1MjUuMDB8MzI0LjAwfDAuMDA=)'><text x='40.96' y='15.39' style='font-size: 13.20px; font-family: TeX Gyre Heros;' textLength='289.07px' lengthAdjust='spacingAndGlyphs'>Entropy for each Observation Window (m = 2^18)</text></g>
 </svg>
 >>>>>>> 587ddc4f3682fe26eb61ef3e7dd1f587b73479b7
+=======
+version https://git-lfs.github.com/spec/v1
+oid sha256:d574bde134e103ad24cd619daa7643738f5163189fc92ee2e50117d1a013caa8
+size 40228
+>>>>>>> ddf0ce1f0044d27ccbf85e02f6cd72dccbbd7019
