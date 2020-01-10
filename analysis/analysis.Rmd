@@ -32,12 +32,12 @@ log2n = as.integer(27)
 pcap_dir = "~/p4sec/ddosm-p4/pcaps"
 
 pcap_csv_m14 = str_c(pcap_dir,"/n_2_27_m_2_14/if3_attack_out.csv.gz")
-#pcap_csv_m16 = str_c(pcap_dir,"/n_2_27_m_2_16/if3_attack_out.csv.gz")
-#pcap_csv_m18 = str_c(pcap_dir,"/n_2_27_m_2_18/if3_attack_out.csv.gz")
+pcap_csv_m16 = str_c(pcap_dir,"/n_2_27_m_2_16/if3_attack_out.csv.gz")
+pcap_csv_m18 = str_c(pcap_dir,"/n_2_27_m_2_18/if3_attack_out.csv.gz")
 
 packets_m14 = read_pcap_csv(log2n=log2n, log2m=14, pcap_csv=pcap_csv_m14, attack_only=TRUE) 
-#packets_m16 = read_pcap_csv(log2n=log2n, log2m=16, pcap_csv=pcap_csv_m16, attack_only=TRUE) 
-#packets_m18 = read_pcap_csv(log2n=log2n, log2m=18, pcap_csv=pcap_csv_m18, attack_only=TRUE) 
+packets_m16 = read_pcap_csv(log2n=log2n, log2m=16, pcap_csv=pcap_csv_m16, attack_only=TRUE) 
+packets_m18 = read_pcap_csv(log2n=log2n, log2m=18, pcap_csv=pcap_csv_m18, attack_only=TRUE) 
 
 
 ```
@@ -84,13 +84,13 @@ tcad.m18 = read_tcad_trace(tcad.m18.trace)
 entropy.title = "Entropy for each Observation Window "
 
 get_plot_tcad(tcad.m14, tcad.m14.k) + labs(title=str_c(entropy.title,"(m = 2^14)"))
-my_ggsave(plot=last_plot(), path="graphics_m14", filename="entropy_all")
+my_ggsave(plot=last_plot(), path="graphics_m14", filename="entropy_all_n_2_27")
 
 get_plot_tcad(tcad.m16, tcad.m16.k) + labs(title=str_c(entropy.title,"(m = 2^16)"))
-my_ggsave(plot=last_plot(), path="graphics_m16", filename="entropy_all")
+my_ggsave(plot=last_plot(), path="graphics_m16", filename="entropy_all_n_2_27")
 
 get_plot_tcad(tcad.m18, tcad.m18.k) + labs(title=str_c(entropy.title,"(m = 2^18)"))
-my_ggsave(plot=last_plot(), path="graphics_m18", filename="entropy_all")
+my_ggsave(plot=last_plot(), path="graphics_m18", filename="entropy_all_n_2_27")
 
 ```
 
@@ -103,13 +103,13 @@ We have the graph for the entire experiments. Now we need to focus in the attack
 title = "Entropy for each Observation Window - Attack Phase "
 
 get_plot_tcad_attack(tcad.m14, tcad.m14.k, log2n, 14) + labs(title=str_c(title,"(m = 2^14)"))
-my_ggsave(plot=last_plot(), path="graphics_m14", filename="entropy_attack")
+my_ggsave(plot=last_plot(), path="graphics_m14", filename="entropy_attack_n_2_27")
 
 get_plot_tcad_attack(tcad.m16, tcad.m16.k, log2n, 16) + labs(title=str_c(title,"(m = 2^16)"))
-my_ggsave(plot=last_plot(), path="graphics_m16", filename="entropy_attack")
+my_ggsave(plot=last_plot(), path="graphics_m16", filename="entropy_attack_n_2_27")
 
 get_plot_tcad_attack(tcad.m18, tcad.m18.k, log2n, 18) + labs(title=str_c(title,"(m = 2^18)"))
-my_ggsave(plot=last_plot(), path="graphics_m18", filename="entropy_attack")
+my_ggsave(plot=last_plot(), path="graphics_m18", filename="entropy_attack_n_2_27")
 
 ```
 
@@ -167,21 +167,24 @@ Base Stats and Confidence Intervals: TPR and FPR are proportions whose values we
 
 summary_all = tibble() 
 
-for(log2m in seq(14, 18, by=2)) {
+for(log2m in seq(14, 16, by=2)) { # Was 14, 18, 2
 
   log2m = as.integer(log2m)
   
   if (log2m == 14)  {
     packets = packets_m14 
+    sequence = seq(-256, 256, by=16)
   } else if (log2m == 16) {
     packets = packets_m16 
+    sequence = seq(-512, 512, by=32)
   } else if (log2m == 18) {
     packets = packets_m18 
+    sequence = seq(-1024, 1024, by=64)
   } else {
     stop("Invalid log2m value.")
   }
 
-  for(diff_threshold in seq(-640, 640, by=32)) {
+  for(diff_threshold in sequence) { # Old: -640, 640, 32; OK: -32, 384, by=32
   
     divert = function(diff) (diff >= diff_threshold)
     packets = packets %>% 
@@ -204,12 +207,12 @@ summary_all
 # Log2m == 18: ideal = 1280
 
 summary_all %>% 
-  ggplot(aes(x=t, color=as.factor(log2m))) + 
+  ggplot(aes(x=t/2^(log2m/2+1), color=as.factor(log2m))) + 
   geom_line(aes(y=p_tp)) + geom_point(aes(y=p_tp), shape=5) + 
   geom_line(aes(y=p_fp)) + geom_point(aes(y=p_fp), shape=4) + 
   scale_color_manual(name="log2m", breaks=c(14,16,18), values=c("red","green","blue")) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
-  labs(x="Mitigation Threshold (t)", y="") + 
+  labs(x="Normalized Mitigation Threshold (t/2^(log2(m)/2+1))", y="") + 
   theme_classic() 
 
 graph_path = "graphics"
@@ -222,13 +225,13 @@ summary_all_x = bind_rows(summary_all_tpr, summary_all_fpr)
 summary_all_x
 
 summary_all_x %>% 
-  ggplot(aes(x=t, color=type, shape=type)) + 
+  ggplot(aes(x=t/2^(log2m/2+1), color=type, shape=type)) + 
   geom_line(aes(y=mean), linetype="dashed" ) + 
   geom_point(aes(y=mean), size=2) + 
   geom_errorbar(aes(ymin=lb, ymax=ub)) + 
   scale_color_manual(name="type", values=c("red","blue")) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
-  labs(x="Mitigation Threshold (t)", y="") + 
+  labs(x="Normalized Mitigation Threshold (t/2^(log2(m)/2+1))", y="") + 
   facet_grid(rows = vars(log2m), labeller = label_both) +
   theme_classic() +
   theme(legend.title = element_blank())
@@ -252,13 +255,13 @@ for(log2m in seq(14, 18, by=2)) {
   
   if (log2m == 14)  {
     packets = packets_m14 
-    diff_threshold = 512
+    diff_threshold = 256
   } else if (log2m == 16) {
     packets = packets_m16 
-    diff_threshold = 768
+    diff_threshold = 512
   } else if (log2m == 18) {
     packets = packets_m18 
-    diff_threshold = 1280
+    diff_threshold = 1024
   } else {
     stop("Invalid log2m value.")
   }
@@ -273,7 +276,7 @@ for(log2m in seq(14, 18, by=2)) {
   stats_all = bind_rows(stats_all, stats)
     
   graph_path = str_c("graphics_m", log2m)
-  m_annotation = str_c("(m = 2^", log2m, ")")   
+  m_annotation = str_c("(n = 2^27, m = 2^", log2m, ")")   
   
   # It would be cool to plot several box plots. 
   graph_false_negatives(packets)

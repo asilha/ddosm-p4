@@ -3,13 +3,18 @@ library(stringr)
 library(svglite)
 library(tidyverse)
 
-# Function inputs are expressed in numbers of packets.
+################################################################################
+# Helper Functions 
+
+# Input: packet quantity / index.
+# Output: observation window index. 
+
+get_ow = function(index, m) as.integer((index - 1) %/% m + 1) 
+
+# Input: 
 #   n: Length of the detection phase, passed to trafg (as '-n 1024000', for instance).
 #   m: Length of the observation window, passed to tcad JSON file (as '"window_size": 262144', for instance)
-#
-# Function outputs are expressed in numbers of observation windows. 
-
-# 2^27 => 250, 125, 250, 125 
+# Output: packet quantity / index. 
 
 detection = function(log2n, log2m) as.integer(2^(log2n - log2m - 10) * 1000)     
 training  = function(log2n, log2m) as.integer(detection(log2n, log2m) / 2) # Training length = detection / 2 
@@ -19,10 +24,69 @@ safety    = function(log2n, log2m) as.integer(detection(log2n, log2m) / 4) # Pre
 attack_first = function(log2n, log2m) as.integer(training(log2n, log2m) + safety(log2n, log2m) + 1)
 attack_last  = function(log2n, log2m) as.integer(training(log2n, log2m) + safety(log2n, log2m) + attack(log2n, log2m))
 
-# Helper function to get the OW number from a packet index.
+################################################################################
+# TCAD Traces
 
-get_ow = function(index, m) as.integer((index - 1) %/% m + 1) 
+read_tcad_trace = function(trace_file) {
+  
+  col_names = c("ts",
+                "src_ent",
+                "src_ewma",
+                "src_ewmmd",
+                "dst_ent",
+                "dst_ewma",
+                "dst_ewmmd",
+                "alarm")
+  
+  col_types = "ciddiddl"
+  
+  tcad_trace = readr::read_table2(trace_file,
+                                  col_names = col_names,
+                                  col_types = col_types)
+  
+  tcad_trace = tcad_trace %>% tibble::rowid_to_column("ow")
+  
+  # Entropy values: 4 fractional bits.
+  # EWMA/EWMMD: 18 fractional bits.
+  
+  tcad_trace = tcad_trace %>% dplyr::mutate(
+    src_ent   = src_ent/16,
+    dst_ent   = dst_ent/16,
+    src_ewma  = src_ewma/262144,
+    dst_ewma  = dst_ewma/262144,
+    src_ewmmd = src_ewmmd/262144,
+    dst_ewmmd = dst_ewmmd/262144)  
+  return(tcad_trace)
+  
+}
 
+get_plot_tcad = function(tcad, k) {
+  
+  plot_options = list(  
+    labs(x="OW number", y="Entropy"),
+    geom_point(mapping=aes(y=src_ent), size=0.25, color="seagreen4"), 
+    geom_point(mapping=aes(y=dst_ent), size=0.25, color="steelblue4"),
+    geom_line(mapping=aes(y=src_ewma+k*src_ewmmd), color="seagreen4"),
+    geom_line(mapping=aes(y=dst_ewma-k*dst_ewmmd), color="steelblue4"),
+    theme_classic())
+  
+  plot = tcad %>% ggplot(mapping=aes(x=ow)) + plot_options
+  
+  return(plot)
+}
+
+get_plot_tcad_attack = function(tcad, tcad_k, log2n, log2m) {
+  
+  first = attack_first(log2n, log2m) + 1
+  last  = attack_last(log2n, log2m)
+  
+  plot = get_plot_tcad(tcad %>% filter(ow>=first, ow<=last), tcad_k) 
+  
+  return(plot)
+  
+}
+
+################################################################################
 # Packet Traces
 
 read_pcap_csv = function(log2n, log2m, pcap_csv, attack_only) {
@@ -190,63 +254,3 @@ graph_results = function(packets, m_annotation) {
 
 }
 
-# TCAD Traces
-
-read_tcad_trace = function(trace_file) {
-  
-  col_names = c("ts",
-                "src_ent",
-                "src_ewma",
-                "src_ewmmd",
-                "dst_ent",
-                "dst_ewma",
-                "dst_ewmmd",
-                "alarm")
-  
-  col_types = "ciddiddl"
-  
-  tcad_trace = readr::read_table2(trace_file,
-                                  col_names = col_names,
-                                  col_types = col_types)
-  
-  tcad_trace = tcad_trace %>% tibble::rowid_to_column("ow")
-  
-  # Entropy values: 4 fractional bits.
-  # EWMA/EWMMD: 18 fractional bits.
-  
-  tcad_trace = tcad_trace %>% dplyr::mutate(
-    src_ent   = src_ent/16,
-    dst_ent   = dst_ent/16,
-    src_ewma  = src_ewma/262144,
-    dst_ewma  = dst_ewma/262144,
-    src_ewmmd = src_ewmmd/262144,
-    dst_ewmmd = dst_ewmmd/262144)  
-  return(tcad_trace)
-  
-}
-
-get_plot_tcad = function(tcad, k) {
-  
-  plot_options = list(  
-    labs(x="OW number", y="Entropy"),
-    geom_point(mapping=aes(y=src_ent), size=0.25, color="seagreen4"), 
-    geom_point(mapping=aes(y=dst_ent), size=0.25, color="steelblue4"),
-    geom_line(mapping=aes(y=src_ewma+k*src_ewmmd), color="seagreen4"),
-    geom_line(mapping=aes(y=dst_ewma-k*dst_ewmmd), color="steelblue4"),
-    theme_classic())
-  
-  plot = tcad %>% ggplot(mapping=aes(x=ow)) + plot_options
-  
-  return(plot)
-}
-
-get_plot_tcad_attack = function(tcad, tcad_k, log2n, log2m) {
-  
-  first = attack_first(log2n, log2m) + 1
-  last  = attack_last(log2n, log2m)
-  
-  plot = get_plot_tcad(tcad %>% filter(ow>=first, ow<=last), tcad_k) 
-  
-  return(plot)
-  
-}
