@@ -13,5 +13,6 @@ workloads/*
 *_out.csv.gz
 *_out.pcapng
 *.pyc
+cleanup.sh
 desktop.ini
 .Rproj.user
