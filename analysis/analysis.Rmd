@@ -35,9 +35,9 @@ pcap_csv_m14 = str_c(pcap_dir,"/n_2_27_m_2_14/if3_attack_out.csv.gz")
 pcap_csv_m16 = str_c(pcap_dir,"/n_2_27_m_2_16/if3_attack_out.csv.gz")
 pcap_csv_m18 = str_c(pcap_dir,"/n_2_27_m_2_18/if3_attack_out.csv.gz")
 
-packets_m14 = read_pcap_csv(log2n=log2n, log2m=14, pcap_csv=pcap_csv_m14, attack_only=TRUE) 
-packets_m16 = read_pcap_csv(log2n=log2n, log2m=16, pcap_csv=pcap_csv_m16, attack_only=TRUE) 
-packets_m18 = read_pcap_csv(log2n=log2n, log2m=18, pcap_csv=pcap_csv_m18, attack_only=TRUE) 
+#packets_m14 = read_pcap_csv(log2n=log2n, log2m=14, pcap_csv=pcap_csv_m14, attack_only=TRUE) 
+#packets_m16 = read_pcap_csv(log2n=log2n, log2m=16, pcap_csv=pcap_csv_m16, attack_only=TRUE) 
+#packets_m18 = read_pcap_csv(log2n=log2n, log2m=18, pcap_csv=pcap_csv_m18, attack_only=TRUE) 
 
 
 ```
@@ -58,7 +58,8 @@ Log2(m) | k     | FPR
 
 ```{r }
 
-tcad.trace.dir = "~/p4sec/ddosm-p4/labs/ddos20_long/tcad_logs"
+# tcad.trace.dir = "~/p4sec/ddosm-p4/labs/ddos20_long/tcad_logs"
+tcad.trace.dir = "D:/P4/ddosm-p4/labs/ddos20_long/tcad_logs"
 
 tcad.m14.k = 4.875
 tcad.m16.k = 4.875
@@ -202,6 +203,8 @@ for(log2m in seq(14, 16, by=2)) { # Was 14, 18, 2
 
 summary_all
 
+# summary_all = read.csv('summary_all.csv')
+
 # Log2m == 14: ideal = 512
 # Log2m == 16: ideal = 768
 # Log2m == 18: ideal = 1280
@@ -232,7 +235,7 @@ summary_all_x %>%
   scale_color_manual(name="type", values=c("red","blue")) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
   labs(x="Normalized Mitigation Threshold (t/2^(log2(m)/2+1))", y="") + 
-  facet_grid(rows = vars(log2m), labeller = label_both) +
+  #facet_grid(rows = vars(log2m), labeller = label_both) +
   theme_classic() +
   theme(legend.title = element_blank())
 
@@ -242,6 +245,65 @@ my_ggsave(plot=last_plot(), path=graph_path, filename="tpr_fpr_2")
 
 
 ```
+
+```{r}
+
+summary_all = read.csv('summary_all.csv')
+summary_all_tpr = summary_all %>% transmute(log2m=log2m, t=t, type="TPR", mean=p_tp, lb=i95_tp_lb, ub=i95_tp_ub) 
+summary_all_fpr = summary_all %>% transmute(log2m=log2m, t=t, type="FPR", mean=p_fp, lb=i95_fp_lb, ub=i95_fp_ub)
+summary_all_x = bind_rows(summary_all_tpr, summary_all_fpr)
+
+summary_all_x %>% 
+    filter(log2m==14) %>%
+    ggplot(aes(x=t/2^(log2m/2+1), color=type, shape=type)) + 
+    geom_line(aes(y=mean), linetype="dashed" ) + 
+    geom_point(aes(y=mean), size=2) + 
+    geom_errorbar(aes(ymin=lb, ymax=ub)) + 
+    scale_color_manual(name="type", values=c("red","blue")) +
+    scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+    labs(x="Normalized Mitigation Threshold (t/2^(log2(m)/2+1))", y="") + 
+    #facet_grid(rows = vars(log2m), labeller = label_both) +
+    theme_classic() +
+    theme(legend.title = element_blank(), legend.position = c(0.2,0.2))
+
+graph_path = "graphics"
+my_ggsave(plot=last_plot(), path=graph_path, filename="tpr_fpr_m14")
+
+summary_all_x %>% 
+    filter(log2m==16) %>%
+    ggplot(aes(x=t/2^(log2m/2+1), color=type, shape=type)) + 
+    geom_line(aes(y=mean), linetype="dashed" ) + 
+    geom_point(aes(y=mean), size=2) + 
+    geom_errorbar(aes(ymin=lb, ymax=ub)) + 
+    scale_color_manual(name="type", values=c("red","blue")) +
+    scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+    labs(x="Normalized Mitigation Threshold (t/2^(log2(m)/2+1))", y="") + 
+    #facet_grid(rows = vars(log2m), labeller = label_both) +
+    theme_classic() +
+    theme(legend.title = element_blank(), legend.position = c(0.2,0.2))
+
+graph_path = "graphics"
+my_ggsave(plot=last_plot(), path=graph_path, filename="tpr_fpr_m16")
+
+
+summary_all_x %>% 
+    filter(log2m==18) %>%
+    ggplot(aes(x=t/2^(log2m/2+1), color=type, shape=type)) + 
+    geom_line(aes(y=mean), linetype="dashed" ) + 
+    geom_point(aes(y=mean), size=2) + 
+    geom_errorbar(aes(ymin=lb, ymax=ub)) + 
+    scale_color_manual(name="type", values=c("red","blue")) +
+    scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+    labs(x="Normalized Mitigation Threshold (t/2^(log2(m)/2+1))", y="") + 
+    #facet_grid(rows = vars(log2m), labeller = label_both) +
+    theme_classic() +
+    theme(legend.title = element_blank(), legend.position = c(0.2,0.2))
+
+graph_path = "graphics"
+my_ggsave(plot=last_plot(), path=graph_path, filename="tpr_fpr_m18")
+
+```
+
 
 ## Diversion Statistics
 
