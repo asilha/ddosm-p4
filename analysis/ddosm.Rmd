@@ -72,7 +72,8 @@ Log2(m) | k     | FPR
 
 ```{r }
 
-tcad.trace.dir = "~/p4sec/ddosm-p4/lab/ddos20/tcad_logs"
+# tcad.trace.dir = "~/p4sec/ddosm-p4/lab/ddos20/tcad_logs"
+tcad.trace.dir = "D:/P4/ddosm-p4/labs/ddos20_long/tcad_logs"
 
 tcad.m14.k = 4.125
 tcad.m16.k = 4.500
