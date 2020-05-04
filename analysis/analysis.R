@@ -2,6 +2,7 @@ library(reshape2)
 library(stringr)
 library(svglite)
 library(tidyverse)
+library(ggthemes)
 
 ################################################################################
 # Helper Functions 
@@ -128,7 +129,10 @@ read_pcap_csv = function(log2n, log2m, pcap_csv, attack_only) {
   # Keep only the attack phase. 
   
   if (attack_only) {
-    packets = packets %>% filter(ow >= attack_first(log2n,log2m) + 2, ow <= attack_last(log2n,log2m)) 
+    # Original experiments.
+    # packets = packets %>% filter(ow >= attack_first(log2n,log2m) + 2, ow <= attack_last(log2n,log2m))
+    # Let's see what happens when we don't filter out the window at which Euclid detects the attack.
+    packets = packets %>% filter(ow >= attack_first(log2n,log2m) + 1, ow <= attack_last(log2n,log2m)) 
   } 
   
   return(packets)
@@ -224,10 +228,10 @@ get_summary = function(stats, log2n, log2m, t) {
   
 }
 
-my_ggsave = function(plot, path, filename) { 
+my_ggsave = function(plot, path, filename, width=8, height=6, units="in") { 
   
-  ggsave(plot = plot, path = path, filename = stringr::str_c(filename, ".pdf"))
-  #ggsave(plot = plot, path = path, filename = stringr::str_c(filename, ".svg"))
+  ggsave(plot = plot, path = path, filename = stringr::str_c(filename, ".pdf"), width=width, height=height, units=units)
+  # ggsave(plot = plot, path = path, filename = stringr::str_c(filename, ".svg"), width=width, height=height, units=units)
   
 }
 
