@@ -18,7 +18,7 @@ header ddosd_t {
     bit<32> dst_ewma;       // 34-37
     bit<32> dst_ewmmd;      // 38-41
     bit<8> alarm;           // 42
-    bit<8> defcon;          // 43
+    bit<8> dr_state;        // 43
     bit<16> ether_type;     // 44-45    [Copied from Ethernet.]
 }
 
@@ -55,7 +55,7 @@ struct metadata {
     bit<32> dst_ewma;
     bit<32> dst_ewmmd;
     bit<8> alarm;
-    bit<8> defcon; 
+    bit<8> dr_state; 
 }
 
 #endif /* HEADERS_P4 */
