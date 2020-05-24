@@ -350,6 +350,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                 cs_src_curr_4_wid.write(src_hash_4, current_wid[7:0]);      // Update the annotation. 
             }
 
+
             // Update the counters.
             src_curr_1 = src_curr_1 + src_ghash_1;                          // Update the counter.
             src_curr_2 = src_curr_2 + src_ghash_2;                          // Update the counter.
