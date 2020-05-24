@@ -268,11 +268,27 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
 
             // Estimate Frequencies for Source Addresses
 
-            // Row 1 Estimate
+            // Variables for counters and annotations.
             int<32> src_curr_1;
             bit<8>  src_curr_1_wid;
+            int<32> src_curr_2;
+            bit<8>  src_curr_2_wid;
+            int<32> src_curr_3;
+            bit<8>  src_curr_3_wid;
+            int<32> src_curr_4;
+            bit<8>  src_curr_4_wid;
+
+            // Read counters and annotations.
             cs_src_curr_1.read(src_curr_1, src_hash_1);                     // Read current counter.
             cs_src_curr_1_wid.read(src_curr_1_wid, src_hash_1);             // Read current annotation. 
+            cs_src_curr_2.read(src_curr_2, src_hash_2);                     // Read current counter.
+            cs_src_curr_2_wid.read(src_curr_2_wid, src_hash_2);             // Read current annotation. 
+            cs_src_curr_3.read(src_curr_3, src_hash_3);                     // Read current counter.
+            cs_src_curr_3_wid.read(src_curr_3_wid, src_hash_3);             // Read current annotation. 
+            cs_src_curr_4.read(src_curr_4, src_hash_4);                     // Read current counter.
+            cs_src_curr_4_wid.read(src_curr_4_wid, src_hash_4);             // Read current annotation. 
+
+            // Row 1 Estimate
             if (src_curr_1_wid != current_wid[7:0]) {                       // If we're in a different window:
                 if (current_wid[7:0] > 1 && dr_state_aux == 0) {            // If we're not in the first window.
                     cs_src_last_1.read(c_aux, src_hash_1);                  // Read counter from Wlast.
@@ -285,15 +301,8 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                 src_curr_1 = 0;                                             // Reset the counter.
                 cs_src_curr_1_wid.write(src_hash_1, current_wid[7:0]);      // Update the annotation. 
             }
-            src_curr_1 = src_curr_1 + src_ghash_1;                          // Update the counter.
-            cs_src_curr_1.write(src_hash_1, src_curr_1);                    // Write the counter.
-            src_curr_1 = src_curr_1 * src_ghash_1;                          // ghash and the counter have the same sign; this computes the absolute value.
 
             // Row 2 Estimate
-            int<32> src_curr_2;
-            bit<8>  src_curr_2_wid;
-            cs_src_curr_2.read(src_curr_2, src_hash_2);                     // Read current counter.
-            cs_src_curr_2_wid.read(src_curr_2_wid, src_hash_2);             // Read current annotation. 
             if (src_curr_2_wid != current_wid[7:0]) {                       // If we're in a different window:
                 if (current_wid[7:0] > 1 && dr_state_aux == 0) {            // If we're not in the first window.
                     cs_src_last_2.read(c_aux, src_hash_2);                  // Read counter from Wlast.
@@ -306,15 +315,8 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                 src_curr_2 = 0;                                             // Reset the counter.
                 cs_src_curr_2_wid.write(src_hash_2, current_wid[7:0]);      // Update the annotation. 
             }
-            src_curr_2 = src_curr_2 + src_ghash_2;                          // Update the counter.
-            cs_src_curr_2.write(src_hash_2, src_curr_2);                    // Write the counter.
-            src_curr_2 = src_curr_2 * src_ghash_2;                          // ghash and the counter have the same sign; this computes the absolute value.
 
             // Row 3 Estimate
-            int<32> src_curr_3;
-            bit<8>  src_curr_3_wid;
-            cs_src_curr_3.read(src_curr_3, src_hash_3);                     // Read current counter.
-            cs_src_curr_3_wid.read(src_curr_3_wid, src_hash_3);             // Read current annotation. 
             if (src_curr_3_wid != current_wid[7:0]) {                       // If we're in a different window:
                 if (current_wid[7:0] > 1 && dr_state_aux == 0) {            // If we're not in the first window.
                     cs_src_last_3.read(c_aux, src_hash_3);                  // Read counter from Wlast.
@@ -327,15 +329,8 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                 src_curr_3 = 0;                                             // Reset the counter.
                 cs_src_curr_3_wid.write(src_hash_3, current_wid[7:0]);      // Update the annotation. 
             }
-            src_curr_3 = src_curr_3 + src_ghash_3;                          // Update the counter.
-            cs_src_curr_3.write(src_hash_3, src_curr_3);                    // Write the counter.
-            src_curr_3 = src_curr_3 * src_ghash_3;                          // ghash and the counter have the same sign; this computes the absolute value.
 
             // Row 4 Estimate
-            int<32> src_curr_4;
-            bit<8>  src_curr_4_wid;
-            cs_src_curr_4.read(src_curr_4, src_hash_4);                     // Read current counter.
-            cs_src_curr_4_wid.read(src_curr_4_wid, src_hash_4);             // Read current annotation. 
             if (src_curr_4_wid != current_wid[7:0]) {                       // If we're in a different window:
                 if (current_wid[7:0] > 1 && dr_state_aux == 0) {            // If we're not in the first window.
                     cs_src_last_4.read(c_aux, src_hash_4);                  // Read counter from Wlast.
@@ -348,9 +343,24 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                 src_curr_4 = 0;                                             // Reset the counter.
                 cs_src_curr_4_wid.write(src_hash_4, current_wid[7:0]);      // Update the annotation. 
             }
+
+            // Update the counters.
+            src_curr_1 = src_curr_1 + src_ghash_1;                          // Update the counter.
+            src_curr_2 = src_curr_2 + src_ghash_2;                          // Update the counter.
+            src_curr_3 = src_curr_3 + src_ghash_3;                          // Update the counter.
             src_curr_4 = src_curr_4 + src_ghash_4;                          // Update the counter.
+            
+            // Write the counters back to the sketches.
+            cs_src_curr_1.write(src_hash_1, src_curr_1);                    // Write the counter.
+            cs_src_curr_2.write(src_hash_2, src_curr_2);                    // Write the counter.
+            cs_src_curr_3.write(src_hash_3, src_curr_3);                    // Write the counter.
             cs_src_curr_4.write(src_hash_4, src_curr_4);                    // Write the counter.
-            src_curr_4 = src_curr_4 * src_ghash_4;                          // ghash and the counter have the same sign; this computes the absolute value.
+
+            // ghash and the counter have the same sign; this computes the absolute value.
+            src_curr_1 = src_curr_1 * src_ghash_1;                         
+            src_curr_2 = src_curr_2 * src_ghash_2;                          
+            src_curr_3 = src_curr_3 * src_ghash_3;                          
+            src_curr_4 = src_curr_4 * src_ghash_4;                          
 
             // At this point, we have updated counters in src_curr_1, src_curr_2, src_curr_3, and src_curr_4.
 
@@ -392,11 +402,27 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
 
             // Estimate Frequencies for Destination Addresses
 
-            // Row 1 Estimate
+            // Variables for counters and annotations.
             int<32> dst_curr_1;
             bit<8>  dst_curr_1_wid;
+            int<32> dst_curr_2;
+            bit<8>  dst_curr_2_wid;
+            int<32> dst_curr_3;
+            bit<8>  dst_curr_3_wid;
+            int<32> dst_curr_4;
+            bit<8>  dst_curr_4_wid;
+
+            // Read counters and annotations.
             cs_dst_curr_1.read(dst_curr_1, dst_hash_1);                     // Read current counter.
             cs_dst_curr_1_wid.read(dst_curr_1_wid, dst_hash_1);             // Read current annotation. 
+            cs_dst_curr_2.read(dst_curr_2, dst_hash_2);                     // Read current counter.
+            cs_dst_curr_2_wid.read(dst_curr_2_wid, dst_hash_2);             // Read current annotation. 
+            cs_dst_curr_3.read(dst_curr_3, dst_hash_3);                     // Read current counter.
+            cs_dst_curr_3_wid.read(dst_curr_3_wid, dst_hash_3);             // Read current annotation. 
+            cs_dst_curr_4.read(dst_curr_4, dst_hash_4);                     // Read current counter.
+            cs_dst_curr_4_wid.read(dst_curr_4_wid, dst_hash_4);             // Read current annotation. 
+
+            // Row 1 Estimate
             if (dst_curr_1_wid != current_wid[7:0]) {                       // If we're in a different window:
                 if (current_wid[7:0] > 1 && dr_state_aux == 0) {            // If we're not in the first window.
                     cs_dst_last_1.read(c_aux, dst_hash_1);                  // Read counter from Wlast.
@@ -409,15 +435,8 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                 dst_curr_1 = 0;                                             // Reset the counter.
                 cs_dst_curr_1_wid.write(dst_hash_1, current_wid[7:0]);      // Update the annotation. 
             }
-            dst_curr_1 = dst_curr_1 + dst_ghash_1;                          // Update the counter.
-            cs_dst_curr_1.write(dst_hash_1, dst_curr_1);                    // Write the counter.
-            dst_curr_1 = dst_curr_1 * dst_ghash_1;                          // ghash and the counter have the same sign; this computes the absolute value.
 
             // Row 2 Estimate
-            int<32> dst_curr_2;
-            bit<8>  dst_curr_2_wid;
-            cs_dst_curr_2.read(dst_curr_2, dst_hash_2);                     // Read current counter.
-            cs_dst_curr_2_wid.read(dst_curr_2_wid, dst_hash_2);             // Read current annotation. 
             if (dst_curr_2_wid != current_wid[7:0]) {                       // If we're in a different window:
                 if (current_wid[7:0] > 1 && dr_state_aux == 0) {            // If we're not in the first window.
                     cs_dst_last_2.read(c_aux, dst_hash_2);                  // Read counter from Wlast.
@@ -430,15 +449,8 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                 dst_curr_2 = 0;                                             // Reset the counter.
                 cs_dst_curr_2_wid.write(dst_hash_2, current_wid[7:0]);      // Update the annotation. 
             }
-            dst_curr_2 = dst_curr_2 + dst_ghash_2;                          // Update the counter.
-            cs_dst_curr_2.write(dst_hash_2, dst_curr_2);                    // Write the counter.
-            dst_curr_2 = dst_curr_2 * dst_ghash_2;                          // ghash and the counter have the same sign; this computes the absolute value.
 
             // Row 3 Estimate
-            int<32> dst_curr_3;
-            bit<8>  dst_curr_3_wid;
-            cs_dst_curr_3.read(dst_curr_3, dst_hash_3);                     // Read current counter.
-            cs_dst_curr_3_wid.read(dst_curr_3_wid, dst_hash_3);             // Read current annotation. 
             if (dst_curr_3_wid != current_wid[7:0]) {                       // If we're in a different window:
                 if (current_wid[7:0] > 1 && dr_state_aux == 0) {            // If we're not in the first window.
                     cs_dst_last_3.read(c_aux, dst_hash_3);                  // Read counter from Wlast.
@@ -451,15 +463,8 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                 dst_curr_3 = 0;                                             // Reset the counter.
                 cs_dst_curr_3_wid.write(dst_hash_3, current_wid[7:0]);      // Update the annotation. 
             }
-            dst_curr_3 = dst_curr_3 + dst_ghash_3;                          // Update the counter.
-            cs_dst_curr_3.write(dst_hash_3, dst_curr_3);                    // Write the counter.
-            dst_curr_3 = dst_curr_3 * dst_ghash_3;                          // ghash and the counter have the same sign; this computes the absolute value.
 
             // Row 4 Estimate
-            int<32> dst_curr_4;
-            bit<8>  dst_curr_4_wid;
-            cs_dst_curr_4.read(dst_curr_4, dst_hash_4);                     // Read current counter.
-            cs_dst_curr_4_wid.read(dst_curr_4_wid, dst_hash_4);             // Read current annotation. 
             if (dst_curr_4_wid != current_wid[7:0]) {                       // If we're in a different window:
                 if (current_wid[7:0] > 1 && dr_state_aux == 0) {            // If we're not in the first window.
                     cs_dst_last_4.read(c_aux, dst_hash_4);                  // Read counter from Wlast.
@@ -472,9 +477,24 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                 dst_curr_4 = 0;                                             // Reset the counter.
                 cs_dst_curr_4_wid.write(dst_hash_4, current_wid[7:0]);      // Update the annotation. 
             }
+
+            // Update the counters.
+            dst_curr_1 = dst_curr_1 + dst_ghash_1;                          // Update the counter.
+            dst_curr_2 = dst_curr_2 + dst_ghash_2;                          // Update the counter.
+            dst_curr_3 = dst_curr_3 + dst_ghash_3;                          // Update the counter.
             dst_curr_4 = dst_curr_4 + dst_ghash_4;                          // Update the counter.
+            
+            // Write the counters back to the sketches.
+            cs_dst_curr_1.write(dst_hash_1, dst_curr_1);                    // Write the counter.
+            cs_dst_curr_2.write(dst_hash_2, dst_curr_2);                    // Write the counter.
+            cs_dst_curr_3.write(dst_hash_3, dst_curr_3);                    // Write the counter.
             cs_dst_curr_4.write(dst_hash_4, dst_curr_4);                    // Write the counter.
-            dst_curr_4 = dst_curr_4 * dst_ghash_4;                          // ghash and the counter have the same sign; this computes the absolute value.
+
+            // ghash and the counter have the same sign; this computes the absolute value.
+            dst_curr_1 = dst_curr_1 * dst_ghash_1;                         
+            dst_curr_2 = dst_curr_2 * dst_ghash_2;                          
+            dst_curr_3 = dst_curr_3 * dst_ghash_3;                          
+            dst_curr_4 = dst_curr_4 * dst_ghash_4;                          
 
             // At this point, we have updated counters in dst_curr_1, dst_curr_2, dst_curr_3, and dst_curr_4.
 
