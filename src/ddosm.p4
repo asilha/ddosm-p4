@@ -30,8 +30,8 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
         
         Our prototype has six extended count sketches: 
 
-        C_Src_Curr, C_Src_Last, C_Src_Safe, 
-        C_Dst_Curr, C_Dst_Last, C_Dst_Safe.
+        CS_Src_Curr, CS_Src_Last, CS_Src_Safe, 
+        CS_Dst_Curr, CS_Dst_Last, CS_Dst_Safe.
 
         "Src" and "Dst" indicate whether the sketch approximates counts for source or destination IP addresses. 
         "Curr", "Last", and "Safe" indicate the type of observation window to which the sketch refers.  
@@ -41,77 +41,77 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
         
     */ 
     
-    // C_Src_Curr (Source IP) (Current OW)
+    // CS_Src_Curr (Source IP) (Current OW)
     // Counters 
-    register<int<32>>(CS_WIDTH) c_src_curr_1;
-    register<int<32>>(CS_WIDTH) c_src_curr_2;
-    register<int<32>>(CS_WIDTH) c_src_curr_3;
-    register<int<32>>(CS_WIDTH) c_src_curr_4;
+    register<int<32>>(CS_WIDTH) cs_src_curr_1;
+    register<int<32>>(CS_WIDTH) cs_src_curr_2;
+    register<int<32>>(CS_WIDTH) cs_src_curr_3;
+    register<int<32>>(CS_WIDTH) cs_src_curr_4;
     // Annotations 
-    register<bit<8>>(CS_WIDTH) c_src_curr_1_wid;
-    register<bit<8>>(CS_WIDTH) c_src_curr_2_wid;
-    register<bit<8>>(CS_WIDTH) c_src_curr_3_wid;
-    register<bit<8>>(CS_WIDTH) c_src_curr_4_wid;
+    register<bit<8>>(CS_WIDTH) cs_src_curr_1_wid;
+    register<bit<8>>(CS_WIDTH) cs_src_curr_2_wid;
+    register<bit<8>>(CS_WIDTH) cs_src_curr_3_wid;
+    register<bit<8>>(CS_WIDTH) cs_src_curr_4_wid;
 
-    // C_Dst_Curr (Destination IP) (Current OW)
+    // CS_Dst_Curr (Destination IP) (Current OW)
     // Counters 
-    register<int<32>>(CS_WIDTH) c_dst_curr_1;
-    register<int<32>>(CS_WIDTH) c_dst_curr_2;
-    register<int<32>>(CS_WIDTH) c_dst_curr_3;
-    register<int<32>>(CS_WIDTH) c_dst_curr_4;
+    register<int<32>>(CS_WIDTH) cs_dst_curr_1;
+    register<int<32>>(CS_WIDTH) cs_dst_curr_2;
+    register<int<32>>(CS_WIDTH) cs_dst_curr_3;
+    register<int<32>>(CS_WIDTH) cs_dst_curr_4;
     // Annotations
-    register<bit<8>>(CS_WIDTH) c_dst_curr_1_wid;
-    register<bit<8>>(CS_WIDTH) c_dst_curr_2_wid;
-    register<bit<8>>(CS_WIDTH) c_dst_curr_3_wid;
-    register<bit<8>>(CS_WIDTH) c_dst_curr_4_wid;
+    register<bit<8>>(CS_WIDTH) cs_dst_curr_1_wid;
+    register<bit<8>>(CS_WIDTH) cs_dst_curr_2_wid;
+    register<bit<8>>(CS_WIDTH) cs_dst_curr_3_wid;
+    register<bit<8>>(CS_WIDTH) cs_dst_curr_4_wid;
 
-    // C_Src_Last (Source IP) (Last OW)
+    // CS_Src_Last (Source IP) (Last OW)
     // Counters
-    register<int<32>>(CS_WIDTH) c_src_last_1;
-    register<int<32>>(CS_WIDTH) c_src_last_2;
-    register<int<32>>(CS_WIDTH) c_src_last_3;
-    register<int<32>>(CS_WIDTH) c_src_last_4;
+    register<int<32>>(CS_WIDTH) cs_src_last_1;
+    register<int<32>>(CS_WIDTH) cs_src_last_2;
+    register<int<32>>(CS_WIDTH) cs_src_last_3;
+    register<int<32>>(CS_WIDTH) cs_src_last_4;
     // Annotations
-    register<bit<8>>(CS_WIDTH) c_src_last_1_wid;
-    register<bit<8>>(CS_WIDTH) c_src_last_2_wid;
-    register<bit<8>>(CS_WIDTH) c_src_last_3_wid;
-    register<bit<8>>(CS_WIDTH) c_src_last_4_wid;
+    register<bit<8>>(CS_WIDTH) cs_src_last_1_wid;
+    register<bit<8>>(CS_WIDTH) cs_src_last_2_wid;
+    register<bit<8>>(CS_WIDTH) cs_src_last_3_wid;
+    register<bit<8>>(CS_WIDTH) cs_src_last_4_wid;
 
-    // C_Dst_Last (Destination IP) (Last OW)
+    // CS_Dst_Last (Destination IP) (Last OW)
     // Counters
-    register<int<32>>(CS_WIDTH) c_dst_last_1;
-    register<int<32>>(CS_WIDTH) c_dst_last_2;
-    register<int<32>>(CS_WIDTH) c_dst_last_3;
-    register<int<32>>(CS_WIDTH) c_dst_last_4;
+    register<int<32>>(CS_WIDTH) cs_dst_last_1;
+    register<int<32>>(CS_WIDTH) cs_dst_last_2;
+    register<int<32>>(CS_WIDTH) cs_dst_last_3;
+    register<int<32>>(CS_WIDTH) cs_dst_last_4;
     // Annotations
-    register<bit<8>>(CS_WIDTH) c_dst_last_1_wid;
-    register<bit<8>>(CS_WIDTH) c_dst_last_2_wid;
-    register<bit<8>>(CS_WIDTH) c_dst_last_3_wid;
-    register<bit<8>>(CS_WIDTH) c_dst_last_4_wid;  
+    register<bit<8>>(CS_WIDTH) cs_dst_last_1_wid;
+    register<bit<8>>(CS_WIDTH) cs_dst_last_2_wid;
+    register<bit<8>>(CS_WIDTH) cs_dst_last_3_wid;
+    register<bit<8>>(CS_WIDTH) cs_dst_last_4_wid;  
 
-    // C_Src_Safe (Source IP) (Safe OW)
+    // CS_Src_Safe (Source IP) (Safe OW)
     // Counters
-    register<int<32>>(CS_WIDTH) c_src_safe_1;
-    register<int<32>>(CS_WIDTH) c_src_safe_2;
-    register<int<32>>(CS_WIDTH) c_src_safe_3;
-    register<int<32>>(CS_WIDTH) c_src_safe_4;
+    register<int<32>>(CS_WIDTH) cs_src_safe_1;
+    register<int<32>>(CS_WIDTH) cs_src_safe_2;
+    register<int<32>>(CS_WIDTH) cs_src_safe_3;
+    register<int<32>>(CS_WIDTH) cs_src_safe_4;
     // Annotations
-    register<bit<8>>(CS_WIDTH) c_src_safe_1_wid;
-    register<bit<8>>(CS_WIDTH) c_src_safe_2_wid;
-    register<bit<8>>(CS_WIDTH) c_src_safe_3_wid;
-    register<bit<8>>(CS_WIDTH) c_src_safe_4_wid;
+    register<bit<8>>(CS_WIDTH) cs_src_safe_1_wid;
+    register<bit<8>>(CS_WIDTH) cs_src_safe_2_wid;
+    register<bit<8>>(CS_WIDTH) cs_src_safe_3_wid;
+    register<bit<8>>(CS_WIDTH) cs_src_safe_4_wid;
 
-    // C_Dst_Safe (Destination IP) (Safe OW)
+    // CS_Dst_Safe (Destination IP) (Safe OW)
     // Counters
-    register<int<32>>(CS_WIDTH) c_dst_safe_1;
-    register<int<32>>(CS_WIDTH) c_dst_safe_2;
-    register<int<32>>(CS_WIDTH) c_dst_safe_3;
-    register<int<32>>(CS_WIDTH) c_dst_safe_4;
+    register<int<32>>(CS_WIDTH) cs_dst_safe_1;
+    register<int<32>>(CS_WIDTH) cs_dst_safe_2;
+    register<int<32>>(CS_WIDTH) cs_dst_safe_3;
+    register<int<32>>(CS_WIDTH) cs_dst_safe_4;
     // Annotations
-    register<bit<8>>(CS_WIDTH) c_dst_safe_1_wid;
-    register<bit<8>>(CS_WIDTH) c_dst_safe_2_wid;
-    register<bit<8>>(CS_WIDTH) c_dst_safe_3_wid;
-    register<bit<8>>(CS_WIDTH) c_dst_safe_4_wid;  
+    register<bit<8>>(CS_WIDTH) cs_dst_safe_1_wid;
+    register<bit<8>>(CS_WIDTH) cs_dst_safe_2_wid;
+    register<bit<8>>(CS_WIDTH) cs_dst_safe_3_wid;
+    register<bit<8>>(CS_WIDTH) cs_dst_safe_4_wid;  
 
     // Entropy Norms - Fixed point representation: 28 integer bits, 4 fractional bits.
     register<bit<32>>(1) src_S;
@@ -253,109 +253,119 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             // Beginning of source address frequency and entropy norm estimation.
 
             // Obtain column IDs for all rows
-            bit<32> src_h1;
-            bit<32> src_h2;
-            bit<32> src_h3;
-            bit<32> src_h4;
-            cs_hash(hdr.ipv4.src_addr, src_h1, src_h2, src_h3, src_h4);
+            bit<32> src_hash_1;
+            bit<32> src_hash_2;
+            bit<32> src_hash_3;
+            bit<32> src_hash_4;
+            cs_hash(hdr.ipv4.src_addr, src_hash_1, src_hash_2, src_hash_3, src_hash_4);
 
             // Determine whether to increase or decrease counters
-            int<32> src_g1;
-            int<32> src_g2;
-            int<32> src_g3;
-            int<32> src_g4;
-            cs_ghash(hdr.ipv4.src_addr, src_g1, src_g2, src_g3, src_g4);
+            int<32> src_ghash_1;
+            int<32> src_ghash_2;
+            int<32> src_ghash_3;
+            int<32> src_ghash_4;
+            cs_ghash(hdr.ipv4.src_addr, src_ghash_1, src_ghash_2, src_ghash_3, src_ghash_4);
 
             // Estimate Frequencies for Source Addresses
 
+            // Variables for counters and annotations.
+            int<32> src_curr_1;
+            bit<8>  src_curr_1_wid;
+            int<32> src_curr_2;
+            bit<8>  src_curr_2_wid;
+            int<32> src_curr_3;
+            bit<8>  src_curr_3_wid;
+            int<32> src_curr_4;
+            bit<8>  src_curr_4_wid;
+
+            // Read counters and annotations.
+            cs_src_curr_1.read(src_curr_1, src_hash_1);                     // Read current counter.
+            cs_src_curr_1_wid.read(src_curr_1_wid, src_hash_1);             // Read current annotation. 
+            cs_src_curr_2.read(src_curr_2, src_hash_2);                     // Read current counter.
+            cs_src_curr_2_wid.read(src_curr_2_wid, src_hash_2);             // Read current annotation. 
+            cs_src_curr_3.read(src_curr_3, src_hash_3);                     // Read current counter.
+            cs_src_curr_3_wid.read(src_curr_3_wid, src_hash_3);             // Read current annotation. 
+            cs_src_curr_4.read(src_curr_4, src_hash_4);                     // Read current counter.
+            cs_src_curr_4_wid.read(src_curr_4_wid, src_hash_4);             // Read current annotation. 
+
             // Row 1 Estimate
-            int<32> src_c1;
-            bit<8>  src_c1_wid;
-            c_src_curr_1.read(src_c1, src_h1);           // Read current counter.
-            c_src_curr_1_wid.read(src_c1_wid, src_h1);     // Read current annotation. 
-            if (src_c1_wid != current_wid[7:0]) {      // If we're in a different window:
-                if (current_wid[7:0] > 1 && dr_state_aux == 0) {
-                    c_src_last_1.read(c_aux, src_h1);            // Read tm_a counter.
-                    c_src_last_1_wid.read(ow_aux, src_h1);        // Read tm_a annotation. 
-                    c_src_safe_1.write(src_h1, c_aux);           // Copy tm_a counter to tm_b.
-                    c_src_safe_1_wid.write(src_h1, ow_aux);       // Copy tm_a annotation to tm_b.
+            if (src_curr_1_wid != current_wid[7:0]) {                       // If we're in a different window:
+                if (current_wid[7:0] > 1 && dr_state_aux == 0) {            // If we're not in the first window.
+                    cs_src_last_1.read(c_aux, src_hash_1);                  // Read counter from Wlast.
+                    cs_src_last_1_wid.read(ow_aux, src_hash_1);             // Read annotation from Wlast. 
+                    cs_src_safe_1.write(src_hash_1, c_aux);                 // Copy Wlast counter to Wsafe.
+                    cs_src_safe_1_wid.write(src_hash_1, ow_aux);            // Copy Wlast annotation to Wsafe.
                 }     
-                c_src_last_1.write(src_h1, src_c1);          // Copy w counter to tm_a.
-                c_src_last_1_wid.write(src_h1, src_c1_wid);    // Copy w annotation to tm_a.
-                src_c1 = 0;                                  // Reset the counter.
-                c_src_curr_1_wid.write(src_h1, current_wid[7:0]);   // Update the annotation. 
+                cs_src_last_1.write(src_hash_1, src_curr_1);                // Copy Wcurr counter to Wlast.
+                cs_src_last_1_wid.write(src_hash_1, src_curr_1_wid);        // Copy wcurr annotation to Wlast.
+                src_curr_1 = 0;                                             // Reset the counter.
+                cs_src_curr_1_wid.write(src_hash_1, current_wid[7:0]);      // Update the annotation. 
             }
-            src_c1 = src_c1 + src_g1;               // Update the counter.
-            c_src_curr_1.write(src_h1, src_c1);          // Write the counter.
-            src_c1 = src_c1 * src_g1;               // If g1 is negative, c1 will also be negative; this computes the absolute value.
 
             // Row 2 Estimate
-            int<32> src_c2;
-            bit<8>  src_c2_wid;
-            c_src_curr_2.read(src_c2, src_h2);           // Read current counter.
-            c_src_curr_2_wid.read(src_c2_wid, src_h2);     // Read annotation. 
-            if (src_c2_wid != current_wid[7:0]) {      // If we're in a different window:
-                if (current_wid[7:0] > 1 && dr_state_aux == 0) {
-                    c_src_last_2.read(c_aux, src_h2);            // Read tm_a counter.
-                    c_src_last_2_wid.read(ow_aux, src_h2);        // Read tm_a annotation. 
-                    c_src_safe_2.write(src_h2, c_aux);           // Copy tm_a counter to tm_b.
-                    c_src_safe_2_wid.write(src_h2, ow_aux);       // Copy tm_a annotation to tm_b.
+            if (src_curr_2_wid != current_wid[7:0]) {                       // If we're in a different window:
+                if (current_wid[7:0] > 1 && dr_state_aux == 0) {            // If we're not in the first window.
+                    cs_src_last_2.read(c_aux, src_hash_2);                  // Read counter from Wlast.
+                    cs_src_last_2_wid.read(ow_aux, src_hash_2);             // Read annotation from Wlast. 
+                    cs_src_safe_2.write(src_hash_2, c_aux);                 // Copy Wlast counter to Wsafe.
+                    cs_src_safe_2_wid.write(src_hash_2, ow_aux);            // Copy Wlast annotation to Wsafe.
                 }     
-                c_src_last_2.write(src_h2, src_c2);          // Copy w counter to tm_a.
-                c_src_last_2_wid.write(src_h2, src_c2_wid);    // Copy w annotation to tm_a.
-                src_c2 = 0;                                  // Reset the counter.
-                c_src_curr_2_wid.write(src_h2, current_wid[7:0]);   // Update the annotation. 
+                cs_src_last_2.write(src_hash_2, src_curr_2);                // Copy Wcurr counter to Wlast.
+                cs_src_last_2_wid.write(src_hash_2, src_curr_2_wid);        // Copy wcurr annotation to Wlast.
+                src_curr_2 = 0;                                             // Reset the counter.
+                cs_src_curr_2_wid.write(src_hash_2, current_wid[7:0]);      // Update the annotation. 
             }
-            src_c2 = src_c2 + src_g2;               // Update the counter.
-            c_src_curr_2.write(src_h2, src_c2);          // Write the counter.
-            src_c2 = src_c2 * src_g2;               // If g2 is negative, c2 will also be negative; this computes the absolute value.
 
             // Row 3 Estimate
-            int<32> src_c3;
-            bit<8>  src_c3_wid;
-            c_src_curr_3.read(src_c3, src_h3);           // Read current counter.
-            c_src_curr_3_wid.read(src_c3_wid, src_h3);     // Read annotation. 
-            if (src_c3_wid != current_wid[7:0]) {      // If we're in a different window:
-                if (current_wid[7:0] > 1 && dr_state_aux == 0) {
-                    c_src_last_3.read(c_aux, src_h3);            // Read tm_a counter.
-                    c_src_last_3_wid.read(ow_aux, src_h3);        // Read tm_a annotation. 
-                    c_src_safe_3.write(src_h3, c_aux);           // Copy tm_a counter to tm_b.
-                    c_src_safe_3_wid.write(src_h3, ow_aux);       // Copy tm_a annotation to tm_b.
+            if (src_curr_3_wid != current_wid[7:0]) {                       // If we're in a different window:
+                if (current_wid[7:0] > 1 && dr_state_aux == 0) {            // If we're not in the first window.
+                    cs_src_last_3.read(c_aux, src_hash_3);                  // Read counter from Wlast.
+                    cs_src_last_3_wid.read(ow_aux, src_hash_3);             // Read annotation from Wlast. 
+                    cs_src_safe_3.write(src_hash_3, c_aux);                 // Copy Wlast counter to Wsafe.
+                    cs_src_safe_3_wid.write(src_hash_3, ow_aux);            // Copy Wlast annotation to Wsafe.
                 }     
-                c_src_last_3.write(src_h3, src_c3);          // Copy w counter to tm_a.
-                c_src_last_3_wid.write(src_h3, src_c3_wid);    // Copy w annotation to tm_a.
-                src_c3 = 0;                                  // Reset the counter.
-                c_src_curr_3_wid.write(src_h3, current_wid[7:0]);   // Update the annotation. 
+                cs_src_last_3.write(src_hash_3, src_curr_3);                // Copy Wcurr counter to Wlast.
+                cs_src_last_3_wid.write(src_hash_3, src_curr_3_wid);        // Copy wcurr annotation to Wlast.
+                src_curr_3 = 0;                                             // Reset the counter.
+                cs_src_curr_3_wid.write(src_hash_3, current_wid[7:0]);      // Update the annotation. 
             }
-            src_c3 = src_c3 + src_g3;               // Update the counter.
-            c_src_curr_3.write(src_h3, src_c3);          // Write the counter.
-            src_c3 = src_c3 * src_g3;               // If g3 is negative, c3 will also be negative; this computes the absolute value.
 
             // Row 4 Estimate
-            int<32> src_c4;
-            bit<8>  src_c4_wid;
-            c_src_curr_4.read(src_c4, src_h4);           // Read current counter.
-            c_src_curr_4_wid.read(src_c4_wid, src_h4);     // Read annotation. 
-            if (src_c4_wid != current_wid[7:0]) {      // If we're in a different window:
-                if (current_wid[7:0] > 1 && dr_state_aux == 0) {
-                    c_src_last_4.read(c_aux, src_h4);            // Read tm_a counter.
-                    c_src_last_4_wid.read(ow_aux, src_h4);        // Read tm_a annotation. 
-                    c_src_safe_4.write(src_h4, c_aux);           // Copy tm_a counter to tm_b.
-                    c_src_safe_4_wid.write(src_h4, ow_aux);       // Copy tm_a annotation to tm_b.
+            if (src_curr_4_wid != current_wid[7:0]) {                       // If we're in a different window:
+                if (current_wid[7:0] > 1 && dr_state_aux == 0) {            // If we're not in the first window.
+                    cs_src_last_4.read(c_aux, src_hash_4);                  // Read counter from Wlast.
+                    cs_src_last_4_wid.read(ow_aux, src_hash_4);             // Read annotation from Wlast. 
+                    cs_src_safe_4.write(src_hash_4, c_aux);                 // Copy Wlast counter to Wsafe.
+                    cs_src_safe_4_wid.write(src_hash_4, ow_aux);            // Copy Wlast annotation to Wsafe.
                 }     
-                c_src_last_4.write(src_h4, src_c4);          // Copy w counter to tm_a.
-                c_src_last_4_wid.write(src_h4, src_c4_wid);    // Copy w annotation to tm_a.
-                src_c4 = 0;                                  // Reset the counter.
-                c_src_curr_4_wid.write(src_h4, current_wid[7:0]);   // Update the annotation. 
+                cs_src_last_4.write(src_hash_4, src_curr_4);                // Copy Wcurr counter to Wlast.
+                cs_src_last_4_wid.write(src_hash_4, src_curr_4_wid);        // Copy wcurr annotation to Wlast.
+                src_curr_4 = 0;                                             // Reset the counter.
+                cs_src_curr_4_wid.write(src_hash_4, current_wid[7:0]);      // Update the annotation. 
             }
-            src_c4 = src_c4 + src_g4;               // Update the counter.
-            c_src_curr_4.write(src_h4, src_c4);          // Write the counter.
-            src_c4 = src_c4 * src_g4;               // If g4 is negative, c4 will also be negative; this computes the absolute value.
 
-            // At this point, we have updated counters in src_c1, src_c2, src_c3, and src_c4.
+            // Update the counters.
+            src_curr_1 = src_curr_1 + src_ghash_1;                          // Update the counter.
+            src_curr_2 = src_curr_2 + src_ghash_2;                          // Update the counter.
+            src_curr_3 = src_curr_3 + src_ghash_3;                          // Update the counter.
+            src_curr_4 = src_curr_4 + src_ghash_4;                          // Update the counter.
+            
+            // Write the counters back to the sketches.
+            cs_src_curr_1.write(src_hash_1, src_curr_1);                    // Write the counter.
+            cs_src_curr_2.write(src_hash_2, src_curr_2);                    // Write the counter.
+            cs_src_curr_3.write(src_hash_3, src_curr_3);                    // Write the counter.
+            cs_src_curr_4.write(src_hash_4, src_curr_4);                    // Write the counter.
+
+            // ghash and the counter have the same sign; this computes the absolute value.
+            src_curr_1 = src_curr_1 * src_ghash_1;                         
+            src_curr_2 = src_curr_2 * src_ghash_2;                          
+            src_curr_3 = src_curr_3 * src_ghash_3;                          
+            src_curr_4 = src_curr_4 * src_ghash_4;                          
+
+            // At this point, we have updated counters in src_curr_1, src_curr_2, src_curr_3, and src_curr_4.
 
             // Count Sketch Source IP Frequency Estimate: store it in meta.ip_count.
-            median(src_c1, src_c2, src_c3, src_c4, meta.ip_count);
+            median(src_curr_1, src_curr_2, src_curr_3, src_curr_4, meta.ip_count);
 
             // LPM Table Lookup
             if (meta.ip_count > 0)              // This prevents having to perform a lookup when the argument is zero.
@@ -377,109 +387,119 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             // Beginning of destination address frequency and entropy norm estimation. 
 
             // Obtain column IDs for all rows
-            bit<32> dst_h1;
-            bit<32> dst_h2;
-            bit<32> dst_h3;
-            bit<32> dst_h4;
-            cs_hash(hdr.ipv4.dst_addr, dst_h1, dst_h2, dst_h3, dst_h4);
+            bit<32> dst_hash_1;
+            bit<32> dst_hash_2;
+            bit<32> dst_hash_3;
+            bit<32> dst_hash_4;
+            cs_hash(hdr.ipv4.dst_addr, dst_hash_1, dst_hash_2, dst_hash_3, dst_hash_4);
 
             // Determine whether to increase or decrease counters
-            int<32> dst_g1;
-            int<32> dst_g2;
-            int<32> dst_g3;
-            int<32> dst_g4;
-            cs_ghash(hdr.ipv4.dst_addr, dst_g1, dst_g2, dst_g3, dst_g4);
+            int<32> dst_ghash_1;
+            int<32> dst_ghash_2;
+            int<32> dst_ghash_3;
+            int<32> dst_ghash_4;
+            cs_ghash(hdr.ipv4.dst_addr, dst_ghash_1, dst_ghash_2, dst_ghash_3, dst_ghash_4);
 
             // Estimate Frequencies for Destination Addresses
 
+            // Variables for counters and annotations.
+            int<32> dst_curr_1;
+            bit<8>  dst_curr_1_wid;
+            int<32> dst_curr_2;
+            bit<8>  dst_curr_2_wid;
+            int<32> dst_curr_3;
+            bit<8>  dst_curr_3_wid;
+            int<32> dst_curr_4;
+            bit<8>  dst_curr_4_wid;
+
+            // Read counters and annotations.
+            cs_dst_curr_1.read(dst_curr_1, dst_hash_1);                     // Read current counter.
+            cs_dst_curr_1_wid.read(dst_curr_1_wid, dst_hash_1);             // Read current annotation. 
+            cs_dst_curr_2.read(dst_curr_2, dst_hash_2);                     // Read current counter.
+            cs_dst_curr_2_wid.read(dst_curr_2_wid, dst_hash_2);             // Read current annotation. 
+            cs_dst_curr_3.read(dst_curr_3, dst_hash_3);                     // Read current counter.
+            cs_dst_curr_3_wid.read(dst_curr_3_wid, dst_hash_3);             // Read current annotation. 
+            cs_dst_curr_4.read(dst_curr_4, dst_hash_4);                     // Read current counter.
+            cs_dst_curr_4_wid.read(dst_curr_4_wid, dst_hash_4);             // Read current annotation. 
+
             // Row 1 Estimate
-            int<32> dst_c1;
-            bit<8>  dst_c1_wid;
-            c_dst_curr_1.read(dst_c1, dst_h1);           // Read current counter.
-            c_dst_curr_1_wid.read(dst_c1_wid, dst_h1);     // Read annotation. 
-            if (dst_c1_wid != current_wid[7:0]) {      // If we're in a different window:
-                if (current_wid[7:0] > 1 && dr_state_aux == 0) {
-                    c_dst_last_1.read(c_aux, dst_h1);            // Read tm_a counter.
-                    c_dst_last_1_wid.read(ow_aux, dst_h1);        // Read tm_a annotation. 
-                    c_dst_safe_1.write(dst_h1, c_aux);           // Copy tm_a counter to tm_b.
-                    c_dst_safe_1_wid.write(dst_h1, ow_aux);       // Copy tm_a annotation to tm_b.
+            if (dst_curr_1_wid != current_wid[7:0]) {                       // If we're in a different window:
+                if (current_wid[7:0] > 1 && dr_state_aux == 0) {            // If we're not in the first window.
+                    cs_dst_last_1.read(c_aux, dst_hash_1);                  // Read counter from Wlast.
+                    cs_dst_last_1_wid.read(ow_aux, dst_hash_1);             // Read annotation from Wlast. 
+                    cs_dst_safe_1.write(dst_hash_1, c_aux);                 // Copy Wlast counter to Wsafe.
+                    cs_dst_safe_1_wid.write(dst_hash_1, ow_aux);            // Copy Wlast annotation to Wsafe.
                 }     
-                c_dst_last_1.write(dst_h1, dst_c1);          // Copy w counter to tm_a.
-                c_dst_last_1_wid.write(dst_h1, dst_c1_wid);    // Copy w annotation to tm_a.
-                dst_c1 = 0;                                  // Reset the counter.
-                c_dst_curr_1_wid.write(dst_h1, current_wid[7:0]);   // Update the annotation. 
+                cs_dst_last_1.write(dst_hash_1, dst_curr_1);                // Copy Wcurr counter to Wlast.
+                cs_dst_last_1_wid.write(dst_hash_1, dst_curr_1_wid);        // Copy wcurr annotation to Wlast.
+                dst_curr_1 = 0;                                             // Reset the counter.
+                cs_dst_curr_1_wid.write(dst_hash_1, current_wid[7:0]);      // Update the annotation. 
             }
-            dst_c1 = dst_c1 + dst_g1;               // Update the counter.
-            c_dst_curr_1.write(dst_h1, dst_c1);          // Write the counter.
-            dst_c1 = dst_c1 * dst_g1;               // If g1 is negative, c1 will also be negative; this computes the absolute value.
 
             // Row 2 Estimate
-            int<32> dst_c2;
-            bit<8>  dst_c2_wid;
-            c_dst_curr_2.read(dst_c2, dst_h2);           // Read current counter.
-            c_dst_curr_2_wid.read(dst_c2_wid, dst_h2);     // Read annotation. 
-            if (dst_c2_wid != current_wid[7:0]) {      // If we're in a different window:
-                if (current_wid[7:0] > 1 && dr_state_aux == 0) {
-                    c_dst_last_2.read(c_aux, dst_h2);            // Read tm_a counter.
-                    c_dst_last_2_wid.read(ow_aux, dst_h2);        // Read tm_a annotation. 
-                    c_dst_safe_2.write(dst_h2, c_aux);           // Copy tm_a counter to tm_b.
-                    c_dst_safe_2_wid.write(dst_h2, ow_aux);       // Copy tm_a annotation to tm_b.
+            if (dst_curr_2_wid != current_wid[7:0]) {                       // If we're in a different window:
+                if (current_wid[7:0] > 1 && dr_state_aux == 0) {            // If we're not in the first window.
+                    cs_dst_last_2.read(c_aux, dst_hash_2);                  // Read counter from Wlast.
+                    cs_dst_last_2_wid.read(ow_aux, dst_hash_2);             // Read annotation from Wlast. 
+                    cs_dst_safe_2.write(dst_hash_2, c_aux);                 // Copy Wlast counter to Wsafe.
+                    cs_dst_safe_2_wid.write(dst_hash_2, ow_aux);            // Copy Wlast annotation to Wsafe.
                 }     
-                c_dst_last_2.write(dst_h2, dst_c2);          // Copy w counter to tm_a.
-                c_dst_last_2_wid.write(dst_h2, dst_c2_wid);    // Copy w annotation to tm_a.
-                dst_c2 = 0;                                  // Reset the counter.
-                c_dst_curr_2_wid.write(dst_h2, current_wid[7:0]);   // Update the annotation. 
+                cs_dst_last_2.write(dst_hash_2, dst_curr_2);                // Copy Wcurr counter to Wlast.
+                cs_dst_last_2_wid.write(dst_hash_2, dst_curr_2_wid);        // Copy wcurr annotation to Wlast.
+                dst_curr_2 = 0;                                             // Reset the counter.
+                cs_dst_curr_2_wid.write(dst_hash_2, current_wid[7:0]);      // Update the annotation. 
             }
-            dst_c2 = dst_c2 + dst_g2;               // Update the counter.
-            c_dst_curr_2.write(dst_h2, dst_c2);          // Write the counter.
-            dst_c2 = dst_c2 * dst_g2;               // If g2 is negative, c2 will also be negative; this computes the absolute value.
 
             // Row 3 Estimate
-            int<32> dst_c3;
-            bit<8>  dst_c3_wid;
-            c_dst_curr_3.read(dst_c3, dst_h3);           // Read current counter.
-            c_dst_curr_3_wid.read(dst_c3_wid, dst_h3);     // Read annotation. 
-            if (dst_c3_wid != current_wid[7:0]) {      // If we're in a different window:
-                if (current_wid[7:0] > 1 && dr_state_aux == 0) {
-                    c_dst_last_3.read(c_aux, dst_h3);            // Read tm_a counter.
-                    c_dst_last_3_wid.read(ow_aux, dst_h3);        // Read tm_a annotation. 
-                    c_dst_safe_3.write(dst_h3, c_aux);           // Copy tm_a counter to tm_b.
-                    c_dst_safe_3_wid.write(dst_h3, ow_aux);       // Copy tm_a annotation to tm_b.
+            if (dst_curr_3_wid != current_wid[7:0]) {                       // If we're in a different window:
+                if (current_wid[7:0] > 1 && dr_state_aux == 0) {            // If we're not in the first window.
+                    cs_dst_last_3.read(c_aux, dst_hash_3);                  // Read counter from Wlast.
+                    cs_dst_last_3_wid.read(ow_aux, dst_hash_3);             // Read annotation from Wlast. 
+                    cs_dst_safe_3.write(dst_hash_3, c_aux);                 // Copy Wlast counter to Wsafe.
+                    cs_dst_safe_3_wid.write(dst_hash_3, ow_aux);            // Copy Wlast annotation to Wsafe.
                 }     
-                c_dst_last_3.write(dst_h3, dst_c3);          // Copy w counter to tm_a.
-                c_dst_last_3_wid.write(dst_h3, dst_c3_wid);    // Copy w annotation to tm_a.
-                dst_c3 = 0;                                  // Reset the counter.
-                c_dst_curr_3_wid.write(dst_h3, current_wid[7:0]);   // Update the annotation. 
+                cs_dst_last_3.write(dst_hash_3, dst_curr_3);                // Copy Wcurr counter to Wlast.
+                cs_dst_last_3_wid.write(dst_hash_3, dst_curr_3_wid);        // Copy wcurr annotation to Wlast.
+                dst_curr_3 = 0;                                             // Reset the counter.
+                cs_dst_curr_3_wid.write(dst_hash_3, current_wid[7:0]);      // Update the annotation. 
             }
-            dst_c3 = dst_c3 + dst_g3;               // Update the counter.
-            c_dst_curr_3.write(dst_h3, dst_c3);          // Write the counter.
-            dst_c3 = dst_c3 * dst_g3;               // If g3 is negative, c3 will also be negative; this computes the absolute value.
 
             // Row 4 Estimate
-            int<32> dst_c4;
-            bit<8>  dst_c4_wid;
-            c_dst_curr_4.read(dst_c4, dst_h4);           // Read current counter.
-            c_dst_curr_4_wid.read(dst_c4_wid, dst_h4);     // Read annotation. 
-            if (dst_c4_wid != current_wid[7:0]) {      // If we're in a different window:
-                if (current_wid[7:0] > 1 && dr_state_aux == 0) {
-                    c_dst_last_4.read(c_aux, dst_h4);            // Read tm_a counter.
-                    c_dst_last_4_wid.read(ow_aux, dst_h4);        // Read tm_a annotation. 
-                    c_dst_safe_4.write(dst_h4, c_aux);           // Copy tm_a counter to tm_b.
-                    c_dst_safe_4_wid.write(dst_h4, ow_aux);       // Copy tm_a annotation to tm_b.
+            if (dst_curr_4_wid != current_wid[7:0]) {                       // If we're in a different window:
+                if (current_wid[7:0] > 1 && dr_state_aux == 0) {            // If we're not in the first window.
+                    cs_dst_last_4.read(c_aux, dst_hash_4);                  // Read counter from Wlast.
+                    cs_dst_last_4_wid.read(ow_aux, dst_hash_4);             // Read annotation from Wlast. 
+                    cs_dst_safe_4.write(dst_hash_4, c_aux);                 // Copy Wlast counter to Wsafe.
+                    cs_dst_safe_4_wid.write(dst_hash_4, ow_aux);            // Copy Wlast annotation to Wsafe.
                 }     
-                c_dst_last_4.write(dst_h4, dst_c4);          // Copy w counter to tm_a.
-                c_dst_last_4_wid.write(dst_h4, dst_c4_wid);    // Copy w annotation to tm_a.
-                dst_c4 = 0;                                  // Reset the counter.
-                c_dst_curr_4_wid.write(dst_h4, current_wid[7:0]);   // Update the annotation. 
+                cs_dst_last_4.write(dst_hash_4, dst_curr_4);                // Copy Wcurr counter to Wlast.
+                cs_dst_last_4_wid.write(dst_hash_4, dst_curr_4_wid);        // Copy wcurr annotation to Wlast.
+                dst_curr_4 = 0;                                             // Reset the counter.
+                cs_dst_curr_4_wid.write(dst_hash_4, current_wid[7:0]);      // Update the annotation. 
             }
-            dst_c4 = dst_c4 + dst_g4;               // Update the counter.
-            c_dst_curr_4.write(dst_h4, dst_c4);          // Write the counter.
-            dst_c4 = dst_c4 * dst_g4;               // If g4 is negative, c4 will also be negative; this computes the absolute value.
 
-            // At this point, we have updated counters in dst_c1, dst_c2, dst_c3, and dst_c4.
+            // Update the counters.
+            dst_curr_1 = dst_curr_1 + dst_ghash_1;                          // Update the counter.
+            dst_curr_2 = dst_curr_2 + dst_ghash_2;                          // Update the counter.
+            dst_curr_3 = dst_curr_3 + dst_ghash_3;                          // Update the counter.
+            dst_curr_4 = dst_curr_4 + dst_ghash_4;                          // Update the counter.
+            
+            // Write the counters back to the sketches.
+            cs_dst_curr_1.write(dst_hash_1, dst_curr_1);                    // Write the counter.
+            cs_dst_curr_2.write(dst_hash_2, dst_curr_2);                    // Write the counter.
+            cs_dst_curr_3.write(dst_hash_3, dst_curr_3);                    // Write the counter.
+            cs_dst_curr_4.write(dst_hash_4, dst_curr_4);                    // Write the counter.
+
+            // ghash and the counter have the same sign; this computes the absolute value.
+            dst_curr_1 = dst_curr_1 * dst_ghash_1;                         
+            dst_curr_2 = dst_curr_2 * dst_ghash_2;                          
+            dst_curr_3 = dst_curr_3 * dst_ghash_3;                          
+            dst_curr_4 = dst_curr_4 * dst_ghash_4;                          
+
+            // At this point, we have updated counters in dst_curr_1, dst_curr_2, dst_curr_3, and dst_curr_4.
 
             // Count Sketch Destination IP Frequency Estimate
-            median(dst_c1, dst_c2, dst_c3, dst_c4, meta.ip_count);
+            median(dst_curr_1, dst_curr_2, dst_curr_3, dst_curr_4, meta.ip_count);
 
             // LPM Table Lookup
             if (meta.ip_count > 0)
@@ -643,48 +663,48 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                 int<32> v;
                 
                 // Get the estimated counter for the source address at Wlast.
-                c_src_last_1.read(src_c1, src_h1);
-                c_src_last_2.read(src_c2, src_h2);
-                c_src_last_3.read(src_c3, src_h3);
-                c_src_last_4.read(src_c4, src_h4);
-                src_c1 = src_c1 * src_g1;
-                src_c2 = src_c2 * src_g2;
-                src_c3 = src_c3 * src_g3;
-                src_c4 = src_c4 * src_g4;
-                median(src_c1, src_c2, src_c3, src_c4, f_src_last);
+                cs_src_last_1.read(src_curr_1, src_hash_1);
+                cs_src_last_2.read(src_curr_2, src_hash_2);
+                cs_src_last_3.read(src_curr_3, src_hash_3);
+                cs_src_last_4.read(src_curr_4, src_hash_4);
+                src_curr_1 = src_curr_1 * src_ghash_1;
+                src_curr_2 = src_curr_2 * src_ghash_2;
+                src_curr_3 = src_curr_3 * src_ghash_3;
+                src_curr_4 = src_curr_4 * src_ghash_4;
+                median(src_curr_1, src_curr_2, src_curr_3, src_curr_4, f_src_last);
 
                 // Get the estimated counter for the source address at Wsafe.
-                c_src_safe_1.read(src_c1, src_h1);
-                c_src_safe_2.read(src_c2, src_h2);
-                c_src_safe_3.read(src_c3, src_h3);
-                c_src_safe_4.read(src_c4, src_h4);
-                src_c1 = src_c1 * src_g1;
-                src_c2 = src_c2 * src_g2;
-                src_c3 = src_c3 * src_g3;
-                src_c4 = src_c4 * src_g4;
-                median(src_c1, src_c2, src_c3, src_c4, f_src_safe);
+                cs_src_safe_1.read(src_curr_1, src_hash_1);
+                cs_src_safe_2.read(src_curr_2, src_hash_2);
+                cs_src_safe_3.read(src_curr_3, src_hash_3);
+                cs_src_safe_4.read(src_curr_4, src_hash_4);
+                src_curr_1 = src_curr_1 * src_ghash_1;
+                src_curr_2 = src_curr_2 * src_ghash_2;
+                src_curr_3 = src_curr_3 * src_ghash_3;
+                src_curr_4 = src_curr_4 * src_ghash_4;
+                median(src_curr_1, src_curr_2, src_curr_3, src_curr_4, f_src_safe);
 
                 // Get the estimated counter for the destination address at Wlast.
-                c_dst_last_1.read(dst_c1, dst_h1);
-                c_dst_last_2.read(dst_c2, dst_h2);
-                c_dst_last_3.read(dst_c3, dst_h3);
-                c_dst_last_4.read(dst_c4, dst_h4);
-                dst_c1 = dst_c1 * dst_g1;
-                dst_c2 = dst_c2 * dst_g2;
-                dst_c3 = dst_c3 * dst_g3;
-                dst_c4 = dst_c4 * dst_g4;
-                median(dst_c1, dst_c2, dst_c3, dst_c4, f_dst_last);
+                cs_dst_last_1.read(dst_curr_1, dst_hash_1);
+                cs_dst_last_2.read(dst_curr_2, dst_hash_2);
+                cs_dst_last_3.read(dst_curr_3, dst_hash_3);
+                cs_dst_last_4.read(dst_curr_4, dst_hash_4);
+                dst_curr_1 = dst_curr_1 * dst_ghash_1;
+                dst_curr_2 = dst_curr_2 * dst_ghash_2;
+                dst_curr_3 = dst_curr_3 * dst_ghash_3;
+                dst_curr_4 = dst_curr_4 * dst_ghash_4;
+                median(dst_curr_1, dst_curr_2, dst_curr_3, dst_curr_4, f_dst_last);
 
                 // Get the estimated counter for the destination address at Wsafe.
-                c_dst_safe_1.read(dst_c1, dst_h1);
-                c_dst_safe_2.read(dst_c2, dst_h2);
-                c_dst_safe_3.read(dst_c3, dst_h3);
-                c_dst_safe_4.read(dst_c4, dst_h4);
-                dst_c1 = dst_c1 * dst_g1;
-                dst_c2 = dst_c2 * dst_g2;
-                dst_c3 = dst_c3 * dst_g3;
-                dst_c4 = dst_c4 * dst_g4;
-                median(dst_c1, dst_c2, dst_c3, dst_c4, f_dst_safe);
+                cs_dst_safe_1.read(dst_curr_1, dst_hash_1);
+                cs_dst_safe_2.read(dst_curr_2, dst_hash_2);
+                cs_dst_safe_3.read(dst_curr_3, dst_hash_3);
+                cs_dst_safe_4.read(dst_curr_4, dst_hash_4);
+                dst_curr_1 = dst_curr_1 * dst_ghash_1;
+                dst_curr_2 = dst_curr_2 * dst_ghash_2;
+                dst_curr_3 = dst_curr_3 * dst_ghash_3;
+                dst_curr_4 = dst_curr_4 * dst_ghash_4;
+                median(dst_curr_1, dst_curr_2, dst_curr_3, dst_curr_4, f_dst_safe);
 
                 // Compute the frequency variations.
                 v_src = f_src_last - f_src_safe;
