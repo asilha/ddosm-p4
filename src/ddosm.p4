@@ -72,10 +72,10 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
     register<int<32>>(CS_WIDTH) cs_src_last_3;
     register<int<32>>(CS_WIDTH) cs_src_last_4;
     // Annotations
-    register<bit<8>>(CS_WIDTH) cs_src_last_1_wid;
-    register<bit<8>>(CS_WIDTH) cs_src_last_2_wid;
-    register<bit<8>>(CS_WIDTH) cs_src_last_3_wid;
-    register<bit<8>>(CS_WIDTH) cs_src_last_4_wid;
+    // register<bit<8>>(CS_WIDTH) cs_src_last_1_wid;
+    // register<bit<8>>(CS_WIDTH) cs_src_last_2_wid;
+    // register<bit<8>>(CS_WIDTH) cs_src_last_3_wid;
+    // register<bit<8>>(CS_WIDTH) cs_src_last_4_wid;
 
     // CS_Dst_Last (Destination IP) (Last OW)
     // Counters
@@ -84,10 +84,10 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
     register<int<32>>(CS_WIDTH) cs_dst_last_3;
     register<int<32>>(CS_WIDTH) cs_dst_last_4;
     // Annotations
-    register<bit<8>>(CS_WIDTH) cs_dst_last_1_wid;
-    register<bit<8>>(CS_WIDTH) cs_dst_last_2_wid;
-    register<bit<8>>(CS_WIDTH) cs_dst_last_3_wid;
-    register<bit<8>>(CS_WIDTH) cs_dst_last_4_wid;  
+    // register<bit<8>>(CS_WIDTH) cs_dst_last_1_wid;
+    // register<bit<8>>(CS_WIDTH) cs_dst_last_2_wid;
+    // register<bit<8>>(CS_WIDTH) cs_dst_last_3_wid;
+    // register<bit<8>>(CS_WIDTH) cs_dst_last_4_wid;  
 
     // CS_Src_Safe (Source IP) (Safe OW)
     // Counters
@@ -96,10 +96,10 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
     register<int<32>>(CS_WIDTH) cs_src_safe_3;
     register<int<32>>(CS_WIDTH) cs_src_safe_4;
     // Annotations
-    register<bit<8>>(CS_WIDTH) cs_src_safe_1_wid;
-    register<bit<8>>(CS_WIDTH) cs_src_safe_2_wid;
-    register<bit<8>>(CS_WIDTH) cs_src_safe_3_wid;
-    register<bit<8>>(CS_WIDTH) cs_src_safe_4_wid;
+    // register<bit<8>>(CS_WIDTH) cs_src_safe_1_wid;
+    // register<bit<8>>(CS_WIDTH) cs_src_safe_2_wid;
+    // register<bit<8>>(CS_WIDTH) cs_src_safe_3_wid;
+    // register<bit<8>>(CS_WIDTH) cs_src_safe_4_wid;
 
     // CS_Dst_Safe (Destination IP) (Safe OW)
     // Counters
@@ -108,10 +108,10 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
     register<int<32>>(CS_WIDTH) cs_dst_safe_3;
     register<int<32>>(CS_WIDTH) cs_dst_safe_4;
     // Annotations
-    register<bit<8>>(CS_WIDTH) cs_dst_safe_1_wid;
-    register<bit<8>>(CS_WIDTH) cs_dst_safe_2_wid;
-    register<bit<8>>(CS_WIDTH) cs_dst_safe_3_wid;
-    register<bit<8>>(CS_WIDTH) cs_dst_safe_4_wid;  
+    // register<bit<8>>(CS_WIDTH) cs_dst_safe_1_wid;
+    // register<bit<8>>(CS_WIDTH) cs_dst_safe_2_wid;
+    // register<bit<8>>(CS_WIDTH) cs_dst_safe_3_wid;
+    // register<bit<8>>(CS_WIDTH) cs_dst_safe_4_wid;  
 
     // Entropy Norms - Fixed point representation: 28 integer bits, 4 fractional bits.
     register<bit<32>>(1) src_S;
@@ -233,21 +233,30 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
     apply {
         if (hdr.ipv4.isValid()) {
 
-            // Obtain Observation Window number from the register.
+            // Obtain the Observation Window number from the register.
             bit<32> current_wid;
             ow_counter.read(current_wid, 0);
 
-            // Obtain Defense Readiness state from the register.
+            // Auxiliary variables for counter and annotation.
+            int<32> c_aux;
+            bit<8>  ow_aux;
+
+            // Obtain the Defense Readiness state from the register.
             bit<8> dr_state_aux;
             dr_state.read(dr_state_aux, 0);
 
-            // Obtain mitigation threshold from the register
+            // Obtain the Mitigation Threshold from the register
             int<32> mitigation_t_aux;
             mitigation_t.read(mitigation_t_aux, 0);
 
-            // Auxiliary variables for counter and annotation:
-            int<32> c_aux;
-            bit<8>  ow_aux;
+            // Variables for Frequency Variation Analysis.
+            int<32> f_src_last;
+            int<32> f_src_safe;
+            int<32> f_dst_last;
+            int<32> f_dst_safe;
+            int<32> v_src;
+            int<32> v_dst;
+            int<32> v;
 
             // --------------------------------------------------------------------------------------------------------            
             // Beginning of source address frequency and entropy norm estimation.
@@ -269,6 +278,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             // Estimate Frequencies for Source Addresses
 
             // Variables for counters and annotations.
+            // For frequency approximation and entropy estimation:
             int<32> src_curr_1;
             bit<8>  src_curr_1_wid;
             int<32> src_curr_2;
@@ -277,6 +287,15 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             bit<8>  src_curr_3_wid;
             int<32> src_curr_4;
             bit<8>  src_curr_4_wid;
+            // For frequency variation analysis:
+            int<32> src_last_1;
+            int<32> src_last_2;
+            int<32> src_last_3;
+            int<32> src_last_4;
+            int<32> src_safe_1;
+            int<32> src_safe_2;
+            int<32> src_safe_3;
+            int<32> src_safe_4;
 
             // Read counters and annotations.
             cs_src_curr_1.read(src_curr_1, src_hash_1);                     // Read current counter.
@@ -287,62 +306,78 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             cs_src_curr_3_wid.read(src_curr_3_wid, src_hash_3);             // Read current annotation. 
             cs_src_curr_4.read(src_curr_4, src_hash_4);                     // Read current counter.
             cs_src_curr_4_wid.read(src_curr_4_wid, src_hash_4);             // Read current annotation. 
+            cs_src_last_1.read(src_last_1, src_hash_1);                     // Read Wlast counter.
+            cs_src_last_2.read(src_last_2, src_hash_2);                     // Read Wlast counter.
+            cs_src_last_3.read(src_last_3, src_hash_3);                     // Read Wlast counter.
+            cs_src_last_4.read(src_last_4, src_hash_4);                     // Read Wlast counter.
+            cs_src_safe_1.read(src_safe_1, src_hash_1);                     // Read Wsafe counter.
+            cs_src_safe_2.read(src_safe_2, src_hash_2);                     // Read Wsafe counter.
+            cs_src_safe_3.read(src_safe_3, src_hash_3);                     // Read Wsafe counter.
+            cs_src_safe_4.read(src_safe_4, src_hash_4);                     // Read Wsafe counter.
+
+            // Perform counter resets and copies.
+            // Within an OW, counter resets and copies must occur exactly once for each address.
+            // We ensure this by checking the window ID annotation (src_curr_d_wid != current_wid): 
+            // the test will only be true for the first occurrence of the address in the OW.
+
+            // At this point we also perform frequency variation analysis. 
 
             // Row 1 Estimate
-            if (src_curr_1_wid != current_wid[7:0]) {                       // If we're in a different window:
-                if (current_wid[7:0] > 1 && dr_state_aux == 0) {            // If we're not in the first window.
-                    cs_src_last_1.read(c_aux, src_hash_1);                  // Read counter from Wlast.
-                    cs_src_last_1_wid.read(ow_aux, src_hash_1);             // Read annotation from Wlast. 
-                    cs_src_safe_1.write(src_hash_1, c_aux);                 // Copy Wlast counter to Wsafe.
-                    cs_src_safe_1_wid.write(src_hash_1, ow_aux);            // Copy Wlast annotation to Wsafe.
+            if (src_curr_1_wid != current_wid[7:0]) {                       // The window has changed.
+                if (current_wid[7:0] > 1) {                                 // This is not the first window.
+                    if (dr_state_aux == 0) {                                // The DR state is SAFE. 
+                        src_safe_1 = src_last_1;                            // Copy Wlast counter to Wsafe.
+                        cs_src_safe_1.write(src_hash_1, src_safe_1);        // Write back.
+                    } 
                 }     
-                cs_src_last_1.write(src_hash_1, src_curr_1);                // Copy Wcurr counter to Wlast.
-                cs_src_last_1_wid.write(src_hash_1, src_curr_1_wid);        // Copy wcurr annotation to Wlast.
+                src_last_1 = src_curr_1;                                    // Copy Wcurr counter to Wlast.
+                cs_src_last_1.write(src_hash_1, src_last_1);                // Write back.
                 src_curr_1 = 0;                                             // Reset the counter.
                 cs_src_curr_1_wid.write(src_hash_1, current_wid[7:0]);      // Update the annotation. 
             }
 
             // Row 2 Estimate
-            if (src_curr_2_wid != current_wid[7:0]) {                       // If we're in a different window:
-                if (current_wid[7:0] > 1 && dr_state_aux == 0) {            // If we're not in the first window.
-                    cs_src_last_2.read(c_aux, src_hash_2);                  // Read counter from Wlast.
-                    cs_src_last_2_wid.read(ow_aux, src_hash_2);             // Read annotation from Wlast. 
-                    cs_src_safe_2.write(src_hash_2, c_aux);                 // Copy Wlast counter to Wsafe.
-                    cs_src_safe_2_wid.write(src_hash_2, ow_aux);            // Copy Wlast annotation to Wsafe.
+            if (src_curr_2_wid != current_wid[7:0]) {                       // The window has changed.
+                if (current_wid[7:0] > 1) {                                 // This is not the first window.
+                    if (dr_state_aux == 0) {                                // The DR state is SAFE. 
+                        src_safe_2 = src_last_2;                            // Copy Wlast counter to Wsafe.
+                        cs_src_safe_2.write(src_hash_2, src_safe_2);        // Write back.
+                    } 
                 }     
-                cs_src_last_2.write(src_hash_2, src_curr_2);                // Copy Wcurr counter to Wlast.
-                cs_src_last_2_wid.write(src_hash_2, src_curr_2_wid);        // Copy wcurr annotation to Wlast.
+                src_last_2 = src_curr_2;                                    // Copy Wcurr counter to Wlast.
+                cs_src_last_2.write(src_hash_2, src_last_2);                // Write back.
                 src_curr_2 = 0;                                             // Reset the counter.
                 cs_src_curr_2_wid.write(src_hash_2, current_wid[7:0]);      // Update the annotation. 
             }
 
             // Row 3 Estimate
-            if (src_curr_3_wid != current_wid[7:0]) {                       // If we're in a different window:
-                if (current_wid[7:0] > 1 && dr_state_aux == 0) {            // If we're not in the first window.
-                    cs_src_last_3.read(c_aux, src_hash_3);                  // Read counter from Wlast.
-                    cs_src_last_3_wid.read(ow_aux, src_hash_3);             // Read annotation from Wlast. 
-                    cs_src_safe_3.write(src_hash_3, c_aux);                 // Copy Wlast counter to Wsafe.
-                    cs_src_safe_3_wid.write(src_hash_3, ow_aux);            // Copy Wlast annotation to Wsafe.
+            if (src_curr_3_wid != current_wid[7:0]) {                       // The window has changed.
+                if (current_wid[7:0] > 1) {                                 // This is not the first window.
+                    if (dr_state_aux == 0) {                                // The DR state is SAFE. 
+                        src_safe_3 = src_last_3;                            // Copy Wlast counter to Wsafe.
+                        cs_src_safe_3.write(src_hash_3, src_safe_3);        // Write back.
+                    } 
                 }     
-                cs_src_last_3.write(src_hash_3, src_curr_3);                // Copy Wcurr counter to Wlast.
-                cs_src_last_3_wid.write(src_hash_3, src_curr_3_wid);        // Copy wcurr annotation to Wlast.
+                src_last_3 = src_curr_3;                                    // Copy Wcurr counter to Wlast.
+                cs_src_last_3.write(src_hash_3, src_last_3);                // Write back.
                 src_curr_3 = 0;                                             // Reset the counter.
                 cs_src_curr_3_wid.write(src_hash_3, current_wid[7:0]);      // Update the annotation. 
             }
 
             // Row 4 Estimate
-            if (src_curr_4_wid != current_wid[7:0]) {                       // If we're in a different window:
-                if (current_wid[7:0] > 1 && dr_state_aux == 0) {            // If we're not in the first window.
-                    cs_src_last_4.read(c_aux, src_hash_4);                  // Read counter from Wlast.
-                    cs_src_last_4_wid.read(ow_aux, src_hash_4);             // Read annotation from Wlast. 
-                    cs_src_safe_4.write(src_hash_4, c_aux);                 // Copy Wlast counter to Wsafe.
-                    cs_src_safe_4_wid.write(src_hash_4, ow_aux);            // Copy Wlast annotation to Wsafe.
+            if (src_curr_4_wid != current_wid[7:0]) {                       // The window has changed.
+                if (current_wid[7:0] > 1) {                                 // This is not the first window.
+                    if (dr_state_aux == 0) {                                // The DR state is SAFE. 
+                        src_safe_4 = src_last_4;                            // Copy Wlast counter to Wsafe.
+                        cs_src_safe_4.write(src_hash_4, src_safe_4);        // Write back.
+                    } 
                 }     
-                cs_src_last_4.write(src_hash_4, src_curr_4);                // Copy Wcurr counter to Wlast.
-                cs_src_last_4_wid.write(src_hash_4, src_curr_4_wid);        // Copy wcurr annotation to Wlast.
+                src_last_4 = src_curr_4;                                    // Copy Wcurr counter to Wlast.
+                cs_src_last_4.write(src_hash_4, src_last_4);                // Write back.
                 src_curr_4 = 0;                                             // Reset the counter.
                 cs_src_curr_4_wid.write(src_hash_4, current_wid[7:0]);      // Update the annotation. 
             }
+
 
             // Update the counters.
             src_curr_1 = src_curr_1 + src_ghash_1;                          // Update the counter.
@@ -403,6 +438,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             // Estimate Frequencies for Destination Addresses
 
             // Variables for counters and annotations.
+            // For frequency approximation and entropy estimation:
             int<32> dst_curr_1;
             bit<8>  dst_curr_1_wid;
             int<32> dst_curr_2;
@@ -411,6 +447,15 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             bit<8>  dst_curr_3_wid;
             int<32> dst_curr_4;
             bit<8>  dst_curr_4_wid;
+            // For frequency variation analysis:
+            int<32> dst_last_1;
+            int<32> dst_last_2;
+            int<32> dst_last_3;
+            int<32> dst_last_4;
+            int<32> dst_safe_1;
+            int<32> dst_safe_2;
+            int<32> dst_safe_3;
+            int<32> dst_safe_4;
 
             // Read counters and annotations.
             cs_dst_curr_1.read(dst_curr_1, dst_hash_1);                     // Read current counter.
@@ -421,59 +466,67 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             cs_dst_curr_3_wid.read(dst_curr_3_wid, dst_hash_3);             // Read current annotation. 
             cs_dst_curr_4.read(dst_curr_4, dst_hash_4);                     // Read current counter.
             cs_dst_curr_4_wid.read(dst_curr_4_wid, dst_hash_4);             // Read current annotation. 
+            cs_dst_last_1.read(dst_last_1, dst_hash_1);                     // Read Wlast counter.
+            cs_dst_last_2.read(dst_last_2, dst_hash_2);                     // Read Wlast counter.
+            cs_dst_last_3.read(dst_last_3, dst_hash_3);                     // Read Wlast counter.
+            cs_dst_last_4.read(dst_last_4, dst_hash_4);                     // Read Wlast counter.
+            cs_dst_safe_1.read(dst_safe_1, dst_hash_1);                     // Read Wsafe counter.
+            cs_dst_safe_2.read(dst_safe_2, dst_hash_2);                     // Read Wsafe counter.
+            cs_dst_safe_3.read(dst_safe_3, dst_hash_3);                     // Read Wsafe counter.
+            cs_dst_safe_4.read(dst_safe_4, dst_hash_4);                     // Read Wsafe counter.
 
-            // Row 1 Estimate
-            if (dst_curr_1_wid != current_wid[7:0]) {                       // If we're in a different window:
-                if (current_wid[7:0] > 1 && dr_state_aux == 0) {            // If we're not in the first window.
-                    cs_dst_last_1.read(c_aux, dst_hash_1);                  // Read counter from Wlast.
-                    cs_dst_last_1_wid.read(ow_aux, dst_hash_1);             // Read annotation from Wlast. 
-                    cs_dst_safe_1.write(dst_hash_1, c_aux);                 // Copy Wlast counter to Wsafe.
-                    cs_dst_safe_1_wid.write(dst_hash_1, ow_aux);            // Copy Wlast annotation to Wsafe.
+           // Row 1 Estimate
+            if (dst_curr_1_wid != current_wid[7:0]) {                       // The window has changed.
+                if (current_wid[7:0] > 1) {                                 // This is not the first window.
+                    if (dr_state_aux == 0) {                                // The DR state is SAFE. 
+                        dst_safe_1 = dst_last_1;                            // Copy Wlast counter to Wsafe.
+                        cs_dst_safe_1.write(dst_hash_1, dst_safe_1);        // Write back.
+                    } 
                 }     
-                cs_dst_last_1.write(dst_hash_1, dst_curr_1);                // Copy Wcurr counter to Wlast.
-                cs_dst_last_1_wid.write(dst_hash_1, dst_curr_1_wid);        // Copy wcurr annotation to Wlast.
+                dst_last_1 = dst_curr_1;                                    // Copy Wcurr counter to Wlast.
+                cs_dst_last_1.write(dst_hash_1, dst_last_1);                // Write back.
                 dst_curr_1 = 0;                                             // Reset the counter.
                 cs_dst_curr_1_wid.write(dst_hash_1, current_wid[7:0]);      // Update the annotation. 
             }
 
             // Row 2 Estimate
-            if (dst_curr_2_wid != current_wid[7:0]) {                       // If we're in a different window:
-                if (current_wid[7:0] > 1 && dr_state_aux == 0) {            // If we're not in the first window.
-                    cs_dst_last_2.read(c_aux, dst_hash_2);                  // Read counter from Wlast.
-                    cs_dst_last_2_wid.read(ow_aux, dst_hash_2);             // Read annotation from Wlast. 
-                    cs_dst_safe_2.write(dst_hash_2, c_aux);                 // Copy Wlast counter to Wsafe.
-                    cs_dst_safe_2_wid.write(dst_hash_2, ow_aux);            // Copy Wlast annotation to Wsafe.
+            if (dst_curr_2_wid != current_wid[7:0]) {                       // The window has changed.
+                if (current_wid[7:0] > 1) {                                 // This is not the first window.
+                    if (dr_state_aux == 0) {                                // The DR state is SAFE. 
+                        dst_safe_2 = dst_last_2;                            // Copy Wlast counter to Wsafe.
+                        cs_dst_safe_2.write(dst_hash_2, dst_safe_2);        // Write back.
+                    } 
                 }     
-                cs_dst_last_2.write(dst_hash_2, dst_curr_2);                // Copy Wcurr counter to Wlast.
-                cs_dst_last_2_wid.write(dst_hash_2, dst_curr_2_wid);        // Copy wcurr annotation to Wlast.
+                dst_last_2 = dst_curr_2;                                    // Copy Wcurr counter to Wlast.
+                cs_dst_last_2.write(dst_hash_2, dst_last_2);                // Write back.
                 dst_curr_2 = 0;                                             // Reset the counter.
                 cs_dst_curr_2_wid.write(dst_hash_2, current_wid[7:0]);      // Update the annotation. 
             }
 
             // Row 3 Estimate
-            if (dst_curr_3_wid != current_wid[7:0]) {                       // If we're in a different window:
-                if (current_wid[7:0] > 1 && dr_state_aux == 0) {            // If we're not in the first window.
-                    cs_dst_last_3.read(c_aux, dst_hash_3);                  // Read counter from Wlast.
-                    cs_dst_last_3_wid.read(ow_aux, dst_hash_3);             // Read annotation from Wlast. 
-                    cs_dst_safe_3.write(dst_hash_3, c_aux);                 // Copy Wlast counter to Wsafe.
-                    cs_dst_safe_3_wid.write(dst_hash_3, ow_aux);            // Copy Wlast annotation to Wsafe.
+            if (dst_curr_3_wid != current_wid[7:0]) {                       // The window has changed.
+                if (current_wid[7:0] > 1) {                                 // This is not the first window.
+                    if (dr_state_aux == 0) {                                // The DR state is SAFE. 
+                        dst_safe_3 = dst_last_3;                            // Copy Wlast counter to Wsafe.
+                        cs_dst_safe_3.write(dst_hash_3, dst_safe_3);        // Write back.
+                    } 
                 }     
-                cs_dst_last_3.write(dst_hash_3, dst_curr_3);                // Copy Wcurr counter to Wlast.
-                cs_dst_last_3_wid.write(dst_hash_3, dst_curr_3_wid);        // Copy wcurr annotation to Wlast.
+                dst_last_3 = dst_curr_3;                                    // Copy Wcurr counter to Wlast.
+                cs_dst_last_3.write(dst_hash_3, dst_last_3);                // Write back.
                 dst_curr_3 = 0;                                             // Reset the counter.
                 cs_dst_curr_3_wid.write(dst_hash_3, current_wid[7:0]);      // Update the annotation. 
             }
 
             // Row 4 Estimate
-            if (dst_curr_4_wid != current_wid[7:0]) {                       // If we're in a different window:
-                if (current_wid[7:0] > 1 && dr_state_aux == 0) {            // If we're not in the first window.
-                    cs_dst_last_4.read(c_aux, dst_hash_4);                  // Read counter from Wlast.
-                    cs_dst_last_4_wid.read(ow_aux, dst_hash_4);             // Read annotation from Wlast. 
-                    cs_dst_safe_4.write(dst_hash_4, c_aux);                 // Copy Wlast counter to Wsafe.
-                    cs_dst_safe_4_wid.write(dst_hash_4, ow_aux);            // Copy Wlast annotation to Wsafe.
+            if (dst_curr_4_wid != current_wid[7:0]) {                       // The window has changed.
+                if (current_wid[7:0] > 1) {                                 // This is not the first window.
+                    if (dr_state_aux == 0) {                                // The DR state is SAFE. 
+                        dst_safe_4 = dst_last_4;                             // Copy Wlast counter to Wsafe.
+                        cs_dst_safe_4.write(dst_hash_4, dst_safe_4);        // Write back.
+                    } 
                 }     
-                cs_dst_last_4.write(dst_hash_4, dst_curr_4);                // Copy Wcurr counter to Wlast.
-                cs_dst_last_4_wid.write(dst_hash_4, dst_curr_4_wid);        // Copy wcurr annotation to Wlast.
+                dst_last_4 = dst_curr_4;                                     // Copy Wcurr counter to Wlast.
+                cs_dst_last_4.write(dst_hash_4, dst_last_4);                // Write back.
                 dst_curr_4 = 0;                                             // Reset the counter.
                 cs_dst_curr_4_wid.write(dst_hash_4, current_wid[7:0]);      // Update the annotation. 
             }
@@ -653,58 +706,58 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                 // Frequency Variation Analysis
 
                 // These variables will hold the estimated counters for Wlast and Wsafe. 
-                int<32> f_src_last;
-                int<32> f_src_safe;
-                int<32> f_dst_last;
-                int<32> f_dst_safe;
+                // int<32> f_src_last;
+                // int<32> f_src_safe;
+                // int<32> f_dst_last;
+                // int<32> f_dst_safe;
 
-                int<32> v_src;
-                int<32> v_dst;
-                int<32> v;
+                // int<32> v_src;
+                // int<32> v_dst;
+                // int<32> v;
                 
                 // Get the estimated counter for the source address at Wlast.
-                cs_src_last_1.read(src_curr_1, src_hash_1);
-                cs_src_last_2.read(src_curr_2, src_hash_2);
-                cs_src_last_3.read(src_curr_3, src_hash_3);
-                cs_src_last_4.read(src_curr_4, src_hash_4);
-                src_curr_1 = src_curr_1 * src_ghash_1;
-                src_curr_2 = src_curr_2 * src_ghash_2;
-                src_curr_3 = src_curr_3 * src_ghash_3;
-                src_curr_4 = src_curr_4 * src_ghash_4;
-                median(src_curr_1, src_curr_2, src_curr_3, src_curr_4, f_src_last);
+                // cs_src_last_1.read(src_last_1, src_hash_1);
+                // cs_src_last_2.read(src_last_2, src_hash_2);
+                // cs_src_last_3.read(src_last_3, src_hash_3);
+                // cs_src_last_4.read(src_last_4, src_hash_4);
+                src_last_1 = src_last_1 * src_ghash_1;
+                src_last_2 = src_last_2 * src_ghash_2;
+                src_last_3 = src_last_3 * src_ghash_3;
+                src_last_4 = src_last_4 * src_ghash_4;
+                median(src_last_1, src_last_2, src_last_3, src_last_4, f_src_last);
 
                 // Get the estimated counter for the source address at Wsafe.
-                cs_src_safe_1.read(src_curr_1, src_hash_1);
-                cs_src_safe_2.read(src_curr_2, src_hash_2);
-                cs_src_safe_3.read(src_curr_3, src_hash_3);
-                cs_src_safe_4.read(src_curr_4, src_hash_4);
-                src_curr_1 = src_curr_1 * src_ghash_1;
-                src_curr_2 = src_curr_2 * src_ghash_2;
-                src_curr_3 = src_curr_3 * src_ghash_3;
-                src_curr_4 = src_curr_4 * src_ghash_4;
-                median(src_curr_1, src_curr_2, src_curr_3, src_curr_4, f_src_safe);
+                // cs_src_safe_1.read(src_safe_1, src_hash_1);
+                // cs_src_safe_2.read(src_safe_2, src_hash_2);
+                // cs_src_safe_3.read(src_safe_3, src_hash_3);
+                // cs_src_safe_4.read(src_safe_4, src_hash_4);
+                src_safe_1 = src_safe_1 * src_ghash_1;
+                src_safe_2 = src_safe_2 * src_ghash_2;
+                src_safe_3 = src_safe_3 * src_ghash_3;
+                src_safe_4 = src_safe_4 * src_ghash_4;
+                median(src_safe_1, src_safe_2, src_safe_3, src_safe_4, f_src_safe);
 
                 // Get the estimated counter for the destination address at Wlast.
-                cs_dst_last_1.read(dst_curr_1, dst_hash_1);
-                cs_dst_last_2.read(dst_curr_2, dst_hash_2);
-                cs_dst_last_3.read(dst_curr_3, dst_hash_3);
-                cs_dst_last_4.read(dst_curr_4, dst_hash_4);
-                dst_curr_1 = dst_curr_1 * dst_ghash_1;
-                dst_curr_2 = dst_curr_2 * dst_ghash_2;
-                dst_curr_3 = dst_curr_3 * dst_ghash_3;
-                dst_curr_4 = dst_curr_4 * dst_ghash_4;
-                median(dst_curr_1, dst_curr_2, dst_curr_3, dst_curr_4, f_dst_last);
+                // cs_dst_last_1.read(dst_last_1, dst_hash_1);
+                // cs_dst_last_2.read(dst_last_2, dst_hash_2);
+                // cs_dst_last_3.read(dst_last_3, dst_hash_3);
+                // cs_dst_last_4.read(dst_last_4, dst_hash_4);
+                dst_last_1 = dst_last_1 * dst_ghash_1;
+                dst_last_2 = dst_last_2 * dst_ghash_2;
+                dst_last_3 = dst_last_3 * dst_ghash_3;
+                dst_last_4 = dst_last_4 * dst_ghash_4;
+                median(dst_last_1, dst_last_2, dst_last_3, dst_last_4, f_dst_last);
 
                 // Get the estimated counter for the destination address at Wsafe.
-                cs_dst_safe_1.read(dst_curr_1, dst_hash_1);
-                cs_dst_safe_2.read(dst_curr_2, dst_hash_2);
-                cs_dst_safe_3.read(dst_curr_3, dst_hash_3);
-                cs_dst_safe_4.read(dst_curr_4, dst_hash_4);
-                dst_curr_1 = dst_curr_1 * dst_ghash_1;
-                dst_curr_2 = dst_curr_2 * dst_ghash_2;
-                dst_curr_3 = dst_curr_3 * dst_ghash_3;
-                dst_curr_4 = dst_curr_4 * dst_ghash_4;
-                median(dst_curr_1, dst_curr_2, dst_curr_3, dst_curr_4, f_dst_safe);
+                // cs_dst_safe_1.read(dst_safe_1, dst_hash_1);
+                // cs_dst_safe_2.read(dst_safe_2, dst_hash_2);
+                // cs_dst_safe_3.read(dst_safe_3, dst_hash_3);
+                // cs_dst_safe_4.read(dst_safe_4, dst_hash_4);
+                dst_safe_1 = dst_safe_1 * dst_ghash_1;
+                dst_safe_2 = dst_safe_2 * dst_ghash_2;
+                dst_safe_3 = dst_safe_3 * dst_ghash_3;
+                dst_safe_4 = dst_safe_4 * dst_ghash_4;
+                median(dst_safe_1, dst_safe_2, dst_safe_3, dst_safe_4, f_dst_safe);
 
                 // Compute the frequency variations.
                 v_src = f_src_last - f_src_safe;
