@@ -11,6 +11,7 @@ logs/*
 notebooks/.ipynb_checkpoints
 workloads/*
 *_out.csv.gz
+*_out.pcap
 *_out.pcapng
 *.pyc
 .RData
