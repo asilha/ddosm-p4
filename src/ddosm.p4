@@ -213,10 +213,6 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             bit<32> current_wid;
             ow_counter.read(current_wid, 0);
 
-            // Auxiliary variables for counter and annotation.
-            int<32> c_aux;
-            bit<8>  ow_aux;
-
             // Obtain the Defense Readiness state from the register.
             bit<8> dr_state_aux;
             dr_state.read(dr_state_aux, 0);
