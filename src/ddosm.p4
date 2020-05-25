@@ -28,7 +28,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
     
         Extended count sketch declarations.
         
-        Our prototype has six extended count sketches: 
+        Our prototype has six count sketches: 
 
         CS_Src_Curr, CS_Src_Last, CS_Src_Safe, 
         CS_Dst_Curr, CS_Dst_Last, CS_Dst_Safe.
@@ -212,10 +212,6 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             // Obtain the Observation Window number from the register.
             bit<32> current_wid;
             ow_counter.read(current_wid, 0);
-
-            // Auxiliary variables for counter and annotation.
-            int<32> c_aux;
-            bit<8>  ow_aux;
 
             // Obtain the Defense Readiness state from the register.
             bit<8> dr_state_aux;
