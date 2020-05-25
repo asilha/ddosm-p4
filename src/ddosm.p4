@@ -66,53 +66,29 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
     register<bit<8>>(CS_WIDTH) cs_dst_curr_4_wid;
 
     // CS_Src_Last (Source IP) (Last OW)
-    // Counters
     register<int<32>>(CS_WIDTH) cs_src_last_1;
     register<int<32>>(CS_WIDTH) cs_src_last_2;
     register<int<32>>(CS_WIDTH) cs_src_last_3;
     register<int<32>>(CS_WIDTH) cs_src_last_4;
-    // Annotations
-    // register<bit<8>>(CS_WIDTH) cs_src_last_1_wid;
-    // register<bit<8>>(CS_WIDTH) cs_src_last_2_wid;
-    // register<bit<8>>(CS_WIDTH) cs_src_last_3_wid;
-    // register<bit<8>>(CS_WIDTH) cs_src_last_4_wid;
-
+ 
     // CS_Dst_Last (Destination IP) (Last OW)
-    // Counters
     register<int<32>>(CS_WIDTH) cs_dst_last_1;
     register<int<32>>(CS_WIDTH) cs_dst_last_2;
     register<int<32>>(CS_WIDTH) cs_dst_last_3;
     register<int<32>>(CS_WIDTH) cs_dst_last_4;
-    // Annotations
-    // register<bit<8>>(CS_WIDTH) cs_dst_last_1_wid;
-    // register<bit<8>>(CS_WIDTH) cs_dst_last_2_wid;
-    // register<bit<8>>(CS_WIDTH) cs_dst_last_3_wid;
-    // register<bit<8>>(CS_WIDTH) cs_dst_last_4_wid;  
-
+ 
     // CS_Src_Safe (Source IP) (Safe OW)
-    // Counters
     register<int<32>>(CS_WIDTH) cs_src_safe_1;
     register<int<32>>(CS_WIDTH) cs_src_safe_2;
     register<int<32>>(CS_WIDTH) cs_src_safe_3;
     register<int<32>>(CS_WIDTH) cs_src_safe_4;
-    // Annotations
-    // register<bit<8>>(CS_WIDTH) cs_src_safe_1_wid;
-    // register<bit<8>>(CS_WIDTH) cs_src_safe_2_wid;
-    // register<bit<8>>(CS_WIDTH) cs_src_safe_3_wid;
-    // register<bit<8>>(CS_WIDTH) cs_src_safe_4_wid;
-
+ 
     // CS_Dst_Safe (Destination IP) (Safe OW)
-    // Counters
     register<int<32>>(CS_WIDTH) cs_dst_safe_1;
     register<int<32>>(CS_WIDTH) cs_dst_safe_2;
     register<int<32>>(CS_WIDTH) cs_dst_safe_3;
     register<int<32>>(CS_WIDTH) cs_dst_safe_4;
-    // Annotations
-    // register<bit<8>>(CS_WIDTH) cs_dst_safe_1_wid;
-    // register<bit<8>>(CS_WIDTH) cs_dst_safe_2_wid;
-    // register<bit<8>>(CS_WIDTH) cs_dst_safe_3_wid;
-    // register<bit<8>>(CS_WIDTH) cs_dst_safe_4_wid;  
-
+ 
     // Entropy Norms - Fixed point representation: 28 integer bits, 4 fractional bits.
     register<bit<32>>(1) src_S;
     register<bit<32>>(1) dst_S;
@@ -705,21 +681,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
               
                 // Frequency Variation Analysis
 
-                // These variables will hold the estimated counters for Wlast and Wsafe. 
-                // int<32> f_src_last;
-                // int<32> f_src_safe;
-                // int<32> f_dst_last;
-                // int<32> f_dst_safe;
-
-                // int<32> v_src;
-                // int<32> v_dst;
-                // int<32> v;
-                
                 // Get the estimated counter for the source address at Wlast.
-                // cs_src_last_1.read(src_last_1, src_hash_1);
-                // cs_src_last_2.read(src_last_2, src_hash_2);
-                // cs_src_last_3.read(src_last_3, src_hash_3);
-                // cs_src_last_4.read(src_last_4, src_hash_4);
                 src_last_1 = src_last_1 * src_ghash_1;
                 src_last_2 = src_last_2 * src_ghash_2;
                 src_last_3 = src_last_3 * src_ghash_3;
@@ -727,10 +689,6 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                 median(src_last_1, src_last_2, src_last_3, src_last_4, f_src_last);
 
                 // Get the estimated counter for the source address at Wsafe.
-                // cs_src_safe_1.read(src_safe_1, src_hash_1);
-                // cs_src_safe_2.read(src_safe_2, src_hash_2);
-                // cs_src_safe_3.read(src_safe_3, src_hash_3);
-                // cs_src_safe_4.read(src_safe_4, src_hash_4);
                 src_safe_1 = src_safe_1 * src_ghash_1;
                 src_safe_2 = src_safe_2 * src_ghash_2;
                 src_safe_3 = src_safe_3 * src_ghash_3;
@@ -738,10 +696,6 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                 median(src_safe_1, src_safe_2, src_safe_3, src_safe_4, f_src_safe);
 
                 // Get the estimated counter for the destination address at Wlast.
-                // cs_dst_last_1.read(dst_last_1, dst_hash_1);
-                // cs_dst_last_2.read(dst_last_2, dst_hash_2);
-                // cs_dst_last_3.read(dst_last_3, dst_hash_3);
-                // cs_dst_last_4.read(dst_last_4, dst_hash_4);
                 dst_last_1 = dst_last_1 * dst_ghash_1;
                 dst_last_2 = dst_last_2 * dst_ghash_2;
                 dst_last_3 = dst_last_3 * dst_ghash_3;
@@ -749,10 +703,6 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                 median(dst_last_1, dst_last_2, dst_last_3, dst_last_4, f_dst_last);
 
                 // Get the estimated counter for the destination address at Wsafe.
-                // cs_dst_safe_1.read(dst_safe_1, dst_hash_1);
-                // cs_dst_safe_2.read(dst_safe_2, dst_hash_2);
-                // cs_dst_safe_3.read(dst_safe_3, dst_hash_3);
-                // cs_dst_safe_4.read(dst_safe_4, dst_hash_4);
                 dst_safe_1 = dst_safe_1 * dst_ghash_1;
                 dst_safe_2 = dst_safe_2 * dst_ghash_2;
                 dst_safe_3 = dst_safe_3 * dst_ghash_3;
