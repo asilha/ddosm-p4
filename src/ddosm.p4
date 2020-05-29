@@ -13,6 +13,10 @@
 #define DR_ACTIVE 1
 #define DR_COOLDOWN 2
 
+// Packet Classification
+#define LEGITIMATE 0
+#define MALICIOUS 1 
+
 control verifyChecksum(inout headers hdr, inout metadata meta) {
 
 #ifdef DR_DEBUG
@@ -132,6 +136,8 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
         standard_metadata.egress_spec = egress_port;
     }
 
+    // In the SAFE mitigation state, this table applies to ALL packets.
+    // In the ACTIVE and COOLDOWN states, this table applies only to packets considered LEGITIMATE. 
     table ipv4_fib {
         key = {
             hdr.ipv4.dst_addr: lpm;
@@ -143,13 +149,14 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
         default_action = drop();
     }
 
+    // In the ACTIVE and COOLDOWN mitigation states, this table applies only to packets considered MALICIOUS. 
     table ipv4_dpi_fib {
         key = {
             hdr.ipv4.dst_addr: lpm;
         }
         actions = {
-            forward;
-            drop;
+            forward;        // Divert to a different interface. 
+            drop;           // Discard.
         }
         default_action = drop();
     }
@@ -389,7 +396,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             // Count Sketch Source IP Frequency Estimate: store it in meta.ip_count.
             median(src_curr_1, src_curr_2, src_curr_3, src_curr_4, meta.ip_count);
 
-            // LPM Table Lookup
+            // LPM table lookup. Side effect: meta.entropy_term is updated.
             if (meta.ip_count > 0)              // This prevents having to perform a lookup when the argument is zero.
                 src_entropy_term.apply();
             else
@@ -541,7 +548,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             // Count Sketch Destination IP Frequency Estimate
             median(dst_curr_1, dst_curr_2, dst_curr_3, dst_curr_4, meta.ip_count);
 
-            // LPM Table Lookup
+            // LPM table lookup. Side effect: meta.entropy_term is updated.
             if (meta.ip_count > 0)
                 dst_entropy_term.apply();
             else
@@ -595,15 +602,16 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                 dst_ewma.read(meta.dst_ewma, 0);
                 dst_ewmmd.read(meta.dst_ewmmd, 0);
 
-                if (current_wid == 1) {                           // In the first window... 
 #ifdef DR_DEBUG
-                    // Do nothing. When debugging, we preinitialize the traffic model. 
+                if (current_wid == 0) {                           // This never happens. When debugging, we preinitialize the traffic model.
 #else
+                if (current_wid == 1) {                           // In the first window... 
+#endif 
                     meta.src_ewma = meta.src_entropy << 14;      // Initialize averages with the first estimated entropies. Averages have 18 fractional bits. 
                     meta.src_ewmmd = 0;
                     meta.dst_ewma = meta.dst_entropy << 14;
                     meta.dst_ewmmd = 0;
-#endif 
+
                  } else {                                            // Beginning with the second window... 
                     meta.alarm = 0;                                  // By default, there's no alarm. 
 
@@ -623,8 +631,10 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
 
                         if ((meta.src_entropy << 14) > src_thresh || (meta.dst_entropy << 14) < dst_thresh) { // ANOMALY DETECTED. 
                             meta.alarm = 1;  
-                            meta.dr_state = 1; 
-                            dr_state.write(0, 1);                     // When dr_state = 1, the switch stays "on alert".
+                            dr_state_aux = DR_ACTIVE;               // Enables mitigation.
+                            dr_state.write(0, dr_state_aux);        // Write back.        
+                            meta.dr_state = dr_state_aux;           // Write into the header.
+
                         }
                             
                     }
@@ -659,21 +669,23 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                 
                 // End of Step 2 (Entropy Estimation). 
 
+                // Preparation for the next OW: 
+
                 // Write back the values for EWMA and EWMMD. 
                 src_ewma.write(0, meta.src_ewma);
                 src_ewmmd.write(0, meta.src_ewmmd);
                 dst_ewma.write(0, meta.dst_ewma);
                 dst_ewmmd.write(0, meta.dst_ewmmd);
 
-                // Reset the packet counter and the entropy term.
+                // Reset the packet counter and the entropy terms.
                 pkt_counter.write(0, 0);
                 src_S.write(0, 0);
                 dst_S.write(0, 0);
 
                 // Check whether we should reset Defense Readiness or not. 
-                dr_state.read(meta.dr_state,0);
-                if (meta.alarm == 0 && meta.dr_state == 1) {
-                    dr_state.write(0, 0);
+                if (dr_state_aux == DR_ACTIVE && meta.alarm == 0) {
+                    dr_state_aux = DR_SAFE;
+                    dr_state.write(0, dr_state_aux);  // Write back.
                 }
 
                 // Generate a signaling packet. 
@@ -686,11 +698,9 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
 
             // --------------------------------------------------------------------------------------------------------
             // Beginning of Defense-Readiness Processing. 
-
-            // Divert has a default value of zero.
-            // It will be set to one for packets that should undergo external inspection.
-            bit<1> divert;
-            divert = 0;
+            
+            bit<1> classification;
+            classification = LEGITIMATE;      // By default, classify all packets as legitimate.       
 
             if (dr_state_aux == DR_ACTIVE) {  // Mitigation is active.        
               
@@ -733,17 +743,16 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
 
 #ifdef DR_DEBUG
 
-                // Debug mode: write the values into the packet headers; always divert. 
+                // Debug mode: write the values into the packet headers.
                 // Note: the maximum count is 2^18; we divide it by four to make sure it fits in the header field. 
                 hdr.ipv4.identification = (bit<16>) v_src[17:2] ;
                 hdr.ipv4.hdr_checksum   = (bit<16>) v_dst[17:2] ;
-                divert = 1;
                 
 #else
 
                 // Normal operation mode: check whether the frequency variation has exceeded the mitigation threshold.
                 if (v > mitigation_t_aux) {
-                    divert = 1;
+                    classification = MALICIOUS;
                 } 
 
 #endif
@@ -752,12 +761,18 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
 
             // Policy Enforcement. 
 
+
+#ifdef DR_DEBUG
+            // Debug mode: classify all packets as malicious.
+            classification = MALICIOUS;
+#endif
+
             // Divert is set to one for packets that must undergo further inspection.
-            if (divert == 0) {
+            if (classification == LEGITIMATE) {
                 ipv4_fib.apply();       // Use the regular forwarding table.
             }
             else { 
-                ipv4_dpi_fib.apply();   // Use the "deep packet inspection" forwarding table. 
+                ipv4_dpi_fib.apply();  // Use the alternative forwarding table.
             }
 
             // End of Policy Enforcement. 
