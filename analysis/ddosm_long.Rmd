@@ -1,0 +1,310 @@
+---
+title: "DDoS Attack Mitigation (Long Runs)"
+output:
+  html_document: default
+  html_notebook: default
+  pdf_document: default
+---
+```{r setup, echo=FALSE, include=FALSE}
+
+source("analysis.R")
+
+knitr::opts_chunk$set(tidy=TRUE, tidy.opts=list(width.cutoff=160))
+
+```
+
+# Overview
+
+## Parameters
+
+We used a packet trace with approximately n=2^27 (exactly n=2^17*1000) packets in the detection phase.
+
+```{r parameters}
+
+log2n = as.integer(27)
+
+```
+
+## Packet Traces 
+
+```{r loading}
+
+# pcap_dir = "~/p4sec/ddosm-p4/pcaps"
+pcap_dir = "F:/Keep II/P4/p4sec/ddosm-p4 [2020-02-21 OK]/pcaps"
+
+pcap_csv_m14 = str_c(pcap_dir,"/n_2_27_m_2_14/if3_attack_out.csv.gz")
+pcap_csv_m16 = str_c(pcap_dir,"/n_2_27_m_2_16/if3_attack_out.csv.gz")
+pcap_csv_m18 = str_c(pcap_dir,"/n_2_27_m_2_18/if3_attack_out.csv.gz")
+
+packets_m14 = read_pcap_csv(log2n=log2n, log2m=14, pcap_csv=pcap_csv_m14, attack_only=TRUE) 
+packets_m16 = read_pcap_csv(log2n=log2n, log2m=16, pcap_csv=pcap_csv_m16, attack_only=TRUE) 
+packets_m18 = read_pcap_csv(log2n=log2n, log2m=18, pcap_csv=pcap_csv_m18, attack_only=TRUE) 
+
+
+```
+
+# Attack Mitigation
+
+## Typical Deltas
+
+For each OW, what are the typical frequency deltas for attack packets? 
+
+```{r typical_deltas}
+
+for(log2m in seq(18, 18, by=2)) { # Originally, (14, 18, by=2).
+
+  log2m = as.integer(log2m)
+  
+  if (log2m == 14)  {
+    packets = packets_m14 
+  } else if (log2m == 16) {
+    packets = packets_m16 
+  } else if (log2m == 18) {
+    packets = packets_m18 
+  } else {
+    stop("Invalid log2m value.")
+  }
+  
+  deltas = summarize_deltas(log2n, log2m, packets)
+
+  graph_path = str_c("graphics_m", log2m)
+  m_annotation = str_c("(m = 2^", log2m, ")") 
+  dot_size = 2.0
+
+  delta_plot_options = list(
+#    geom_point(aes(y=diffq1), color="blue4", size=dot_size),
+    geom_point(aes(y=diffq2), color="blue4", size=dot_size),
+#    geom_point(aes(y=diffq3), color="orangered4", size=dot_size),
+    labs(x="Observation Window", y="Median Address Frequency Variation", title = str_c("Median Address Frequency Variations ", m_annotation)),
+    theme_classic())
+  
+  deltas %>% ggplot(aes(x=ow, shape=attack)) + delta_plot_options
+  
+  my_ggsave(plot=last_plot(), path=graph_path, filename="diffs")  
+  
+}
+
+
+```
+
+## Diversion Thresholds
+
+We want to find the best value for t, considering its effect on the accuracy of the mechanism. 
+
+Base Stats and Confidence Intervals: TPR and FPR are proportions whose values we need to estimate. Let X be a random variable whose value is 1 when a classification succeeds, and 0 otherwise. Consequently, X follows a a Bernoulli distribution with probability p. We can use our sample to estimate the mean value of p. This sample mean has a sampling error approximately equal to sqrt(p * (1-p) / n), where n is the sample size. Considering the attack as a whole, what is the 95% confidence interval for the mean TPR and FPR?       
+
+```{r best_threshold, include=TRUE}
+
+summary_all = tibble() 
+
+for(log2m in seq(18, 18, by=2)) { # Originally, (14, 18, by=2).
+
+  log2m = as.integer(log2m)
+  
+  if (log2m == 14)  {
+    packets = packets_m14 
+    sequence = seq(-256, 256, by=16)
+  } else if (log2m == 16) {
+    packets = packets_m16 
+    sequence = seq(-512, 512, by=32)
+  } else if (log2m == 18) {
+    packets = packets_m18 
+    sequence = seq(-1024, 1024, by=64)
+  } else {
+    stop("Invalid log2m value.")
+  }
+
+  for(diff_threshold in sequence) { 
+  
+    divert = function(diff) (diff >= diff_threshold)
+    packets = packets %>% 
+      mutate(diverted=divert(diff)) %>% 
+      mutate(tp =  attack & diverted, fp = !attack & diverted) %>%
+      ungroup() # %>% group_by(ow)
+    stats = get_stats(packets)
+    summary = get_summary(stats, log2n, log2m, diff_threshold)
+    summary_all = bind_rows(summary_all, summary)
+    
+  }
+  
+
+}
+
+summary_all
+
+# summary_all = read.csv('summary_all.csv')
+
+summary_all %>% 
+  ggplot(aes(x=t/2^(log2m/2+1), color=as.factor(log2m))) + 
+  geom_line(aes(y=p_tp)) + geom_point(aes(y=p_tp), shape=5) + 
+  geom_line(aes(y=p_fp)) + geom_point(aes(y=p_fp), shape=4) + 
+  scale_color_manual(name="log2m", breaks=c(14,16,18), values=c("red","green","blue")) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  labs(x="Normalized Mitigation Threshold (t/2^(log2(m)/2+1))", y="") + 
+  theme_classic() 
+
+graph_path = "graphics"
+my_ggsave(plot=last_plot(), path=graph_path, filename="tpr_fpr")
+
+summary_all_tpr = summary_all %>% transmute(log2m=log2m, t=t, type="TPR", mean=p_tp, lb=i95_tp_lb, ub=i95_tp_ub) 
+summary_all_fpr = summary_all %>% transmute(log2m=log2m, t=t, type="FPR", mean=p_fp, lb=i95_fp_lb, ub=i95_fp_ub) 
+summary_all_x = bind_rows(summary_all_tpr, summary_all_fpr)
+
+summary_all_x
+
+summary_all_x %>% 
+  ggplot(aes(x=t/2^(log2m/2+1), color=type, shape=type)) + 
+  geom_line(aes(y=mean), linetype="dashed" ) + 
+  geom_point(aes(y=mean), size=2) + 
+  geom_errorbar(aes(ymin=lb, ymax=ub)) + 
+  scale_color_manual(name="type", values=c("red","blue")) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  labs(x="Normalized Mitigation Threshold (t/2^(log2(m)/2+1))", y="") + 
+  #facet_grid(rows = vars(log2m), labeller = label_both) +
+  theme_classic() +
+  theme(legend.title = element_blank())
+
+
+my_ggsave(plot=last_plot(), path=graph_path, filename="tpr_fpr_2")
+
+
+```
+
+```{r}
+
+library(showtext)
+font_paths(c("C:\\Windows\\Fonts", "C:\\Users\\Alexandre\\AppData\\Local\\Microsoft\\Windows\\Fonts"))
+font_add("Helvetica", regular="helr45w.ttf")
+showtext_auto() 
+windows()
+
+# summary_all = read.csv('summary_all_with_warm_up.csv')  # Original analysis
+summary_all = read.csv('summary_all_without_warm_up.csv') # Experimental analysis
+summary_all_tpr = summary_all %>% transmute(log2m=log2m, t=t, type="TPR", mean=p_tp, lb=i95_tp_lb, ub=i95_tp_ub) 
+summary_all_fpr = summary_all %>% transmute(log2m=log2m, t=t, type="FPR", mean=p_fp, lb=i95_fp_lb, ub=i95_fp_ub)
+summary_all_x = bind_rows(summary_all_tpr, summary_all_fpr)
+
+graph_path = "graphics"
+
+# summary_all_x %>% 
+#     filter(log2m==14) %>%
+#     ggplot(aes(x=t/2^(log2m/2+1), color=type, shape=type)) + 
+#     geom_line(aes(y=mean), linetype="dashed" ) + 
+#     geom_point(aes(y=mean), size=2) + 
+#     geom_errorbar(aes(ymin=lb, ymax=ub)) + 
+#     scale_color_manual(name="type", values=c("red","blue")) +
+#     scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+#     labs(x="Normalized Mitigation Threshold (t/2^(log2(m)/2+1))", y="") + 
+#     #facet_grid(rows = vars(log2m), labeller = label_both) +
+#     theme_classic() +
+#     theme(legend.title = element_blank(), legend.position = c(0.2,0.2))
+# 
+# my_ggsave(plot=last_plot(), path=graph_path, filename="tpr_fpr_m14")
+# 
+# summary_all_x %>% 
+#     filter(log2m==16) %>%
+#     ggplot(aes(x=t/2^(log2m/2+1), color=type, shape=type)) + 
+#     geom_line(aes(y=mean), linetype="dashed" ) + 
+#     geom_point(aes(y=mean), size=2) + 
+#     geom_errorbar(aes(ymin=lb, ymax=ub)) + 
+#     scale_color_manual(name="type", values=c("red","blue")) +
+#     scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+#     labs(x="Normalized Mitigation Threshold (t/2^(log2(m)/2+1))", y="") + 
+#     #facet_grid(rows = vars(log2m), labeller = label_both) +
+#     theme_classic() +
+#     theme(legend.title = element_blank(), legend.position = c(0.2,0.2))
+# 
+# my_ggsave(plot=last_plot(), path=graph_path, filename="tpr_fpr_m16")
+
+summary_all_x %>% 
+    filter(log2m==18) %>%
+    ggplot(aes(x=t/2^(log2m/2+1), color=type, shape=type)) + 
+    geom_line(aes(y=mean), linetype="dashed" ) + 
+    geom_point(aes(y=mean), size=2) + 
+    geom_errorbar(aes(ymin=lb, ymax=ub)) + 
+    scale_color_manual(name="type", values=c("red","blue")) +
+    scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+    labs(x="Normalized Mitigation Threshold (t/2^(log2(m)/2+1))", y="") + 
+    #facet_grid(rows = vars(log2m), labeller = label_both) +
+    theme_classic() +
+    theme(legend.title = element_blank(), legend.position = c(0.2,0.2))
+
+my_ggsave(plot=last_plot(), path=graph_path, filename="tpr_fpr_m18")
+
+summary_all_x %>% 
+    filter(log2m==18) %>%
+    ggplot(aes(x=t, color=type, shape=type)) +
+    geom_line(aes(y=mean), linetype="dashed") + 
+    geom_point(aes(y=mean), size=1.5) + 
+    geom_errorbar(aes(ymin=lb, ymax=ub)) + 
+    scale_color_manual(name="type", values=c("red","blue")) +
+    scale_shape_manual(name="type", values=c(16,15)) +
+    scale_x_continuous(breaks=seq(-1024,1024,256)) +
+    scale_y_continuous(labels = scales::percent_format(accuracy = 1), breaks=seq(0,1,0.2)) +
+    labs(x="Defense Threshold (t)", y=NULL) + 
+    theme_bw(base_size = 11, base_family = "Helvetica" ) +
+    theme(#aspect.ratio = 2/3,
+          plot.margin = margin(t = 0.013, r = 0.189, b = 0.069, l = 0.43, unit = "in"),
+          panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          panel.grid.major.y = element_line(linetype = "dashed", size = rel(0.5), color = "grey"),
+          panel.grid.minor.y = element_line(linetype = "dashed", size = rel(1.0), color = "grey"),
+          panel.border = element_rect(size = 0.75),
+          axis.ticks.length = unit(.1, "in"),
+          axis.text = element_text(size = 0.85 * 12, color = "black"),
+          axis.text.x = element_text(margin = margin(t=8), size = 10),
+          axis.text.y = element_text(margin = margin(r=8), size = 10),
+          legend.title = element_blank(), 
+          legend.position = c(0.9,0.75), 
+          legend.background = element_rect(fill = NA))
+
+my_ggsave(plot=last_plot(), path=graph_path, filename="tpr_fpr_m18_raw", width = 4.5, height = 3, units = "in")
+
+```
+
+## Diversion Statistics
+
+```{r diversion_stats}
+
+stats_all = tibble()
+
+for(log2m in seq(14, 18, by=2)) {
+
+  log2m = as.integer(log2m)
+  
+  if (log2m == 14)  {
+    packets = packets_m14 
+    diff_threshold = 256
+  } else if (log2m == 16) {
+    packets = packets_m16 
+    diff_threshold = 512
+  } else if (log2m == 18) {
+    packets = packets_m18 
+    diff_threshold = 1024
+  } else {
+    stop("Invalid log2m value.")
+  }
+
+  divert = function(diff) (diff >= diff_threshold)
+  packets = packets %>% 
+    mutate(diverted=divert(diff)) %>%
+    mutate(tp =  attack & diverted, fp = !attack & diverted) %>%
+    group_by(ow)
+
+  stats = get_stats(packets) %>% mutate(log2n=log2n, log2m=log2m, t=diff_threshold)
+  stats_all = bind_rows(stats_all, stats)
+    
+  graph_path = str_c("graphics_m", log2m)
+  m_annotation = str_c("(n = 2^27, m = 2^", log2m, ")")   
+  
+  # It would be cool to plot several box plots. 
+  graph_false_negatives(packets)
+  my_ggsave(plot=last_plot(), path=graph_path, filename="false_negatives")
+  graph_false_positives(packets)
+  my_ggsave(plot=last_plot(), path=graph_path, filename="false_positives")
+  graph_results(packets, m_annotation)
+  my_ggsave(plot=last_plot(), path=graph_path, filename="results")
+
+}
+
+```

@@ -1,13 +1,17 @@
+# TODO: Replace this file by analysis.R. The only difference appears to be in the implementation of the helper functions.
+
 library(reshape2)
 library(stringr)
 library(svglite)
 library(tidyverse)
 
+# Helper functions
 # Function inputs are expressed in numbers of packets.
 #   Log2n: Length of the detection phase, passed to trafg (as '-n 1048576', for instance).
 #   Log2m: Length of the observation window, passed to tcad JSON file (as '"window_size": 262144', for instance)
 # Function outputs are expressed in numbers of observation windows. 
 
+# These implementations are intended for the workloads with 2^24 packets. 
 detection = function(log2n, log2m) as.integer(2^(log2n - log2m))     
 training  = function(log2n, log2m) as.integer(2^(log2n - log2m - 1)) # Training length = detection / 2 
 attack    = function(log2n, log2m) as.integer(2^(log2n - log2m - 1)) # Attack length   = detection / 2
@@ -142,7 +146,7 @@ read_pcap_csv = function(log2n, log2m, pcap_csv, attack_only) {
   # Keep only the attack phase. 
   
   if (attack_only) {
-    packets = packets %>% filter(ow >= attack_first(log2n,log2m) + 2, ow <= attack_last(log2n,log2m)) 
+    packets = packets %>% filter(ow >= attack_first(log2n,log2m) + 1, ow <= attack_last(log2n,log2m)) 
   } 
   
   return(packets)

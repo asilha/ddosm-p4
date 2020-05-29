@@ -1,0 +1,99 @@
+---
+title: "TCAD (Long Runs)"
+output:
+  html_document: default
+  html_notebook: default
+  pdf_document: default
+---
+```{r setup, echo=FALSE, include=FALSE}
+
+source("analysis.R")
+
+knitr::opts_chunk$set(tidy=TRUE, tidy.opts=list(width.cutoff=160))
+
+```
+
+# Overview
+
+## Parameters
+
+We used a packet trace with approximately n=2^27 (exactly n=2^17*1000) packets in the detection phase.
+
+```{r parameters}
+
+log2n = as.integer(27)
+
+```
+
+## TCAD Traces
+
+Sensitivity Coefficients 
+
+Our experiments with tcad_m_levels.py show us candidate values for k, as follows: 
+
+Log2(m) | k     | FPR
+--------|-------|-----
+14      | 4.125 | 1.7%
+16      | 4.500 | 1.6%
+18      | 3.625 | 0.0%
+
+[Source: DDoS Mitigation.ipynb, section Finding TCAD Values]
+
+```{r }
+
+# tcad.trace.dir = "~/p4sec/ddosm-p4/labs/ddos20_long/tcad_logs"
+tcad.trace.dir = "D:/P4/ddosm-p4/labs/ddos20_long/tcad_logs"
+
+tcad.m14.k = 4.875
+tcad.m16.k = 4.875
+tcad.m18.k = 3.625
+
+tcad.m14.trace = str_c(tcad.trace.dir,"/tcad_m_2_14_k_4.875.log")
+tcad.m16.trace = str_c(tcad.trace.dir,"/tcad_m_2_16_k_4.875.log")
+tcad.m18.trace = str_c(tcad.trace.dir,"/tcad_m_2_18_k_3.625.log")
+
+tcad.m14 = read_tcad_trace(tcad.m14.trace)
+tcad.m16 = read_tcad_trace(tcad.m16.trace)
+tcad.m18 = read_tcad_trace(tcad.m18.trace)
+
+
+```
+
+# Workload Characterization
+
+## Entropy Overview
+
+```{r entropy_overview, include=TRUE}
+
+entropy.title = "Entropy for each Observation Window "
+
+get_plot_tcad(tcad.m14, tcad.m14.k) + labs(title=str_c(entropy.title,"(m = 2^14)"))
+my_ggsave(plot=last_plot(), path="graphics_m14", filename="entropy_all_n_2_27")
+
+get_plot_tcad(tcad.m16, tcad.m16.k) + labs(title=str_c(entropy.title,"(m = 2^16)"))
+my_ggsave(plot=last_plot(), path="graphics_m16", filename="entropy_all_n_2_27")
+
+get_plot_tcad(tcad.m18, tcad.m18.k) + labs(title=str_c(entropy.title,"(m = 2^18)"))
+my_ggsave(plot=last_plot(), path="graphics_m18", filename="entropy_all_n_2_27")
+
+```
+
+## Entropy Under Attack
+
+We have the graph for the entire experiments. Now we need to focus in the attack.
+
+```{r entropy_under_attack, include=TRUE}
+
+title = "Entropy for each Observation Window - Attack Phase "
+
+get_plot_tcad_attack(tcad.m14, tcad.m14.k, log2n, 14) + labs(title=str_c(title,"(m = 2^14)"))
+my_ggsave(plot=last_plot(), path="graphics_m14", filename="entropy_attack_n_2_27")
+
+get_plot_tcad_attack(tcad.m16, tcad.m16.k, log2n, 16) + labs(title=str_c(title,"(m = 2^16)"))
+my_ggsave(plot=last_plot(), path="graphics_m16", filename="entropy_attack_n_2_27")
+
+get_plot_tcad_attack(tcad.m18, tcad.m18.k, log2n, 18) + labs(title=str_c(title,"(m = 2^18)"))
+my_ggsave(plot=last_plot(), path="graphics_m18", filename="entropy_attack_n_2_27")
+
+```
+
