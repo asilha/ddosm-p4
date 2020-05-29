@@ -5,10 +5,28 @@
 #define ALARM_SESSION 250
 #define CS_WIDTH 1280
 
+// To enable debugging, uncomment the following line. 
+#define DR_DEBUG 1
+
+// Defense Readiness State
+#define DR_SAFE 0
+#define DR_ACTIVE 1
+#define DR_COOLDOWN 2
+
 control verifyChecksum(inout headers hdr, inout metadata meta) {
+
+#ifdef DR_DEBUG
+
+    apply {}
+
+#else
+
     apply {
-        // verify_checksum(true, {hdr.ipv4.version, hdr.ipv4.ihl, hdr.ipv4.dscp, hdr.ipv4.ecn, hdr.ipv4.total_len, hdr.ipv4.identification, hdr.ipv4.flags, hdr.ipv4.frag_offset, hdr.ipv4.ttl, hdr.ipv4.protocol, hdr.ipv4.src_addr, hdr.ipv4.dst_addr}, hdr.ipv4.hdr_checksum, HashAlgorithm.csum16);
+        verify_checksum(true, {hdr.ipv4.version, hdr.ipv4.ihl, hdr.ipv4.dscp, hdr.ipv4.ecn, hdr.ipv4.total_len, hdr.ipv4.identification, hdr.ipv4.flags, hdr.ipv4.frag_offset, hdr.ipv4.ttl, hdr.ipv4.protocol, hdr.ipv4.src_addr, hdr.ipv4.dst_addr}, hdr.ipv4.hdr_checksum, HashAlgorithm.csum16);
     }
+
+#endif    
+
 }
 
 control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_t standard_metadata) {
@@ -26,7 +44,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
 
     /*  
     
-        Extended count sketch declarations.
+        Count sketch declarations.
         
         Our prototype has six count sketches: 
 
@@ -103,11 +121,8 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
     register<bit<8>>(1) alpha;    // Fixed point representation: 0 integer bits, 8 fractional bits.
     register<bit<8>>(1) k;        // Fixed point representation: 5 integer bits, 3 fractional bits.
 
-    // Defense Readiness State
+    // Defense Readiness State (see the definitions at the beginning of the code).
     register<bit<8>>(1) dr_state; 
-
-    // Debug Mode Flag
-    register<int<8>>(1) debug_mode;
 
     action drop() {
         mark_to_drop();
@@ -297,7 +312,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             // Row 1 Estimate
             if (src_curr_1_wid != current_wid[7:0]) {                       // The window has changed.
                 if (current_wid[7:0] > 1) {                                 // This is not the first window.
-                    if (dr_state_aux == 0) {                                // The DR state is SAFE. 
+                    if (dr_state_aux == DR_SAFE) {                          // The DR state is SAFE. 
                         src_safe_1 = src_last_1;                            // Copy Wlast counter to Wsafe.
                         cs_src_safe_1.write(src_hash_1, src_safe_1);        // Write back.
                     } 
@@ -311,7 +326,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             // Row 2 Estimate
             if (src_curr_2_wid != current_wid[7:0]) {                       // The window has changed.
                 if (current_wid[7:0] > 1) {                                 // This is not the first window.
-                    if (dr_state_aux == 0) {                                // The DR state is SAFE. 
+                    if (dr_state_aux == DR_SAFE) {                          // The DR state is SAFE. 
                         src_safe_2 = src_last_2;                            // Copy Wlast counter to Wsafe.
                         cs_src_safe_2.write(src_hash_2, src_safe_2);        // Write back.
                     } 
@@ -325,7 +340,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             // Row 3 Estimate
             if (src_curr_3_wid != current_wid[7:0]) {                       // The window has changed.
                 if (current_wid[7:0] > 1) {                                 // This is not the first window.
-                    if (dr_state_aux == 0) {                                // The DR state is SAFE. 
+                    if (dr_state_aux == DR_SAFE) {                          // The DR state is SAFE. 
                         src_safe_3 = src_last_3;                            // Copy Wlast counter to Wsafe.
                         cs_src_safe_3.write(src_hash_3, src_safe_3);        // Write back.
                     } 
@@ -339,7 +354,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             // Row 4 Estimate
             if (src_curr_4_wid != current_wid[7:0]) {                       // The window has changed.
                 if (current_wid[7:0] > 1) {                                 // This is not the first window.
-                    if (dr_state_aux == 0) {                                // The DR state is SAFE. 
+                    if (dr_state_aux == DR_SAFE) {                          // The DR state is SAFE. 
                         src_safe_4 = src_last_4;                            // Copy Wlast counter to Wsafe.
                         cs_src_safe_4.write(src_hash_4, src_safe_4);        // Write back.
                     } 
@@ -450,7 +465,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
            // Row 1 Estimate
             if (dst_curr_1_wid != current_wid[7:0]) {                       // The window has changed.
                 if (current_wid[7:0] > 1) {                                 // This is not the first window.
-                    if (dr_state_aux == 0) {                                // The DR state is SAFE. 
+                    if (dr_state_aux == DR_SAFE) {                          // The DR state is SAFE. 
                         dst_safe_1 = dst_last_1;                            // Copy Wlast counter to Wsafe.
                         cs_dst_safe_1.write(dst_hash_1, dst_safe_1);        // Write back.
                     } 
@@ -464,7 +479,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             // Row 2 Estimate
             if (dst_curr_2_wid != current_wid[7:0]) {                       // The window has changed.
                 if (current_wid[7:0] > 1) {                                 // This is not the first window.
-                    if (dr_state_aux == 0) {                                // The DR state is SAFE. 
+                    if (dr_state_aux == DR_SAFE) {                          // The DR state is SAFE. 
                         dst_safe_2 = dst_last_2;                            // Copy Wlast counter to Wsafe.
                         cs_dst_safe_2.write(dst_hash_2, dst_safe_2);        // Write back.
                     } 
@@ -478,7 +493,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             // Row 3 Estimate
             if (dst_curr_3_wid != current_wid[7:0]) {                       // The window has changed.
                 if (current_wid[7:0] > 1) {                                 // This is not the first window.
-                    if (dr_state_aux == 0) {                                // The DR state is SAFE. 
+                    if (dr_state_aux == DR_SAFE) {                          // The DR state is SAFE. 
                         dst_safe_3 = dst_last_3;                            // Copy Wlast counter to Wsafe.
                         cs_dst_safe_3.write(dst_hash_3, dst_safe_3);        // Write back.
                     } 
@@ -492,12 +507,12 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             // Row 4 Estimate
             if (dst_curr_4_wid != current_wid[7:0]) {                       // The window has changed.
                 if (current_wid[7:0] > 1) {                                 // This is not the first window.
-                    if (dr_state_aux == 0) {                                // The DR state is SAFE. 
-                        dst_safe_4 = dst_last_4;                             // Copy Wlast counter to Wsafe.
+                    if (dr_state_aux == DR_SAFE) {                          // The DR state is SAFE. 
+                        dst_safe_4 = dst_last_4;                            // Copy Wlast counter to Wsafe.
                         cs_dst_safe_4.write(dst_hash_4, dst_safe_4);        // Write back.
                     } 
                 }     
-                dst_last_4 = dst_curr_4;                                     // Copy Wcurr counter to Wlast.
+                dst_last_4 = dst_curr_4;                                    // Copy Wcurr counter to Wlast.
                 cs_dst_last_4.write(dst_hash_4, dst_last_4);                // Write back.
                 dst_curr_4 = 0;                                             // Reset the counter.
                 cs_dst_curr_4_wid.write(dst_hash_4, current_wid[7:0]);      // Update the annotation. 
@@ -580,11 +595,15 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                 dst_ewma.read(meta.dst_ewma, 0);
                 dst_ewmmd.read(meta.dst_ewmmd, 0);
 
-                if (current_wid == 0) {                           // In the first window... [changed to 0th window, which will never happen.]
+                if (current_wid == 1) {                           // In the first window... 
+#ifdef DR_DEBUG
+                    // Do nothing. When debugging, we preinitialize the traffic model. 
+#else
                     meta.src_ewma = meta.src_entropy << 14;      // Initialize averages with the first estimated entropies. Averages have 18 fractional bits. 
                     meta.src_ewmmd = 0;
                     meta.dst_ewma = meta.dst_entropy << 14;
                     meta.dst_ewmmd = 0;
+#endif 
                  } else {                                            // Beginning with the second window... 
                     meta.alarm = 0;                                  // By default, there's no alarm. 
 
@@ -673,7 +692,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             bit<1> divert;
             divert = 0;
 
-            if (dr_state_aux == 1) {  // Mitigation is active.        
+            if (dr_state_aux == DR_ACTIVE) {  // Mitigation is active.        
               
                 // Frequency Variation Analysis
 
@@ -712,23 +731,26 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
 
                 // Packet Classification
 
-                // Normal operation mode: check whether the frequency variation has exceeded the mitigation threshold.
-                // if (v > mitigation_t_aux) {
-                //     divert = 1;
-                // } 
+#ifdef DR_DEBUG
 
-                // Debug mode: write the values in the packet. 
+                // Debug mode: write the values into the packet headers; always divert. 
                 // Note: the maximum count is 2^18; we divide it by four to make sure it fits in the header field. 
                 hdr.ipv4.identification = (bit<16>) v_src[17:2] ;
                 hdr.ipv4.hdr_checksum   = (bit<16>) v_dst[17:2] ;
+                divert = 1;
+                
+#else
 
+                // Normal operation mode: check whether the frequency variation has exceeded the mitigation threshold.
+                if (v > mitigation_t_aux) {
+                    divert = 1;
+                } 
+
+#endif
 
             } // End of Defense-Readiness Processing. 
 
             // Policy Enforcement. 
-
-            // Debug mode: unconditional divert
-            divert = 1;
 
             // Divert is set to one for packets that must undergo further inspection.
             if (divert == 0) {
@@ -767,9 +789,19 @@ control egress(inout headers hdr, inout metadata meta, inout standard_metadata_t
 }
 
 control computeChecksum(inout headers  hdr, inout metadata meta) {
+
+#ifdef DR_DEBUG
+
+    apply {}
+
+#else
+
     apply {
-        // update_checksum(true, {hdr.ipv4.version, hdr.ipv4.ihl, hdr.ipv4.dscp, hdr.ipv4.ecn, hdr.ipv4.total_len, hdr.ipv4.identification, hdr.ipv4.flags, hdr.ipv4.frag_offset, hdr.ipv4.ttl, hdr.ipv4.protocol, hdr.ipv4.src_addr, hdr.ipv4.dst_addr}, hdr.ipv4.hdr_checksum, HashAlgorithm.csum16);
+        update_checksum(true, {hdr.ipv4.version, hdr.ipv4.ihl, hdr.ipv4.dscp, hdr.ipv4.ecn, hdr.ipv4.total_len, hdr.ipv4.identification, hdr.ipv4.flags, hdr.ipv4.frag_offset, hdr.ipv4.ttl, hdr.ipv4.protocol, hdr.ipv4.src_addr, hdr.ipv4.dst_addr}, hdr.ipv4.hdr_checksum, HashAlgorithm.csum16);
     }
+
+#endif
+
 }
 
 control DeparserImpl(packet_out pkt, in headers hdr) {
