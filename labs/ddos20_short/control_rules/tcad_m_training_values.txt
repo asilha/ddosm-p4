@@ -1,14 +1,3 @@
-Trace file: tcad_m_2_13_k_4.000.log
-Last training OW: 2048
-register_write ingress.log2_m 0 13
-register_write ingress.training_len 0 0
-register_write ingress.alpha 0 20
-register_write ingress.k 0 32
-register_write src_ewma 0 2483288
-register_write src_ewmmd 0 32385
-register_write dst_ewma 0 2428573
-register_write dst_ewmmd 0 37761
-register_write migration_t 0 10
 Trace file: tcad_m_2_14_k_4.125.log
 Last training OW: 1024
 register_write ingress.log2_m 0 14
@@ -20,17 +9,6 @@ register_write src_ewmmd 0 18220
 register_write dst_ewma 0 2572820
 register_write dst_ewmmd 0 20993
 register_write migration_t 0 10
-Trace file: tcad_m_2_15_k_4.250.log
-Last training OW: 512
-register_write ingress.log2_m 0 15
-register_write ingress.training_len 0 0
-register_write ingress.alpha 0 20
-register_write ingress.k 0 34
-register_write src_ewma 0 2759023
-register_write src_ewmmd 0 14492
-register_write dst_ewma 0 2701450
-register_write dst_ewmmd 0 14954
-register_write migration_t 0 10
 Trace file: tcad_m_2_16_k_4.500.log
 Last training OW: 256
 register_write ingress.log2_m 0 16
@@ -41,17 +19,6 @@ register_write src_ewma 0 2869138
 register_write src_ewmmd 0 13911
 register_write dst_ewma 0 2811871
 register_write dst_ewmmd 0 14734
-register_write migration_t 0 10
-Trace file: tcad_m_2_17_k_4.750.log
-Last training OW: 128
-register_write ingress.log2_m 0 17
-register_write ingress.training_len 0 0
-register_write ingress.alpha 0 20
-register_write ingress.k 0 38
-register_write src_ewma 0 2965379
-register_write src_ewmmd 0 9283
-register_write dst_ewma 0 2905470
-register_write dst_ewmmd 0 11565
 register_write migration_t 0 10
 Trace file: tcad_m_2_18_k_3.625.log
 Last training OW: 64
