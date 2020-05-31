@@ -17,3 +17,4 @@ workloads/*
 cleanup.sh
 desktop.ini
 workloads/*
+.Rproj.user
