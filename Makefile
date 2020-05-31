@@ -58,7 +58,13 @@ workload_a_0.060_detection:
 	editcap -r  $(WORKLOAD_DIR)/synthetic_lapolli/a_0.060/complete.pcap    $(WORKLOAD_DIR)/synthetic_lapolli/a_0.060/detection.pcap 65536001-196608000
 	capinfos -m $(WORKLOAD_DIR)/synthetic_lapolli/a_0.060/detection.pcap > $(WORKLOAD_DIR)/synthetic_lapolli/a_0.060/detection.txt 	
 
-
+ee_n_2_24:
+	$(EE_BIN) -c labs/ddos20_short/ee_json/ee_m_2_14.json workloads/synthetic/a_0.200/n_2_24/complete.pcap > /tmp/ee_m_2_14.log
+	mv -nv /tmp/ee_m_2_14.log labs/ddos20_short/ee_logs/ 
+	$(EE_BIN) -c labs/ddos20_short/ee_json/ee_m_2_16.json workloads/synthetic/a_0.200/n_2_24/complete.pcap > /tmp/ee_m_2_16.log
+	mv -nv /tmp/ee_m_2_16.log labs/ddos20_short/ee_logs/ 
+	$(EE_BIN) -c labs/ddos20_short/ee_json/ee_m_2_18.json workloads/synthetic/a_0.200/n_2_24/complete.pcap > /tmp/ee_m_2_18.log
+	mv -nv /tmp/ee_m_2_18.log labs/ddos20_short/ee_logs/
 
 ee_n_2_27:
 	cp -nv labs/ddos20_short/ee_json/ee_m_2_14.json labs/ddos20_long/ee_json/
@@ -70,6 +76,11 @@ ee_n_2_27:
 	mv -nv /tmp/ee_m_2_16.log labs/ddos20_long/ee_logs/ 
 	$(EE_BIN) -c labs/ddos20_long/ee_json/ee_m_2_18.json workloads/synthetic/a_0.200/n_2_27/complete.pcap > /tmp/ee_m_2_18.log
 	mv -nv /tmp/ee_m_2_18.log labs/ddos20_long/ee_logs/ 
+
+tcad_n_2_24:
+	scripts/generate_tcad_traces.py -m 14 -t 4000 -i labs/ddos20_short/ee_logs/ee_m_2_14.log -o labs/ddos20_short/tcad_logs/
+	scripts/generate_tcad_traces.py -m 16 -t 1000 -i labs/ddos20_short/ee_logs/ee_m_2_16.log -o labs/ddos20_short/tcad_logs/
+	scripts/generate_tcad_traces.py -m 18 -t 250 -i labs/ddos20_short/ee_logs/ee_m_2_18.log -o labs/ddos20_short/tcad_logs/
 
 tcad_n_2_27:
 	scripts/generate_tcad_traces.py -m 14 -t 4000 -i labs/ddos20_long/ee_logs/ee_m_2_14.log -o labs/ddos20_long/tcad_logs/
