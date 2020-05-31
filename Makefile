@@ -59,11 +59,11 @@ workload_a_0.060_detection:
 	capinfos -m $(WORKLOAD_DIR)/synthetic_lapolli/a_0.060/detection.pcap > $(WORKLOAD_DIR)/synthetic_lapolli/a_0.060/detection.txt 	
 
 ee_n_2_24:
-	$(EE_BIN) -c labs/ddos20_short/ee_json/ee_m_2_14.json workloads/synthetic/a_0.200/n_2_27/complete.pcap > /tmp/ee_m_2_14.log
+	$(EE_BIN) -c labs/ddos20_short/ee_json/ee_m_2_14.json workloads/synthetic/a_0.200/n_2_24/complete.pcap > /tmp/ee_m_2_14.log
 	mv -nv /tmp/ee_m_2_14.log labs/ddos20_short/ee_logs/ 
-	$(EE_BIN) -c labs/ddos20_short/ee_json/ee_m_2_16.json workloads/synthetic/a_0.200/n_2_27/complete.pcap > /tmp/ee_m_2_16.log
+	$(EE_BIN) -c labs/ddos20_short/ee_json/ee_m_2_16.json workloads/synthetic/a_0.200/n_2_24/complete.pcap > /tmp/ee_m_2_16.log
 	mv -nv /tmp/ee_m_2_16.log labs/ddos20_short/ee_logs/ 
-	$(EE_BIN) -c labs/ddos20_short/ee_json/ee_m_2_18.json workloads/synthetic/a_0.200/n_2_27/complete.pcap > /tmp/ee_m_2_18.log
+	$(EE_BIN) -c labs/ddos20_short/ee_json/ee_m_2_18.json workloads/synthetic/a_0.200/n_2_24/complete.pcap > /tmp/ee_m_2_18.log
 	mv -nv /tmp/ee_m_2_18.log labs/ddos20_short/ee_logs/
 
 ee_n_2_27:
