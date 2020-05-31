@@ -98,22 +98,22 @@ control_rules_n_2_27:
 	scripts/generate_tcad_preinit_instructions.py -m 18 -t 250  -k 3.625 -i labs/ddos20_long/tcad_logs/tcad_m_2_18_k_3.625.log -o labs/ddos20_long/control_rules/
 
 dirs_a_0.060:
-	mkdir -p labs/ddos_a_0.060/ee_json
-	mkdir -p labs/ddos_a_0.060/ee_logs
-	mkdir -p labs/ddos_a_0.060/tcad_logs
-	mkdir -p labs/ddos_a_0.060/control_rules
-	cp -nv labs/ddos20_long/ee_json/ee_m_2_18.json labs/ddos_a_0.060/ee_json/
-	cp -nv labs/ddos20_long/control_rules/control_rules_base.txt labs/ddos_a_0.060/control_rules/
+	mkdir -p labs/ddos06_long/ee_json
+	mkdir -p labs/ddos06_long/ee_logs
+	mkdir -p labs/ddos06_long/tcad_logs
+	mkdir -p labs/ddos06_long/control_rules
+	cp -nv labs/ddos20_long/ee_json/ee_m_2_18.json labs/ddos06_long/ee_json/
+	cp -nv labs/ddos20_long/control_rules/control_rules_base.txt labs/ddos06_long/control_rules/
 
 ee_a_0.060:
-	$(EE_BIN) -c labs/ddos_a_0.060/ee_json/ee_m_2_18.json workloads/synthetic_lapolli/a_0.060/complete.pcap > /tmp/ee.log
-	mv -nv /tmp/ee.log labs/ddos_a_0.060/ee_logs/ 
+	$(EE_BIN) -c labs/ddos06_long/ee_json/ee_m_2_18.json workloads/synthetic_lapolli/a_0.060/complete.pcap > /tmp/ee.log
+	mv -nv /tmp/ee.log labs/ddos06_long/ee_logs/ 
 
 tcad_a_0.060:
-	scripts/generate_tcad_traces.py -m 18 -t 250 -i labs/ddos_a_0.060/ee_logs/ee.log -o labs/ddos_a_0.060/tcad_logs/
+	scripts/generate_tcad_traces.py -m 18 -t 250 -i labs/ddos06_long/ee_logs/ee.log -o labs/ddos06_long/tcad_logs/
 
 control_rules_a_0.060:
-	scripts/generate_tcad_preinit_instructions.py -m 18 -t 250  -k 3.625 -i labs/ddos_a_0.060/tcad_logs/tcad_m_2_18_k_3.625.log -o labs/ddos_a_0.060/control_rules/
+	scripts/generate_tcad_preinit_instructions.py -m 18 -t 250  -k 3.625 -i labs/ddos06_long/tcad_logs/tcad_m_2_18_k_3.625.log -o labs/ddos06_long/control_rules/
 
 
 
@@ -238,8 +238,8 @@ n_2_27_generate_csv:
 a_0.060:
 	$(SS_BIN) --use-files 15 -i 1@$(PCAP_DIR)/$@/$(LOAD) -i 2@$(PCAP_DIR)/$@/$(GOOD) -i 3@$(PCAP_DIR)/$@/$(EVIL) -i 4@$(PCAP_DIR)/$@/$(STAT) $(BUILD_DIR)/ddosm.json &
 	sleep 5
-	$(SS_CLI) < $(LAB_DIR)/ddos_a_0.060/control_rules/control_rules_base.txt
-	$(SS_CLI) < $(LAB_DIR)/ddos_a_0.060/control_rules/control_rules_m_2_18.txt
+	$(SS_CLI) < $(LAB_DIR)/ddos06_long/control_rules/control_rules_base.txt
+	$(SS_CLI) < $(LAB_DIR)/ddos06_long/control_rules/control_rules_m_2_18.txt
 	# TODO Set the adequate mitigation threshold.
 	echo "register_write mitigation_t 0 10" | $(SS_CLI)
 	./scripts/monitor.sh $(PCAP_DIR)/$@
@@ -250,7 +250,7 @@ a_0.060:
 	~/p4sec/ddosd-cpp/bin/ercnv $(PCAP_DIR)/$@/if4_stats_out.pcapng > $(PCAP_DIR)/$@/stats.txt
 
 a_0.060_copy_logs:
-	cp -nv pcaps/a_0.060/stats.txt labs/ddos_a_0.060/m_2_18.stats.txt
+	cp -nv pcaps/a_0.060/stats.txt labs/ddos06_long/m_2_18.stats.txt
 
 a_0.060_generate_csv:
 	scripts/pcap_to_csv.py -i pcaps/a_0.060/if3_attack_out.pcapng -o pcaps/a_0.060/if3_attack_out.csv.gz 
