@@ -6,7 +6,7 @@
 #define CS_WIDTH 1280
 
 // To enable debugging, uncomment the following line. 
-// #define DR_DEBUG 1
+#define DR_DEBUG 1
 
 // Defense Readiness State
 #define DR_SAFE 0
