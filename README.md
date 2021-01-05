@@ -1,7 +1,11 @@
-# About ddosm-p4
+# About
 
-This is a work in progress based on a fork of [ddosd-p4](https://github.com/aclapolli/ddosd-p4). 
-The target is the `simple_switch` variation of the P4 behavioral model software reference implementation.
+This is the central code repository of the in-network DDoS attack detection and mitigation mechanism we proposed in the journal article "EUCLID: A Fully In-Network, P4-based Approach for Real-Time DDoS Attack Detection and Mitigation" (in _IEEE Transactions on Network and Service Management_, 
+[DOI: 10.1109/TNSM.2020.3048265](https://doi.org/10.1109/TNSM.2020.3048265)).
+
+EUCLID adds DDoS attack mitigation capabilities and several other improvements to [ddosd-p4](https://github.com/aclapolli/ddosd-p4), which performs attack detection.
+
+The target architecture for this proof-of-concept code is the `simple_switch` variation of the P4 behavioral model software reference implementation.
 
 ## Getting Started
 
@@ -13,7 +17,7 @@ We recommend using an Ubuntu 16.04 virtual machine.
 This work depends on extended versions of the P4 reference compiler (p4c) and the behavioral model, which implement custom hash functions.  
 You need to clone the repositories and follow the installation guidelines within:
 
-- [behavioral-model](https://github.com/aclapolli/behavioral-model)
+- [behavioral-model](https://github.com/asilha/aclapolli-bmv2)
 - [p4c](https://github.com/aclapolli/p4c)
 
 ### Building
