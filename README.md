@@ -14,11 +14,11 @@ We recommend using an Ubuntu 16.04 virtual machine.
 
 ### Prerequisites
 
-This work depends on extended versions of the P4 reference compiler (p4c) and the behavioral model, which implement custom hash functions.  
+This work depends on extended versions of the P4 reference compiler (p4c) and the behavioral model (bmv2), which implement custom hash functions.  
 You need to clone the repositories and follow the installation guidelines within:
 
-- [behavioral-model](https://github.com/asilha/aclapolli-bmv2)
-- [p4c](https://github.com/aclapolli/p4c)
+- [bmv2](https://github.com/asilha/aclapolli-bmv2)
+- [p4c](https://github.com/asilha/aclapolli-p4c)
 
 ### Building
 Ensure that the `p4c` binary is within your `$PATH` and run:
@@ -29,6 +29,8 @@ make
 ```
 
 This process builds the P4 program into `./build/ddosm.json`
+
+We plan on making available a Dockerfile to simplify building and experiments. 
 
 ## License
 This repository is licensed under the GNU General Public License v3.0 (check [LICENSE](LICENSE) for details).
