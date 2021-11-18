@@ -17,7 +17,7 @@ We recommend using an Ubuntu 16.04 virtual machine.
 This work depends on extended versions of the P4 reference compiler (p4c) and the behavioral model (bmv2), which implement custom hash functions.  
 You need to clone the repositories and follow the installation guidelines within:
 
-- [bmv2](https://github.com/asilha/aclapolli-bmv2)
+- [bmv2](https://github.com/asilha/p4lang-behavioral-model/tree/euclid)
 - [p4c](https://github.com/asilha/aclapolli-p4c)
 
 ### Building
