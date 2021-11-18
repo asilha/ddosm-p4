@@ -18,7 +18,7 @@ This work depends on extended versions of the P4 reference compiler (p4c) and th
 You need to clone the repositories and follow the installation guidelines within:
 
 - [bmv2](https://github.com/asilha/p4lang-behavioral-model/tree/euclid)
-- [p4c](https://github.com/asilha/aclapolli-p4c)
+- [p4c](https://github.com/asilha/p4lang-p4c/tree/euclid)
 
 ### Building
 Ensure that the `p4c` binary is within your `$PATH` and run:
