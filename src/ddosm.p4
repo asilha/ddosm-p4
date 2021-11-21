@@ -129,7 +129,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
     register<bit<8>>(1) dr_state; 
 
     action drop() {
-        mark_to_drop();
+        mark_to_drop(standard_metadata);
     }
 
     action forward(bit<9> egress_port) {
