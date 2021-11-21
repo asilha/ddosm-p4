@@ -56,6 +56,7 @@ struct metadata {
     bit<32> dst_ewmmd;
     bit<8> alarm;
     bit<8> dr_state; 
+    bit<32> nhop_ipv4;     
 }
 
 #endif /* HEADERS_P4 */

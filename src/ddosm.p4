@@ -2,11 +2,14 @@
 
 #include "parser.p4"
 
+const bit<32> INSTANCE_TYPE_NORMAL = 0;
+const bit<32> INSTANCE_TYPE_CLONE  = 1; // TODO: Add other instance types.
+
 #define ALARM_SESSION 250
 #define CS_WIDTH 1280
 
 // To enable debugging, uncomment the following line. 
-#define DR_DEBUG 1
+// #define DR_DEBUG
 
 // Defense Readiness State
 #define DR_SAFE 0
@@ -128,13 +131,32 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
     // Defense Readiness State (see the definitions at the beginning of the code).
     register<bit<8>>(1) dr_state; 
 
+    // --------------------------------------------------------------------------------
+    // IPv4 routing and forwarding code adapted from https://github.com/p4lang/p4app.
+    // Licensing information: https://github.com/p4lang/p4app/blob/master/LICENSE
+
     action drop() {
         mark_to_drop(standard_metadata);
     }
 
-    action forward(bit<9> egress_port) {
-        standard_metadata.egress_spec = egress_port;
+    // IPv4 Routing
+
+    // Update next hop, set egress port, and decrement TTL.
+    action set_nhop(bit<32> nhop_ipv4, bit<9> port) {
+        meta.nhop_ipv4 = nhop_ipv4;
+        standard_metadata.egress_spec = port;
+        hdr.ipv4.ttl = hdr.ipv4.ttl + 8w255;
     }
+
+    // Table usage example: 
+    // table_add <table> set_nhop <prefix> => <router> <output interface>
+
+    // Legitimate traffic:
+    // table_add ipv4_fib set_nhop 10.0.0.10/32 => 10.0.0.10 1
+    // table_add ipv4_fib set_nhop 10.0.1.10/32 => 10.0.1.10 2  
+
+    // Malicious traffic:
+    // table_add ipv4_dpi_fib set_nhop 0/0 => 10.0.2.10 3
 
     // In the SAFE mitigation state, this table applies to ALL packets.
     // In the ACTIVE and COOLDOWN states, this table applies only to packets considered LEGITIMATE. 
@@ -143,7 +165,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             hdr.ipv4.dst_addr: lpm;
         }
         actions = {
-            forward;
+            set_nhop;
             drop;
         }
         default_action = drop();
@@ -155,11 +177,36 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
             hdr.ipv4.dst_addr: lpm;
         }
         actions = {
-            forward;        // Divert to a different interface. 
+            set_nhop;
             drop;           // Discard.
         }
         default_action = drop();
     }
+
+    // IPv4 Forwarding
+
+    // Update destination MAC address based on the next-hop IPv4 (akin to an ARP lookup).
+    action set_dmac(bit<48> dmac) {
+        hdr.ethernet.dst_addr = dmac;
+    }
+
+    // Table usage example:
+    // table_add ipv4_forward set_dmac <IP address> => <MAC address>
+    // table_add ipv4_forward set_dmac 10.0.0.10 => 00:04:00:00:00:00
+    // table_add ipv4_forward set_dmac 10.0.1.10 => 00:04:00:00:00:01 
+
+    table ipv4_forward { 
+        actions = {
+            set_dmac;
+            NoAction;
+        }
+        key = {
+            meta.nhop_ipv4: exact;
+        }
+        size = 512;
+        default_action = NoAction();
+    }
+
 
     action get_entropy_term(bit<32> entropy_term) {
         meta.entropy_term = entropy_term;
@@ -775,6 +822,8 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
                 ipv4_dpi_fib.apply();  // Use the alternative forwarding table.
             }
 
+            ipv4_forward.apply();  
+
             // End of Policy Enforcement. 
             // --------------------------------------------------------------------------------------------------------
 
@@ -783,10 +832,40 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
 } // End of ingress pipeline definition. 
 
 control egress(inout headers hdr, inout metadata meta, inout standard_metadata_t standard_metadata) {
-    const bit<32> CLONE = 1;
+    
+    // Before emitting the frame, set the its source MAC address to the egress port's.
+    action rewrite_mac(bit<48> smac) {
+        hdr.ethernet.src_addr = smac;
+    }
+
+    // Table usage example:
+    // table_add send_frame rewrite_mac <port> => <port MAC address>
+    // table_add send_frame rewrite_mac 1 => 00:aa:bb:00:00:00
+    // table_add send_frame rewrite_mac 2 => 00:aa:bb:00:00:01
+
+    table send_frame {
+        actions = {
+            rewrite_mac;
+            NoAction;
+        }
+        key = {
+            standard_metadata.egress_port: exact;
+        }
+        size = 256;
+        default_action = NoAction();
+    }
 
     apply {
-        if (standard_metadata.instance_type == CLONE) {
+        
+        // Emit normal packets.
+        if (standard_metadata.instance_type == INSTANCE_TYPE_NORMAL) {
+            if (hdr.ipv4.isValid()) { 
+                send_frame.apply();
+            }
+        }
+
+        // Generate statistics packets.
+        if (standard_metadata.instance_type == INSTANCE_TYPE_CLONE) {
             hdr.ddosd.setValid();
             hdr.ddosd.pkt_num = meta.pkt_num;
             hdr.ddosd.src_entropy = meta.src_entropy;
@@ -800,7 +879,9 @@ control egress(inout headers hdr, inout metadata meta, inout standard_metadata_t
             hdr.ddosd.ether_type = hdr.ethernet.ether_type;
             hdr.ethernet.ether_type = ETHERTYPE_DDOSD;
         }
+
     }
+
 }
 
 control computeChecksum(inout headers  hdr, inout metadata meta) {
