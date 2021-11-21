@@ -136,7 +136,8 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
     // Licensing information: https://github.com/p4lang/p4app/blob/master/LICENSE
 
     action drop() {
-        mark_to_drop(standard_metadata);
+        // mark_to_drop(); For p4c < v1.2.2.
+        mark_to_drop(standard_metadata); // For p4c >= v1.2.2
     }
 
     // IPv4 Routing
